@@ -1,7 +1,8 @@
 import torch
 import torch.nn.functional as F
 
-from grb.utils import utils, evaluator
+import grb.utils as utils
+from grb.utils import evaluator
 
 
 class Trainer(object):
@@ -35,11 +36,14 @@ class Trainer(object):
         self.features = torch.FloatTensor(self.features).to(self.device)
         self.labels = torch.LongTensor(self.labels).to(self.device)
 
-    def train(self, model, **kwargs):
+    def train(self, model, dropout=0, **kwargs):
         model = model.to(self.device)
+        n_epoch = self.config['n_epoch']
+        eval_every = self.config['eval_every']
+        save_path = self.config['save_path']
 
-        for epoch in range(self.config['n_epoch']):
-            logits = model(self.features, self.adj).to(self.device)
+        for epoch in range(n_epoch):
+            logits = model(self.features, self.adj, dropout).to(self.device)
             logp = F.log_softmax(logits, 1)
             loss = F.nll_loss(logp[self.train_mask], self.labels[self.train_mask]).to(self.device)
 
@@ -47,14 +51,14 @@ class Trainer(object):
             loss.backward()
             self.optimizer.step()
 
-            if epoch % self.config['eval_every'] == 0:
+            if epoch % eval_every == 0:
                 train_acc = evaluator.eval_acc(logp, self.labels, self.train_mask)
                 val_acc = evaluator.eval_acc(logp, self.labels, self.val_mask)
 
                 print('Epoch {:05d} | Loss {:.4f} | Train Acc {:.4f} | Val Acc {:.4f}'.format(
                     epoch, loss, train_acc, val_acc))
 
-        torch.save(model.state_dict(), self.config['save_path'])
+        torch.save(model.state_dict(), save_path)
 
     def inference(self):
         raise NotImplementedError

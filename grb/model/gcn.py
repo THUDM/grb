@@ -26,7 +26,7 @@ class GraphConvolution(nn.Module):
 
 
 class GCN(nn.Module):
-    def __init__(self, num_layers, num_features, activation=F.elu):
+    def __init__(self, num_layers, num_features, activation=F.relu):
         super(GCN, self).__init__()
         self.num_layers = num_layers
         self.num_features = num_features
