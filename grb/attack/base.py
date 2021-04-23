@@ -87,3 +87,9 @@ class InjectionAttack(Attack):
 
         :return:
         """
+
+    # def check_adj(self, adj):
+    #     """symetricity, n_edge_max"""
+    #
+    # def check_features(self, features, constraint):
+    #     """feature form (binary, float) / range defined in 'constraint'"""

@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class TAGraphConvolution(nn.Module):
+class TAGConv(nn.Module):
     def __init__(self, in_features, out_features, k=2, activation=None, dropout=False, norm=False):
-        super(TAGraphConvolution, self).__init__()
+        super(TAGConv, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features * (k + 1), out_features)
@@ -17,13 +17,17 @@ class TAGraphConvolution(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        gain = nn.init.calculate_gain('relu')
+        if self.activation == F.relu:
+            gain = nn.init.calculate_gain('relu')
+        elif self.activation == F.leaky_relu:
+            gain = nn.init.calculate_gain('leaky_relu')
+        else:
+            gain = nn.init.calculate_gain('relu')
         nn.init.xavier_normal_(self.linear.weight, gain=gain)
 
     def forward(self, x, adj, dropout=0):
 
         fstack = [x]
-
         for i in range(self.k):
             y = torch.spmm(adj, fstack[-1])
             fstack.append(y)
@@ -40,18 +44,19 @@ class TAGraphConvolution(nn.Module):
 
 
 class TAGCN(nn.Module):
-    def __init__(self, num_layers, num_features, k):
+    def __init__(self, in_features, out_features, hidden_features, k, activation=F.leaky_relu, dropout=True):
         super(TAGCN, self).__init__()
-        self.num_layers = num_layers
-        self.num_features = num_features
-        self.layers = nn.ModuleList()
+        self.in_features = in_features
+        self.out_features = out_features
+        if type(hidden_features) is int:
+            hidden_features = [hidden_features]
 
-        for i in range(num_layers):
-            if i != num_layers - 1:
-                self.layers.append(
-                    TAGraphConvolution(num_features[i], num_features[i + 1], k, activation=F.leaky_relu, dropout=True))
-            else:
-                self.layers.append(TAGraphConvolution(num_features[i], num_features[i + 1], k))
+        self.layers = nn.ModuleList()
+        self.layers.append(TAGConv(in_features, hidden_features[0], k, activation=activation, dropout=dropout))
+        for i in range(len(hidden_features) - 1):
+            self.layers.append(
+                TAGConv(hidden_features[i], hidden_features[i + 1], k, activation=activation, dropout=dropout))
+        self.layers.append(TAGConv(hidden_features[-1], out_features, k))
         self.reset_parameters()
 
     def reset_parameters(self):

@@ -12,7 +12,13 @@ class DataLoader(object):
         """mode: 'normal', 'lcc';"""
         default_dict = {"dataset": name}
         args = build_args_from_dict(default_dict)
-        dataset = build_dataset(args)
+
+        try:
+            dataset = build_dataset(args)
+        except AssertionError:
+            print("Dataset '{}' is not supported.".format(name))
+            exit(1)
+
         if mode == 'normal':
             self.adj = dataset.data._build_adj_().tocoo()
             self.adj_tensor = adj_to_tensor(self.adj)
@@ -25,7 +31,7 @@ class DataLoader(object):
             self.num_val = int(torch.sum(self.val_mask))
             self.num_test = int(torch.sum(self.test_mask))
             self.num_nodes = dataset.data.num_nodes
-            self.num_edges = dataset.data.num_edges
+            self.num_edges = dataset.data.num_edges // 2
             self.num_features = dataset.data.num_features
             self.num_classes = dataset.data.num_classes
         elif mode == 'lcc':
@@ -46,7 +52,7 @@ class DataLoader(object):
             self.num_val = int(torch.sum(self.val_mask))
             self.num_test = int(torch.sum(self.test_mask))
             self.num_nodes = subgraph.number_of_nodes()
-            self.num_edges = subgraph.number_of_edges()
+            self.num_edges = subgraph.number_of_edges() // 2
             self.num_features = dataset.data.num_features
             self.num_classes = dataset.data.num_classes
 
@@ -59,9 +65,9 @@ class DataLoader(object):
             print("    Number of train samples: {}.".format(self.num_train))
             print("    Number of val samples: {}.".format(self.num_val))
             print("    Number of test samples: {}.".format(self.num_test))
-            print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+            print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
-    SUPPORTED_DATASETS = {
+    COGDL_DATASETS = {
         "kdd_icdm": "cogdl.datasets.gcc_data",
         "sigir_cikm": "cogdl.datasets.gcc_data",
         "sigmod_icde": "cogdl.datasets.gcc_data",
@@ -129,21 +135,69 @@ class DataLoader(object):
 
 
 class CustomDataLoader(object):
-    def __init__(self, adj, features, labels, train_mask, val_mask, test_mask, name=None, verbose=True):
+    def __init__(self, adj, features, labels, train_mask, val_mask, test_mask, name=None, mode='normal', verbose=True):
         self.adj = adj.tocoo()
         self.adj_tensor = adj_to_tensor(self.adj)
-        self.features = features
-        self.labels = labels
-        self.train_mask = train_mask
-        self.val_mask = val_mask
-        self.test_mask = test_mask
-        self.num_train = int(torch.sum(self.train_mask))
-        self.num_val = int(torch.sum(self.val_mask))
-        self.num_test = int(torch.sum(self.test_mask))
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz()
         self.num_features = features.shape[1]
-        self.num_classes = labels.max() + 1
+
+        if type(features) != torch.Tensor:
+            features = torch.FloatTensor(features)
+        elif features.type() != 'torch.FloatTensor':
+            features = features.float()
+        self.features = features
+
+        assert labels.shape[0] == self.num_nodes, "Size must match number of nodes !"
+        if type(labels) != torch.Tensor:
+            labels = torch.LongTensor(labels)
+        elif labels.type() != 'torch.LongTensor':
+            labels = labels.long()
+        self.labels = labels
+
+        assert train_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
+        if type(train_mask) != torch.Tensor:
+            train_mask = torch.BoolTensor(train_mask)
+        elif train_mask.type() != 'torch.BoolTensor':
+            train_mask = train_mask.bool()
+        self.train_mask = train_mask
+
+        assert val_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
+        if type(val_mask) != torch.Tensor:
+            val_mask = torch.BoolTensor(val_mask)
+        elif val_mask.type() != 'torch.BoolTensor':
+            val_mask = val_mask.bool()
+        self.val_mask = val_mask
+
+        assert test_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
+        if type(test_mask) != torch.Tensor:
+            test_mask = torch.BoolTensor(test_mask)
+        elif test_mask.type() != 'torch.BoolTensor':
+            test_mask = test_mask.bool()
+        self.test_mask = test_mask
+
+        if mode == 'lcc':
+            graph = nx.from_scipy_sparse_matrix(adj)
+            components = nx.connected_components(graph)
+            lcc_nodes = list(next(components))
+            subgraph = graph.subgraph(lcc_nodes)
+            self.adj = nx.to_scipy_sparse_matrix(subgraph, format='coo')
+            self.adj_tensor = adj_to_tensor(self.adj)
+            self.features = self.features[lcc_nodes]
+            self.labels = self.labels[lcc_nodes]
+            self.train_mask = self.train_mask[lcc_nodes]
+            self.val_mask = self.val_mask[lcc_nodes]
+            self.test_mask = self.test_mask[lcc_nodes]
+            self.num_train = int(torch.sum(self.train_mask))
+            self.num_val = int(torch.sum(self.val_mask))
+            self.num_test = int(torch.sum(self.test_mask))
+            self.num_nodes = subgraph.number_of_nodes()
+            self.num_edges = subgraph.number_of_edges() // 2
+
+        self.num_train = int(torch.sum(self.train_mask))
+        self.num_val = int(torch.sum(self.val_mask))
+        self.num_test = int(torch.sum(self.test_mask))
+        self.num_classes = int(labels.max() + 1)
 
         if verbose:
             print("Custom Dataset \'{}\' loaded.".format(name))
