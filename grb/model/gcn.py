@@ -18,9 +18,7 @@ class GCNConv(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        if self.activation == F.relu:
-            gain = nn.init.calculate_gain('relu')
-        elif self.activation == F.leaky_relu:
+        if self.activation == F.leaky_relu:
             gain = nn.init.calculate_gain('leaky_relu')
         else:
             gain = nn.init.calculate_gain('relu')
@@ -38,7 +36,7 @@ class GCNConv(nn.Module):
 
 
 class GCN(nn.Module):
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, dropout=True):
+    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
         super(GCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -46,8 +44,12 @@ class GCN(nn.Module):
             hidden_features = [hidden_features]
 
         self.layers = nn.ModuleList()
+        if layer_norm:
+            self.layers.append(nn.LayerNorm(in_features))
         self.layers.append(GCNConv(in_features, hidden_features[0], activation=activation, dropout=dropout))
         for i in range(len(hidden_features) - 1):
+            if layer_norm:
+                self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(
                 GCNConv(hidden_features[i], hidden_features[i + 1], activation=activation, dropout=dropout))
         self.layers.append(GCNConv(hidden_features[-1], out_features))
@@ -59,6 +61,9 @@ class GCN(nn.Module):
 
     def forward(self, x, adj, dropout=0):
         for layer in self.layers:
-            x = layer(x, adj, dropout=dropout)
+            if isinstance(layer, nn.LayerNorm):
+                x = layer(x)
+            else:
+                x = layer(x, adj, dropout=dropout)
 
         return x

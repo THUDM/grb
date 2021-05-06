@@ -3,26 +3,29 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class SparseDropout(torch.nn.Module):
-    def __init__(self):
-        super(SparseDropout, self).__init__()
+class SparseEdgeDrop(nn.Module):
+    def __init__(self, edge_drop):
+        super(SparseEdgeDrop, self).__init__()
+        self.edge_drop = edge_drop
 
-    def forward(self, x, dropout_prob=0.5):
-        mask = ((torch.rand(x._values().size()) + (1 - dropout_prob)).floor()).type(torch.bool)
+    def forward(self, x):
+        mask = ((torch.rand(x._values().size()) + (1 - self.edge_drop)).floor()).type(torch.bool)
         rc = x._indices()[:, mask]
-        val = x._values()[mask] * (1.0 / (1.0 - dropout_prob + 1e-5))
+        val = x._values()[mask] * (1.0 / (1.0 - self.edge_drop + 1e-5))
+
         return torch.sparse.FloatTensor(rc, val)
 
 
 class APPNP(nn.Module):
-    def __init__(self, in_features, out_features, num_hidden, alpha=0.01, k=10):
+    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, edge_drop=0, alpha=0.01, k=10):
         super(APPNP, self).__init__()
-        self.linear1 = nn.Linear(in_features, num_hidden)
-        self.linear2 = nn.Linear(num_hidden, out_features)
+        self.linear1 = nn.Linear(in_features, hidden_features)
+        self.linear2 = nn.Linear(hidden_features, out_features)
         self.alpha = alpha
-        self.dropout = SparseDropout()
-        self.activation = F.relu
         self.k = k
+        self.edge_drop = edge_drop
+        self.dropout = SparseEdgeDrop(edge_drop)
+        self.activation = activation
 
     def forward(self, x, adj, dropout=0):
         x = self.linear1(x)
@@ -31,8 +34,9 @@ class APPNP(nn.Module):
 
         x = self.linear2(x)
         x = F.dropout(x, dropout)
-        for i in range(self.K):
-            adj_drop = self.drop(adj, dprob=dropout)
-            x = (1 - self.alpha) * torch.spmm(adj_drop, x) + self.alpha * x
+        for i in range(self.k):
+            if self.edge_drop != 0:
+                adj = self.dropout(adj, dropout_prob=self.edge_drop)
+            x = (1 - self.alpha) * torch.spmm(adj, x) + self.alpha * x
 
         return x
