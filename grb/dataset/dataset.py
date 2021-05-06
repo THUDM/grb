@@ -7,7 +7,7 @@ from cogdl.utils import build_args_from_dict
 from grb.utils import adj_to_tensor
 
 
-class DataLoader(object):
+class Dataset(object):
     def __init__(self, name, mode='normal', verbose=True):
         """mode: 'normal', 'lcc';"""
         default_dict = {"dataset": name}
@@ -134,7 +134,7 @@ class DataLoader(object):
     }
 
 
-class CustomDataLoader(object):
+class CustomDataset(object):
     def __init__(self, adj, features, labels, train_mask, val_mask, test_mask, name=None, mode='normal', verbose=True):
         self.adj = adj.tocoo()
         self.adj_tensor = adj_to_tensor(self.adj)
