@@ -4,22 +4,21 @@ import torch.nn.functional as F
 
 
 class TAGConv(nn.Module):
-    def __init__(self, in_features, out_features, k=2, activation=None, dropout=False, norm=False):
+    def __init__(self, in_features, out_features, k=2, activation=None, dropout=False, batchnorm=False):
         super(TAGConv, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features * (k + 1), out_features)
-        self.norm = norm
-        self.norm_func = nn.BatchNorm1d(out_features, affine=False)
+        self.batchnorm = batchnorm
+        if batchnorm:
+            self.norm_func = nn.BatchNorm1d(out_features, affine=False)
         self.activation = activation
         self.dropout = dropout
         self.k = k
         self.reset_parameters()
 
     def reset_parameters(self):
-        if self.activation == F.relu:
-            gain = nn.init.calculate_gain('relu')
-        elif self.activation == F.leaky_relu:
+        if self.activation == F.leaky_relu:
             gain = nn.init.calculate_gain('leaky_relu')
         else:
             gain = nn.init.calculate_gain('relu')
@@ -33,7 +32,7 @@ class TAGConv(nn.Module):
             fstack.append(y)
         x = torch.cat(fstack, dim=-1)
         x = self.linear(x)
-        if self.norm:
+        if self.batchnorm:
             x = self.norm_func(x)
         if not (self.activation is None):
             x = self.activation(x)

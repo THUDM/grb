@@ -63,15 +63,15 @@ class GAThead(nn.Module):
 
 
 class GATConv(nn.Module):
-    def __init__(self, in_features, n_heads, dims, activation=None, mode=0):
+    def __init__(self, in_features, n_heads, out_features, activation=None, mode=0):
         super(GATConv, self).__init__()
         self.in_features = in_features
         self.n_heads = n_heads
-        self.dims = dims
+        self.out_features = out_features
         self.heads = nn.ModuleList()
         self.mode = mode
         for i in range(n_heads):
-            self.heads.append(GAThead(in_features, dims, activation=activation))
+            self.heads.append(GAThead(in_features, out_features, activation=activation))
 
     def forward(self, x, adj, dropout=0):
         xp = []
@@ -86,19 +86,19 @@ class GATConv(nn.Module):
 
 
 class GAT(nn.Module):
-    def __init__(self, num_layers, num_heads, head_dim, activation=F.leaky_relu):
+    def __init__(self, num_layers, num_heads, head_dims, activation=F.leaky_relu):
         super(GAT, self).__init__()
         self.num_layers = num_layers
         self.num_heads = num_heads
-        self.head_dim = head_dim
+        self.head_dims = head_dims
         self.layers = nn.ModuleList()
 
         for i in range(num_layers):
             if i != num_layers - 1:
                 self.layers.append(
-                    GATConv(num_heads[i] * head_dim[i], num_heads[i + 1], head_dim[i + 1], activation=activation))
+                    GATConv(num_heads[i] * head_dims[i], num_heads[i + 1], head_dims[i + 1], activation=activation))
             else:
-                self.layers.append(GATConv(num_heads[i] * head_dim[i], num_heads[i + 1], head_dim[i + 1], mode=1))
+                self.layers.append(GATConv(num_heads[i] * head_dims[i], num_heads[i + 1], head_dims[i + 1], mode=1))
 
     def forward(self, x, adj, dropout=0):
         for layer in self.layers:
