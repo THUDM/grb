@@ -2,6 +2,7 @@ import random
 import numpy as np
 import scipy.sparse as sp
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 import grb.utils as utils
@@ -31,7 +32,7 @@ class TDGIA(InjectionAttack):
         self.n_inject_max = kwargs['n_inject_max']
         self.n_edge_max = kwargs['n_edge_max']
 
-    def attack(self, model, mode='sequential'):
+    def attack(self, model, mode='sequential', opt='sin'):
         """attack mode: sequential, one-time, multi-model"""
         if 'inject_mode' in self.config:
             inject_mode = self.config['inject_mode']
@@ -57,7 +58,8 @@ class TDGIA(InjectionAttack):
                                                adj_attack=adj_attack,
                                                features=features,
                                                features_attack=features_attack,
-                                               origin_labels=origin_labels)
+                                               origin_labels=origin_labels,
+                                               opt=opt)
 
         return adj_attack, features_attack
 
@@ -137,7 +139,7 @@ class TDGIA(InjectionAttack):
 
             # higher score is better
             sorted_rank = add_score.argsort()
-            sorted_rank = sorted_rank[-n_connect * n_inject:]
+            sorted_rank = sorted_rank[-n_inject * n_connect:]
             labelgroup = np.zeros(n_classes)
 
             # separate them by origin_labels
@@ -201,27 +203,39 @@ class TDGIA(InjectionAttack):
 
             return adj_attack
 
-    def update_features(self, model, adj_attack, features, features_attack, origin_labels):
+    def update_features(self, model, adj_attack, features, features_attack, origin_labels, opt='sin', smooth_factor=4):
         lr = self.config['lr']
         n_epoch = self.config['n_epoch']
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
 
-        adj_attack = utils.adj_to_tensor(adj_attack).to(self.device)
+        adj_attack_tensor = utils.adj_to_tensor(adj_attack).to(self.device)
+
+        if opt == 'sin':
+            features_attack = features_attack / feat_lim_max
+            features_attack = np.arcsin(features_attack)
         features_attack = torch.FloatTensor(features_attack).to(self.device)
         features_attack.requires_grad_(True)
         optimizer = torch.optim.Adam([features_attack], lr=lr)
+        loss_func = nn.CrossEntropyLoss(reduction='none')
         model.eval()
         for i in range(n_epoch):
-            features_concat = torch.cat((features, features_attack), dim=0)
-            pred_adv = model(features_concat, adj_attack)
-            pred_loss = -F.nll_loss(pred_adv[:self.n_total][self.dataset.test_mask],
-                                    origin_labels[self.dataset.test_mask]).to(self.device)
+            if opt == 'sin':
+                features_attacked = torch.sin(features_attack) * feat_lim_max
+            elif opt == 'clip':
+                features_attacked = torch.clamp(features_attack, feat_lim_min, feat_lim_max)
+            features_concat = torch.cat((features, features_attacked), dim=0)
+            pred_adv = model(features_concat, adj_attack_tensor)
+            pred_loss = loss_func(pred_adv[:self.n_total][self.dataset.test_mask],
+                                  origin_labels[self.dataset.test_mask]).to(self.device)
+            if opt == 'sin':
+                pred_loss = F.relu(-pred_loss + smooth_factor) ** 2
+            elif opt == 'clip':
+                pred_loss = -pred_loss
+            pred_loss = torch.mean(pred_loss)
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
 
-            with torch.no_grad():
-                features_attack.clamp_(feat_lim_min, feat_lim_max)
             print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss,
                                                                     evaluator.eval_acc(
                                                                         pred_adv[:self.n_total][self.dataset.test_mask],
