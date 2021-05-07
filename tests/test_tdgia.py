@@ -4,14 +4,16 @@ import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
-from grb.dataset.dataloader import DataLoader
+from grb.dataset.dataset import Dataset
 from grb.model.gcn import GCN
 from grb.utils import evaluator
 from grb.attack.tdgia import TDGIA
+from grb.utils.normalize import GCNAdjNorm
 
 if __name__ == '__main__':
+    device = "cuda:3"
     # Data preparing
-    dataset = DataLoader('cora')
+    dataset = Dataset('cora')
     adj = dataset.adj
     adj_tensor = dataset.adj_tensor
     features = dataset.features
@@ -20,9 +22,11 @@ if __name__ == '__main__':
     num_classes = dataset.num_classes
 
     # Model loading
-    num_hidden = 64
-    model_path = "../grb/model/saved_models/model_gcn_cora.pt"
-    model = GCN(num_layers=3, num_features=[num_features, num_hidden, num_hidden, num_classes], activation=F.relu)
+    model_path = '../saved_models/gcn_cora/checkpoint.pt'
+    model = GCN(in_features=num_features,
+                out_features=num_classes,
+                hidden_features=[64, 64],
+                activation=F.relu)
     model.load_state_dict(torch.load(model_path))
     print("Model loaded.")
 
@@ -31,16 +35,15 @@ if __name__ == '__main__':
     acc = evaluator.eval_acc(pred, labels, mask=dataset.test_mask)
     print("Test accuracy: {:.4f}".format(acc))
 
-    # Attack configuration
     config = {}
-    config['mode'] = 'random-inter'
+    config['inject_mode'] = 'tdgia'
     config['lr'] = 0.01
-    config['n_epoch'] = 10
+    config['n_epoch'] = 100
     config['feat_lim_min'] = 0
     config['feat_lim_max'] = 1
+    config['n_inject_max'] = 500
+    config['n_edge_max'] = 20
 
-    # Attack test
-    tdgia = TDGIA(dataset, n_inject_max=100, n_edge_max=100)
+    tdgia = TDGIA(dataset, adj_norm_func=GCNAdjNorm, device=device)
     tdgia.set_config(**config)
-
-    adj_attack, features_attack = tdgia.attack(model, features, adj)
+    adj_attack, features_attack = tdgia.attack(model)
