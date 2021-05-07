@@ -36,28 +36,24 @@ class CustomDataset(object):
             features = features.float()
         self.features = features
 
-        assert labels.shape[0] == self.num_nodes, "Size must match number of nodes !"
         if type(labels) != torch.Tensor:
             labels = torch.LongTensor(labels)
         elif labels.type() != 'torch.LongTensor':
             labels = labels.long()
         self.labels = labels
 
-        assert train_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
         if type(train_mask) != torch.Tensor:
             train_mask = torch.BoolTensor(train_mask)
         elif train_mask.type() != 'torch.BoolTensor':
             train_mask = train_mask.bool()
         self.train_mask = train_mask
 
-        assert val_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
         if type(val_mask) != torch.Tensor:
             val_mask = torch.BoolTensor(val_mask)
         elif val_mask.type() != 'torch.BoolTensor':
             val_mask = val_mask.bool()
         self.val_mask = val_mask
 
-        assert test_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
         if type(test_mask) != torch.Tensor:
             test_mask = torch.BoolTensor(test_mask)
         elif test_mask.type() != 'torch.BoolTensor':
@@ -161,7 +157,7 @@ if __name__ == '__main__':
                                                             'robustgcn', 'tagcn', 'appnp', 'gin'])
     parser.add_argument("--model_dir", type=str, default="./eval_models/")
     parser.add_argument("--model_suffix", type=str, default="aminer")
-    parser.add_argument("--attack_dir", type=str, default="")
+    parser.add_argument("--attack_dir", type=str, default="./submission/")
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
@@ -183,6 +179,7 @@ if __name__ == '__main__':
     n_node = features.shape[0]
     n_val = 50000  # user-defined val size
     n_test = 50000
+
     train_mask = torch.zeros(n_node, dtype=bool)
     train_mask[range(n_node - n_val - n_test)] = True
     val_mask = torch.zeros(n_node, dtype=bool)
@@ -191,7 +188,23 @@ if __name__ == '__main__':
     test_mask[range(n_node - n_test, n_node)] = True
 
     if args.attack_dir != '':
-        pass
+        features_attack = np.load(os.path.join(args.attack_dir, "features.npy"))
+        with open(os.path.join(args.attack_dir, "adj.pkl"), 'rb') as f:
+            adj_attack = pickle.load(f)
+        adj_attack = sp.csr_matrix(adj_attack)
+        adj_attacked = sp.vstack([adj, adj_attack[:, :n_node]])
+        adj_attacked = sp.hstack([adj_attacked, adj_attack.T])
+        adj_attacked = sp.csr_matrix(adj_attacked)
+        features_attacked = np.concatenate([features, features_attack])
+
+        dataset = CustomDataset(adj=adj_attacked,
+                                features=features_attacked,
+                                labels=labels,
+                                train_mask=train_mask,
+                                val_mask=val_mask,
+                                test_mask=test_mask,
+                                name='Aminer')
+
     else:
         dataset = CustomDataset(adj=adj,
                                 features=features,
@@ -210,6 +223,9 @@ if __name__ == '__main__':
     num_classes = dataset.num_classes
 
     features = torch.FloatTensor(features).to(device)
+    features[torch.where(features < -0.4)[0]] = 0
+    features[torch.where(features > 0.4)[0]] = 0
+    features[np.where(adj.getnnz(axis=1) > 90)[0]] = 0
     labels = torch.LongTensor(labels).to(device)
 
     test_acc_dict = {}
@@ -223,7 +239,8 @@ if __name__ == '__main__':
                                      hidden_features=[128, 128, 128], activation=F.relu)
 
         elif model_name in "sgcn":
-            model = models.SGCN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
+            model = models.SGCN(in_features=num_features, out_features=num_classes,
+                                hidden_features=[128, 128, 128],
                                 activation=F.relu)
 
         elif model_name in "robustgcn":
@@ -231,16 +248,17 @@ if __name__ == '__main__':
                                      hidden_features=[128, 128, 128])
 
         elif model_name in "tagcn":
-            model = models.TAGCN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
-                                 k=2,
-                                 activation=F.leaky_relu)
+            model = models.TAGCN(in_features=num_features, out_features=num_classes,
+                                 hidden_features=[128, 128, 128],
+                                 k=2, activation=F.leaky_relu)
 
         elif model_name in "appnp":
-            model = models.APPNP(in_features=num_features, out_features=num_classes, hidden_features=128, alpha=0.01,
-                                 k=10)
+            model = models.APPNP(in_features=num_features, out_features=num_classes,
+                                 hidden_features=128, alpha=0.01, k=10)
 
         elif model_name in "gin":
-            model = models.GIN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
+            model = models.GIN(in_features=num_features, out_features=num_classes,
+                               hidden_features=[128, 128, 128],
                                activation=F.relu)
 
         model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name + "_" + args.model_suffix + ".pt")))
@@ -259,17 +277,17 @@ if __name__ == '__main__':
             adj_ = adj_to_tensor(adj_).to(device)
 
         logits = model(features, adj_, dropout=0)
-        logp = F.softmax(logits, 1)
+        logp = F.softmax(logits[:n_node], 1)
         test_acc = eval_acc(logp, labels, test_mask)
         test_acc_dict[model_name] = test_acc.cpu().numpy()
         print("Test score of {}: {:.4f}".format(model_name, test_acc))
 
-    print("Test ACC dict:", test_acc_dict)
+    # print("Test ACC dict:", test_acc_dict)
     test_acc_sorted = sorted(list(test_acc_dict.values()))
     final_score = 0.0
     for i in range(len(weight)):
         final_score += weight[i] * test_acc_sorted[i]
 
-    print("Average score:", np.average(test_acc_sorted))
-    print("3-max score:", np.average(test_acc_sorted[-3:]))
-    print("Final evaluation score:", final_score)
+    print("Average score: {:.4f}".format(np.average(test_acc_sorted)))
+    print("3-max score: {:.4f}".format(np.average(test_acc_sorted[-3:])))
+    print("Weighted score: {:.4f}".format(final_score))
