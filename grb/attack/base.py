@@ -21,26 +21,6 @@ class Attack(metaclass=ABCMeta):
         :return:
         """
 
-    @abstractmethod
-    def save_features(self, feature, file_dir, file_name):
-        """
-
-        :param feature:
-        :param file_dir:
-        :param file_name:
-        :return:
-        """
-
-    @abstractmethod
-    def save_adj(self, adj, file_dir, file_name):
-        """
-
-        :param adj:
-        :param file_dir:
-        :param file_name:
-        :return:
-        """
-
     # @abstractmethod
     # def set_attack_objecteve(self):
     #     """
@@ -87,9 +67,3 @@ class InjectionAttack(Attack):
 
         :return:
         """
-
-    # def check_adj(self, adj):
-    #     """symetricity, n_edge_max"""
-    #
-    # def check_features(self, features, constraint):
-    #     """feature form (binary, float) / range defined in 'constraint'"""

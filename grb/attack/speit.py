@@ -1,5 +1,3 @@
-import os
-import pickle
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -11,12 +9,14 @@ from grb.utils import evaluator
 
 
 class SPEIT(InjectionAttack):
-    def __init__(self, dataset, device='cpu'):
+    def __init__(self, dataset, adj_norm_func=None, device='cpu'):
         self.dataset = dataset
         self.n_total = dataset.num_nodes
         self.n_test = dataset.num_test
+        self.n_feat = dataset.num_features
         self.n_inject_max = 0
         self.n_edge_max = 0
+        self.adj_norm_func = adj_norm_func
         self.device = device
         self.config = {}
 
@@ -29,13 +29,24 @@ class SPEIT(InjectionAttack):
         self.n_inject_max = kwargs['n_inject_max']
         self.n_edge_max = kwargs['n_edge_max']
 
-    def attack(self, model, features, adj, target_node):
-        mode = self.config['inject_mode']
-
-        pred_orig = model(features, utils.adj_to_tensor(adj).to(self.device))
+    def attack(self, model, target_node):
+        if 'inject_mode' in self.config:
+            inject_mode = self.config['inject_mode']
+        else:
+            inject_mode = 'random-inter'
+        model.to(self.device)
+        features = self.dataset.features
+        features = torch.FloatTensor(features).to(self.device)
+        adj = self.dataset.adj
+        adj_tensor = utils.adj_preprocess(adj, adj_norm_func=self.adj_norm_func, device=self.device)
+        pred_orig = model(features, adj_tensor)
         origin_labels = torch.argmax(pred_orig, dim=1)
-        adj_attack = self.injection(target_node, mode)
-        features_attack = np.zeros([self.n_inject_max, self.dataset.num_features])
+        adj_attack = self.injection(adj=adj,
+                                    n_inject=self.n_inject_max,
+                                    target_node=target_node,
+                                    mode=inject_mode)
+
+        features_attack = np.zeros([self.n_inject_max, self.n_feat])
         features_attack = self.update_features(model=model,
                                                adj_attack=adj_attack,
                                                features=features,
@@ -44,7 +55,7 @@ class SPEIT(InjectionAttack):
 
         return adj_attack, features_attack
 
-    def injection(self, target_node, mode='random-inter'):
+    def injection(self, adj, n_inject, target_node, mode='random-inter'):
         def get_inject_list(adj, n_inter, inject_id, inject_tmp_list):
             i = 1
             res = []
@@ -147,8 +158,8 @@ class SPEIT(InjectionAttack):
             return adj
 
         # construct injected adjacency matrix
-        adj_inject = inject(target_node, self.n_inject_max, self.n_test, mode)
-        adj_inject = np.concatenate([np.zeros([self.n_inject_max, self.n_total - self.n_test]), adj_inject], axis=1)
+        adj_inject = inject(target_node, n_inject, self.n_test, mode)
+        adj_inject = sp.hstack([sp.csr_matrix((n_inject, self.n_total - self.n_test)), adj_inject])
         adj_inject = sp.csr_matrix(adj_inject)
         adj_attack = sp.vstack([self.dataset.adj, adj_inject[:, :self.n_total]])
         adj_attack = sp.hstack([adj_attack, adj_inject.T])
@@ -157,47 +168,29 @@ class SPEIT(InjectionAttack):
         return adj_attack
 
     def update_features(self, model, adj_attack, features, features_attack, origin_labels):
-        model.eval()
         lr = self.config['lr']
         n_epoch = self.config['n_epoch']
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
-        adj_attack_tensor = utils.adj_to_tensor(adj_attack).to(self.device)
+
+        adj_attacked_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
         features_attack = torch.FloatTensor(features_attack).to(self.device)
         features_attack.requires_grad_(True)
         optimizer = torch.optim.Adam([features_attack], lr=lr)
-
+        model.eval()
         for i in range(n_epoch):
             features_concat = torch.cat((features, features_attack), dim=0)
-            pred_adv = model(features_concat, adj_attack_tensor)
-            pred_loss = -F.nll_loss(pred_adv[:self.n_total][self.dataset.test_mask],
+            pred = model(features_concat, adj_attacked_tensor)
+            pred_loss = -F.nll_loss(pred[:self.n_total][self.dataset.test_mask],
                                     origin_labels[self.dataset.test_mask]).to(self.device)
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
 
-            # clip
             with torch.no_grad():
                 features_attack.clamp_(feat_lim_min, feat_lim_max)
             print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss,
                                                                     evaluator.eval_acc(
-                                                                        pred_adv[:self.n_total][self.dataset.test_mask],
+                                                                        pred[:self.n_total][self.dataset.test_mask],
                                                                         origin_labels[self.dataset.test_mask])))
 
         return features_attack
-
-    def save_features(self, features, file_dir, file_name='features.npy'):
-        if not os.path.exists(file_dir):
-            assert os.mkdir(file_dir)
-        if features is not None:
-            np.save(os.path.join(file_dir, file_name), features.detach().numpy())
-
-    def save_adj(self, adj, file_dir, file_name='adj.pkl'):
-        if adj is not None:
-            with open(os.path.join(file_dir, file_name), 'wb') as f:
-                pickle.dump(adj, f)
-
-    def check_adj(self, adj):
-        pass
-
-    def check_features(self, features):
-        pass
