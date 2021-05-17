@@ -208,7 +208,7 @@ class TDGIA(InjectionAttack):
         n_epoch = self.config['n_epoch']
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
 
-        adj_attack_tensor = utils.adj_to_tensor(adj_attack).to(self.device)
+        adj_attack_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
 
         if opt == 'sin':
             features_attack = features_attack / feat_lim_max
@@ -218,14 +218,15 @@ class TDGIA(InjectionAttack):
         optimizer = torch.optim.Adam([features_attack], lr=lr)
         loss_func = nn.CrossEntropyLoss(reduction='none')
         model.eval()
+
         for i in range(n_epoch):
             if opt == 'sin':
                 features_attacked = torch.sin(features_attack) * feat_lim_max
             elif opt == 'clip':
                 features_attacked = torch.clamp(features_attack, feat_lim_min, feat_lim_max)
             features_concat = torch.cat((features, features_attacked), dim=0)
-            pred_adv = model(features_concat, adj_attack_tensor)
-            pred_loss = loss_func(pred_adv[:self.n_total][self.dataset.test_mask],
+            pred = model(features_concat, adj_attack_tensor)
+            pred_loss = loss_func(pred[:self.n_total][self.dataset.test_mask],
                                   origin_labels[self.dataset.test_mask]).to(self.device)
             if opt == 'sin':
                 pred_loss = F.relu(-pred_loss + smooth_factor) ** 2
@@ -235,10 +236,9 @@ class TDGIA(InjectionAttack):
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
-
-            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss,
-                                                                    evaluator.eval_acc(
-                                                                        pred_adv[:self.n_total][self.dataset.test_mask],
-                                                                        origin_labels[self.dataset.test_mask])))
+            test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
+                                          origin_labels[self.dataset.test_mask])
+            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
+                  end='\r' if i != n_epoch - 1 else '\n')
 
         return features_attack

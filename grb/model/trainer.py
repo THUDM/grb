@@ -1,4 +1,6 @@
+import os
 import time
+import scipy
 import torch
 import torch.nn.functional as F
 
@@ -48,6 +50,8 @@ class Trainer(object):
             self.early_stop = early_stop
 
     def prepare(self, adj_norm_func=None):
+        if type(self.adj) != scipy.sparse.coo.coo_matrix:
+            self.adj = self.adj.tocoo()
         if adj_norm_func is not None:
             self.adj = adj_norm_func(self.adj)
         if type(self.adj) is tuple:
@@ -57,13 +61,23 @@ class Trainer(object):
         self.features = torch.FloatTensor(self.features).to(self.device)
         self.labels = torch.LongTensor(self.labels).to(self.device)
 
-    def train(self, model, n_epoch, save_dir=None, eval_every=10, save_after=0, dropout=0, verbose=True):
+    def train(self, model, n_epoch, save_dir=None, save_name=None,
+              eval_every=10, save_after=0, dropout=0, verbose=True):
         model.to(self.device)
         model.train()
 
         if save_dir is None:
             cur_time = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
             save_dir = "./tmp_{}".format(cur_time)
+        else:
+            if not os.path.exists(save_dir):
+                os.mkdir(save_dir)
+
+        if save_name is None:
+            save_name = "checkpoint.pt"
+        else:
+            if save_name.split(".")[-1] != "pt":
+                save_name = save_name + ".pt"
 
         train_acc_list = []
         val_acc_list = []
@@ -97,15 +111,13 @@ class Trainer(object):
                     best_val_acc = val_acc
                     if epoch > save_after:
                         print("Best validation accuracy: {:.4f}".format(best_val_acc))
-                        utils.save_model(model, save_dir, "checkpoint.pt")
+                        utils.save_model(model, save_dir, save_name)
                 if verbose:
                     print(
                         'Epoch {:05d} | Train Loss {:.4f} | Train Acc {:.4f} | Val Loss {:.4f} | Val Acc {:.4f}'.format(
                             epoch, train_loss, train_acc, val_loss, val_acc))
 
         utils.save_model(model, save_dir, "checkpoint_final.pt")
-
-        # return train_acc_list, val_acc_list
 
     def inference(self, model):
         model.to(self.device)

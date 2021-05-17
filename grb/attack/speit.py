@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -151,21 +152,50 @@ class SPEIT(InjectionAttack):
                                                               threshold=self.n_edge_max)
                     adj[inject_list + n_inject_layer_1, i + n_test] = 1
                     adj[i, inject_list + n_inject_layer_1 + n_test] = 1
-
             else:
-                print("Mode ERROR: 'mode' should be one of ['random-inter', 'multi-layer']")
+                print("Mode ERROR: 'mode' should be one of ['random-inter', 'multi-layer', 'random']")
 
             return adj
 
-        # construct injected adjacency matrix
-        adj_inject = inject(target_node, n_inject, self.n_test, mode)
-        adj_inject = sp.hstack([sp.csr_matrix((n_inject, self.n_total - self.n_test)), adj_inject])
-        adj_inject = sp.csr_matrix(adj_inject)
-        adj_attack = sp.vstack([self.dataset.adj, adj_inject[:, :self.n_total]])
-        adj_attack = sp.hstack([adj_attack, adj_inject.T])
-        adj_attack = sp.coo_matrix(adj_attack)
+        if mode == 'random':
+            test_index = torch.where(self.dataset.test_mask)[0]
+            n_test = test_index.shape[0]
+            new_edges_x = []
+            new_edges_y = []
+            new_data = []
+            for i in range(n_inject):
+                islinked = np.zeros(self.n_test)
+                for j in range(n_inject):
+                    x = i + self.n_total
 
-        return adj_attack
+                    yy = random.randint(0, n_test - 1)
+                    while islinked[yy] > 0:
+                        yy = random.randint(0, n_test - 1)
+
+                    y = test_index[yy]
+                    new_edges_x.extend([x, y])
+                    new_edges_y.extend([y, x])
+                    new_data.extend([1, 1])
+
+            add1 = sp.csr_matrix((n_inject, self.n_total))
+            add2 = sp.csr_matrix((self.n_total + n_inject, n_inject))
+            adj_attack = sp.vstack([adj, add1])
+            adj_attack = sp.hstack([adj_attack, add2])
+            adj_attack.row = np.hstack([adj_attack.row, new_edges_x])
+            adj_attack.col = np.hstack([adj_attack.col, new_edges_y])
+            adj_attack.data = np.hstack([adj_attack.data, new_data])
+
+            return adj_attack
+        else:
+            # construct injected adjacency matrix
+            adj_inject = inject(target_node, n_inject, self.n_test, mode)
+            adj_inject = sp.hstack([sp.csr_matrix((n_inject, self.n_total - self.n_test)), adj_inject])
+            adj_inject = sp.csr_matrix(adj_inject)
+            adj_attack = sp.vstack([self.dataset.adj, adj_inject[:, :self.n_total]])
+            adj_attack = sp.hstack([adj_attack, adj_inject.T])
+            adj_attack = sp.coo_matrix(adj_attack)
+
+            return adj_attack
 
     def update_features(self, model, adj_attack, features, features_attack, origin_labels):
         lr = self.config['lr']
@@ -177,6 +207,7 @@ class SPEIT(InjectionAttack):
         features_attack.requires_grad_(True)
         optimizer = torch.optim.Adam([features_attack], lr=lr)
         model.eval()
+
         for i in range(n_epoch):
             features_concat = torch.cat((features, features_attack), dim=0)
             pred = model(features_concat, adj_attacked_tensor)
@@ -188,9 +219,10 @@ class SPEIT(InjectionAttack):
 
             with torch.no_grad():
                 features_attack.clamp_(feat_lim_min, feat_lim_max)
-            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss,
-                                                                    evaluator.eval_acc(
-                                                                        pred[:self.n_total][self.dataset.test_mask],
-                                                                        origin_labels[self.dataset.test_mask])))
+
+            test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
+                                          origin_labels[self.dataset.test_mask])
+            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
+                  end='\r' if i != n_epoch - 1 else '\n')
 
         return features_attack

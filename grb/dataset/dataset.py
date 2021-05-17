@@ -1,27 +1,102 @@
+import os
 import torch
 import networkx as nx
+import numpy as np
+import scipy.sparse as sp
 
-from cogdl.datasets import build_dataset
-from cogdl.utils import build_args_from_dict
+from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
-from grb.utils import adj_to_tensor
+from grb.dataset import splitting
 
 
 class Dataset(object):
-    def __init__(self, name, mode='normal', verbose=True):
-        """mode: 'normal', 'lcc';"""
-        default_dict = {"dataset": name}
-        args = build_args_from_dict(default_dict)
+    def __init__(self, name, data_dir, mode="easy", verbose=True):
+        """
+
+        :param name:
+        :param data_dir:
+        :param mode:
+        :param verbose:
+        """
+        adj = sp.load_npz(os.path.join(data_dir, "adj.npz"))
+        features = np.load(os.path.join(data_dir, "features.npz")).get("data")
+        labels = np.load(os.path.join(data_dir, "labels.npz")).get("data")
+
+        self.adj = adj
+        self.features = torch.FloatTensor(features)
+        self.labels = torch.LongTensor(labels)
+        self.num_nodes = features.shape[0]
+        self.num_edges = adj.getnnz() // 2
+        self.num_features = features.shape[1]
+        self.num_classes = int(labels.max() + 1)
+
+        index = np.load(os.path.join(data_dir, "index.npz"))
+        index_train = index.get("index_train")
+        train_mask = torch.zeros(self.num_nodes, dtype=bool)
+        train_mask[index_train] = True
+        self.train_mask = train_mask
+
+        index_val = index.get("index_val")
+        val_mask = torch.zeros(self.num_nodes, dtype=bool)
+        val_mask[index_val] = True
+        self.val_mask = val_mask
+
+        if mode == "easy":
+            index_test = index.get("index_test_easy")
+        elif mode == "medium":
+            index_test = index.get("index_test_medium")
+        elif mode == "hard":
+            index_test = index.get("index_test_hard")
+        elif mode == "normal":
+            index_test = index.get("index_test")
+        else:
+            index_test = index.get("index_test")
+
+        test_mask = torch.zeros(self.num_nodes, dtype=bool)
+        test_mask[index_test] = True
+        self.test_mask = test_mask
+
+        self.num_train = int(torch.sum(self.train_mask))
+        self.num_val = int(torch.sum(self.val_mask))
+        self.num_test = int(torch.sum(self.test_mask))
+
+        if verbose:
+            print("Dataset \'{}\' loaded.".format(name))
+            print("    Number of nodes: {}".format(self.num_nodes))
+            print("    Number of edges: {}".format(self.num_edges))
+            print("    Number of features: {}".format(self.num_features))
+            print("    Number of classes: {}".format(self.num_classes))
+            print("    Number of train samples: {}".format(self.num_train))
+            print("    Number of val samples: {}".format(self.num_val))
+            print("    Number of test samples: {}".format(self.num_test))
+            print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+
+
+class CogDLDataset(object):
+    def __init__(self, name, data_dir=None, mode='origin', verbose=True):
+        """
+
+        :param name:
+        :param data_dir: e.g. /data/Cora/;
+        :param mode: 'normal', 'lcc';
+        :param verbose:
+        """
 
         try:
-            dataset = build_dataset(args)
+            if data_dir:
+                dataset = build_dataset_from_path(data_path=data_dir, task="node_classification", dataset=name)
+            else:
+                dataset = build_dataset_from_name(name)
         except AssertionError:
             print("Dataset '{}' is not supported.".format(name))
             exit(1)
 
-        if mode == 'normal':
-            self.adj = dataset.data._build_adj_().tocoo()
-            self.adj_tensor = adj_to_tensor(self.adj)
+        graph = dataset.data
+        edge_index = graph.edge_index
+        attr = graph.edge_attr if graph.edge_attr is not None else torch.ones(edge_index[0].shape[0])
+        self.adj = self.build_adj(attr, edge_index, adj_type='csr')
+
+        if mode == 'origin':
             self.features = dataset.data.x
             self.labels = dataset.data.y
             self.train_mask = dataset.data.train_mask
@@ -36,13 +111,11 @@ class Dataset(object):
             self.num_classes = dataset.data.num_classes
         elif mode == 'lcc':
             # Get largest connected component
-            adj = dataset.data._build_adj_()
-            graph = nx.from_scipy_sparse_matrix(adj)
-            components = nx.connected_components(graph)
+            graph_nx = nx.from_scipy_sparse_matrix(self.adj)
+            components = nx.connected_components(graph_nx)
             lcc_nodes = list(next(components))
-            subgraph = graph.subgraph(lcc_nodes)
+            subgraph = graph_nx.subgraph(lcc_nodes)
             self.adj = nx.to_scipy_sparse_matrix(subgraph, format='coo')
-            self.adj_tensor = adj_to_tensor(self.adj)
             self.features = dataset.data.x[lcc_nodes]
             self.labels = dataset.data.y[lcc_nodes]
             self.train_mask = dataset.data.train_mask[lcc_nodes]
@@ -58,14 +131,27 @@ class Dataset(object):
 
         if verbose:
             print("Dataset \'{}\' loaded.".format(name))
-            print("    Number of nodes: {}.".format(self.num_nodes))
-            print("    Number of edges: {}.".format(self.num_edges))
-            print("    Number of features: {}.".format(self.num_features))
-            print("    Number of classes: {}.".format(self.num_classes))
-            print("    Number of train samples: {}.".format(self.num_train))
-            print("    Number of val samples: {}.".format(self.num_val))
-            print("    Number of test samples: {}.".format(self.num_test))
+            print("    Number of nodes: {}".format(self.num_nodes))
+            print("    Number of edges: {}".format(self.num_edges))
+            print("    Number of features: {}".format(self.num_features))
+            print("    Number of classes: {}".format(self.num_classes))
+            print("    Number of train samples: {}".format(self.num_train))
+            print("    Number of val samples: {}".format(self.num_val))
+            print("    Number of test samples: {}".format(self.num_test))
             print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+
+    @staticmethod
+    def build_adj(attr, edge_index, adj_type='csr'):
+        if type(attr) == torch.Tensor:
+            attr = attr.numpy()
+        if type(edge_index) == torch.Tensor:
+            edge_index = edge_index.numpy()
+        if adj_type == 'csr':
+            adj = sp.csr_matrix((attr, edge_index))
+        elif adj_type == 'coo':
+            adj = sp.coo_matrix((attr, edge_index))
+
+        return adj
 
     COGDL_DATASETS = {
         "kdd_icdm": "cogdl.datasets.gcc_data",
@@ -135,11 +221,11 @@ class Dataset(object):
 
 
 class CustomDataset(object):
-    def __init__(self, adj, features, labels, train_mask, val_mask, test_mask, name=None, mode='normal', verbose=True):
-        self.adj = adj.tocoo()
-        self.adj_tensor = adj_to_tensor(self.adj)
+    def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
+                 name=None, data_dir=None, mode='normal', save=False, verbose=True):
+        self.adj = adj
         self.num_nodes = features.shape[0]
-        self.num_edges = adj.getnnz()
+        self.num_edges = adj.getnnz() // 2
         self.num_features = features.shape[1]
 
         if type(features) != torch.Tensor:
@@ -148,64 +234,79 @@ class CustomDataset(object):
             features = features.float()
         self.features = features
 
-        assert labels.shape[0] == self.num_nodes, "Size must match number of nodes !"
         if type(labels) != torch.Tensor:
             labels = torch.LongTensor(labels)
         elif labels.type() != 'torch.LongTensor':
             labels = labels.long()
         self.labels = labels
 
-        assert train_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
-        if type(train_mask) != torch.Tensor:
-            train_mask = torch.BoolTensor(train_mask)
-        elif train_mask.type() != 'torch.BoolTensor':
-            train_mask = train_mask.bool()
+        index = splitting(adj)
+        if train_mask is None:
+            index_train = index.get("index_train")
+            train_mask = torch.zeros(self.num_nodes, dtype=bool)
+            train_mask[index_train] = True
+        else:
+            if type(train_mask) != torch.Tensor:
+                train_mask = torch.BoolTensor(train_mask)
+            elif train_mask.type() != 'torch.BoolTensor':
+                train_mask = train_mask.bool()
         self.train_mask = train_mask
 
-        assert val_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
-        if type(val_mask) != torch.Tensor:
-            val_mask = torch.BoolTensor(val_mask)
-        elif val_mask.type() != 'torch.BoolTensor':
-            val_mask = val_mask.bool()
+        if val_mask is None:
+            index_val = index.get("index_val")
+            val_mask = torch.zeros(self.num_nodes, dtype=bool)
+            val_mask[index_val] = True
+        else:
+            if type(val_mask) != torch.Tensor:
+                val_mask = torch.BoolTensor(val_mask)
+            elif val_mask.type() != 'torch.BoolTensor':
+                val_mask = val_mask.bool()
         self.val_mask = val_mask
 
-        assert test_mask.shape[0] == self.num_nodes, "Size must match number of nodes !"
-        if type(test_mask) != torch.Tensor:
-            test_mask = torch.BoolTensor(test_mask)
-        elif test_mask.type() != 'torch.BoolTensor':
-            test_mask = test_mask.bool()
+        if test_mask is None:
+            if mode == "easy":
+                index_test = index.get("index_test_easy")
+            elif mode == "medium":
+                index_test = index.get("index_test_medium")
+            elif mode == "hard":
+                index_test = index.get("index_test_hard")
+            elif mode == "normal":
+                index_test = index.get("index_test")
+            else:
+                index_test = index.get("index_test")
+            test_mask = torch.zeros(self.num_nodes, dtype=bool)
+            test_mask[index_test] = True
+        else:
+            if type(test_mask) != torch.Tensor:
+                test_mask = torch.BoolTensor(test_mask)
+            elif test_mask.type() != 'torch.BoolTensor':
+                test_mask = test_mask.bool()
         self.test_mask = test_mask
 
-        if mode == 'lcc':
-            graph = nx.from_scipy_sparse_matrix(adj)
-            components = nx.connected_components(graph)
-            lcc_nodes = list(next(components))
-            subgraph = graph.subgraph(lcc_nodes)
-            self.adj = nx.to_scipy_sparse_matrix(subgraph, format='coo')
-            self.adj_tensor = adj_to_tensor(self.adj)
-            self.features = self.features[lcc_nodes]
-            self.labels = self.labels[lcc_nodes]
-            self.train_mask = self.train_mask[lcc_nodes]
-            self.val_mask = self.val_mask[lcc_nodes]
-            self.test_mask = self.test_mask[lcc_nodes]
-            self.num_train = int(torch.sum(self.train_mask))
-            self.num_val = int(torch.sum(self.val_mask))
-            self.num_test = int(torch.sum(self.test_mask))
-            self.num_nodes = subgraph.number_of_nodes()
-            self.num_edges = subgraph.number_of_edges() // 2
-
+        self.index = index
         self.num_train = int(torch.sum(self.train_mask))
         self.num_val = int(torch.sum(self.val_mask))
         self.num_test = int(torch.sum(self.test_mask))
         self.num_classes = int(labels.max() + 1)
 
+        if save:
+            if data_dir is None:
+                data_dir = "./data"
+            if not os.path.exists(data_dir):
+                os.mkdir(data_dir)
+            sp.save_npz(os.path.join(data_dir, "adj.npz"), adj.tocsr())
+            np.savez_compressed(os.path.join(data_dir, "index.npz"), **index)
+            np.savez_compressed(os.path.join(data_dir, "features.npz"), data=features)
+            np.savez_compressed(os.path.join(data_dir, "labels.npz"), data=labels)
+            print("    Saved in {}.".format(data_dir))
+
         if verbose:
             print("Custom Dataset \'{}\' loaded.".format(name))
-            print("    Number of nodes: {}.".format(self.num_nodes))
-            print("    Number of edges: {}.".format(self.num_edges))
-            print("    Number of features: {}.".format(self.num_features))
-            print("    Number of classes: {}.".format(self.num_classes))
-            print("    Number of train samples: {}.".format(self.num_train))
-            print("    Number of val samples: {}.".format(self.num_val))
-            print("    Number of test samples: {}.".format(self.num_test))
+            print("    Number of nodes: {}".format(self.num_nodes))
+            print("    Number of edges: {}".format(self.num_edges))
+            print("    Number of features: {}".format(self.num_features))
+            print("    Number of classes: {}".format(self.num_classes))
+            print("    Number of train samples: {}".format(self.num_train))
+            print("    Number of val samples: {}".format(self.num_val))
+            print("    Number of test samples: {}".format(self.num_test))
             print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))

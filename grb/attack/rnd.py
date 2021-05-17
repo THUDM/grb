@@ -9,7 +9,7 @@ from grb.attack.base import InjectionAttack
 from grb.utils import evaluator
 
 
-class FGSM(InjectionAttack):
+class RND(InjectionAttack):
     def __init__(self, dataset, adj_norm_func=None, device='cpu'):
         self.dataset = dataset
         self.n_total = dataset.num_nodes
@@ -22,8 +22,6 @@ class FGSM(InjectionAttack):
         self.config = {}
 
     def set_config(self, **kwargs):
-        self.config['epsilon'] = kwargs['epsilon']
-        self.config['n_epoch'] = kwargs['n_epoch']
         self.config['feat_lim_min'] = kwargs['feat_lim_min']
         self.config['feat_lim_max'] = kwargs['feat_lim_max']
         self.n_inject_max = kwargs['n_inject_max']
@@ -81,33 +79,23 @@ class FGSM(InjectionAttack):
         return adj_attack
 
     def update_features(self, model, adj_attack, features, features_attack, origin_labels):
-        epsilon = self.config['epsilon']
-        n_epoch = self.config['n_epoch']
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
 
         adj_attacked_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
+        features_attack = np.random.normal(loc=0, scale=self.config['feat_lim_max'] / 10,
+                                           size=(self.n_inject_max, self.n_feat))
+        features_attack = np.clip(features_attack, feat_lim_min, feat_lim_max)
         features_attack = torch.FloatTensor(features_attack).to(self.device)
         model.eval()
 
-        for i in range(n_epoch):
-            features_attack.requires_grad_(True)
-            features_attack.retain_grad()
-            features_concat = torch.cat((features, features_attack), dim=0)
-            pred = model(features_concat, adj_attacked_tensor)
-            pred_loss = -F.nll_loss(pred[:self.n_total][self.dataset.test_mask],
-                                    origin_labels[self.dataset.test_mask]).to(self.device)
+        features_concat = torch.cat((features, features_attack), dim=0)
+        pred = model(features_concat, adj_attacked_tensor)
+        pred_loss = -F.nll_loss(pred[:self.n_total][self.dataset.test_mask],
+                                origin_labels[self.dataset.test_mask]).to(self.device)
 
-            model.zero_grad()
-            pred_loss.backward()
-            grad = features_attack.grad.data
-            features_attack = features_attack.clone() + epsilon * grad.sign()
-            features_attack = torch.clamp(features_attack, feat_lim_min, feat_lim_max)
-            features_attack = features_attack.detach()
+        test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
+                                      origin_labels[self.dataset.test_mask])
 
-            test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
-                                          origin_labels[self.dataset.test_mask])
-
-            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
-                  end='\r' if i != n_epoch - 1 else '\n')
+        print("Loss: {:.5f}, Test acc: {:.5f}".format(pred_loss, test_acc))
 
         return features_attack

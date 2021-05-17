@@ -9,7 +9,7 @@ from grb.attack.base import InjectionAttack
 from grb.utils import evaluator
 
 
-class FGSM(InjectionAttack):
+class PGD(InjectionAttack):
     def __init__(self, dataset, adj_norm_func=None, device='cpu'):
         self.dataset = dataset
         self.n_total = dataset.num_nodes
@@ -41,7 +41,8 @@ class FGSM(InjectionAttack):
                                     n_inject=self.n_inject_max,
                                     n_node=self.n_total)
 
-        features_attack = np.zeros((self.n_inject_max, self.n_feat))
+        features_attack = np.random.normal(loc=0, scale=self.config['feat_lim_max'] / 10,
+                                           size=(self.n_inject_max, self.n_feat))
         features_attack = self.update_features(model=model,
                                                adj_attack=adj_attack,
                                                features=features,

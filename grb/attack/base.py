@@ -21,19 +21,6 @@ class Attack(metaclass=ABCMeta):
         :return:
         """
 
-    # @abstractmethod
-    # def set_attack_objecteve(self):
-    #     """
-    #
-    #     :return:
-    #     """
-    # @abstractmethod
-    # def set_attack_scenario(self):
-    #     """
-    #
-    #     :return:
-    #     """
-
 
 class ModificationAttack(Attack):
     @abstractmethod
@@ -63,6 +50,13 @@ class InjectionAttack(Attack):
 
     @abstractmethod
     def injection(self, **kwargs):
+        """
+
+        :return:
+        """
+
+    @abstractmethod
+    def update_features(self, **kwargs):
         """
 
         :return:

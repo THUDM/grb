@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class GINConv(nn.Module):
-    def __init__(self, in_features, out_features, activation=F.relu, eps=0, batchnorm=False, dropout=False):
+    def __init__(self, in_features, out_features, activation=F.relu, eps=0, batchnorm=True, dropout=False):
         super(GINConv, self).__init__()
         self.linear1 = nn.Linear(in_features, out_features)
         self.linear2 = nn.Linear(out_features, out_features)
@@ -20,7 +20,7 @@ class GINConv(nn.Module):
             gain = nn.init.calculate_gain('leaky_relu')
         else:
             gain = nn.init.calculate_gain('relu')
-        nn.init.xavier_normal_(self.linear.weight, gain=gain)
+        nn.init.xavier_normal_(self.linear.weights, gain=gain)
 
     def forward(self, x, adj, dropout=0):
         y = torch.spmm(adj, x)
