@@ -10,7 +10,7 @@ import torch.nn.functional as F
 sys.path.append('..')
 
 from grb.dataset.dataset import CustomDataset
-from grb.model.trainer import Trainer
+from grb.utils.trainer import Trainer
 from grb.utils import normalize
 
 sys.path.append('..')
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     model_name = args.model_name
     if model_name in "gcn_ln":
-        from grb.model.gcn import GCN
+        from grb.model.torch.gcn import GCN
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
@@ -81,37 +81,37 @@ if __name__ == '__main__':
                     activation=F.relu)
         adj_norm_func = normalize.GCNAdjNorm
     elif model_name in "graphsage":
-        from grb.model.graphsage import GraphSAGE
+        from grb.model.torch.graphsage import GraphSAGE
 
         model = GraphSAGE(in_features=num_features, out_features=num_classes,
                           hidden_features=[128, 128, 128], activation=F.relu)
         adj_norm_func = normalize.SAGEAdjNorm
     elif model_name in "sgcn":
-        from grb.model.sgcn import SGCN
+        from grb.model.torch.sgcn import SGCN
 
         model = SGCN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
                      activation=F.relu)
         adj_norm_func = normalize.GCNAdjNorm
     elif model_name in "robustgcn":
-        from grb.model.robustgcn import RobustGCN
+        from grb.model.torch.robustgcn import RobustGCN
 
         model = RobustGCN(in_features=num_features, out_features=num_classes,
                           hidden_features=[128, 128, 128])
         adj_norm_func = normalize.RobustGCNAdjNorm
     elif model_name in "tagcn":
-        from grb.model.tagcn import TAGCN
+        from grb.model.torch.tagcn import TAGCN
 
         model = TAGCN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
                       k=2, activation=F.leaky_relu)
         adj_norm_func = normalize.GCNAdjNorm
     elif model_name in "appnp":
-        from grb.model.appnp import APPNP
+        from grb.model.torch.appnp import APPNP
 
         model = APPNP(in_features=num_features, out_features=num_classes, hidden_features=128,
                       alpha=0.01, k=10)
         adj_norm_func = normalize.GCNAdjNorm
     elif model_name in "gin":
-        from grb.model.gin import GIN
+        from grb.model.torch.gin import GIN
 
         model = GIN(in_features=num_features, out_features=num_classes, hidden_features=[128, 128, 128],
                     activation=F.relu)

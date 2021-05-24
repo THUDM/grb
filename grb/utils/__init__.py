@@ -7,6 +7,7 @@ import torch
 import numpy as np
 from urllib import request
 
+from .trainer import Trainer
 
 def adj_to_tensor(adj):
     if type(adj) != scipy.sparse.coo.coo_matrix:
@@ -53,14 +54,14 @@ def get_num_params(model):
 def save_features(features, file_dir, file_name='features.npy'):
     if features is not None:
         if not os.path.exists(file_dir):
-            os.mkdir(file_dir)
+            os.makedirs(file_dir)
         np.save(os.path.join(file_dir, file_name), features.cpu().detach().numpy())
 
 
 def save_adj(adj, file_dir, file_name='adj.pkl'):
     if adj is not None:
         if not os.path.exists(file_dir):
-            os.mkdir(file_dir)
+            os.makedirs(file_dir)
         with open(os.path.join(file_dir, file_name), 'wb') as f:
             pickle.dump(adj, f)
 
@@ -69,9 +70,9 @@ def save_model(model, save_dir, name, verbose=True):
     if save_dir is None:
         cur_time = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
         save_dir = "./tmp_{}".format(cur_time)
-        os.mkdir(save_dir)
+        os.makedirs(save_dir)
     if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+        os.makedirs(save_dir)
 
     torch.save(model.state_dict(), os.path.join(save_dir, name))
 

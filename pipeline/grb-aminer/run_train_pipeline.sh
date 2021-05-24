@@ -1,0 +1,14 @@
+python train_pipeline.py \
+--n_epoch 15000 \
+--dataset grb-aminer \
+--feat_norm arctan \
+--data_dir /home/stanislas/Research/GRB/data/grb-aminer \
+--model_dir /home/stanislas/Research/GRB/saved_models/grb-aminer-arctan-ind/ \
+--config_dir /home/stanislas/Research/GRB/pipeline/grb-aminer/ \
+--dropout 0.5 \
+--eval_every 10 \
+--save_after 1000 \
+--early_stop \
+--n_train 10 \
+--train_mode inductive \
+--gpu 0

@@ -15,7 +15,7 @@ def GCNAdjNorm(adj, order=-0.5):
     d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
     adj = d_mat_inv_sqrt @ adj @ d_mat_inv_sqrt
 
-    return adj.tocoo()
+    return adj
 
 
 def SAGEAdjNorm(adj, order=-1):
@@ -35,7 +35,7 @@ def SAGEAdjNorm(adj, order=-1):
     d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
     adj = d_mat_inv_sqrt @ adj
 
-    return adj.tocoo()
+    return adj
 
 
 def RobustGCNAdjNorm(adj):

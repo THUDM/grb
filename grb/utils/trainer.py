@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 
 import grb.utils as utils
-from grb.utils import evaluator
+from grb.evaluator import metric
 
 
 class Trainer(object):
@@ -142,11 +142,12 @@ class Trainer(object):
                     self.early_stop(val_loss)
                     if self.early_stop.stop:
                         print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_epoch_{}_early_stopped.pt".format(epoch))
+                        utils.save_model(model, save_dir, "checkpoint_final.pt")
+                        return
 
                 if epoch % eval_every == 0:
-                    train_acc = evaluator.eval_acc(logp, labels[train_mask], None)
-                    val_acc = evaluator.eval_acc(logp_val, labels[train_val_mask], val_mask_induc)
+                    train_acc = metric.eval_acc(logp, labels[train_mask], None)
+                    val_acc = metric.eval_acc(logp_val, labels[train_val_mask], val_mask_induc)
                     train_acc_list.append(train_acc)
                     val_acc_list.append(val_acc)
                     if val_acc > best_val_acc:
@@ -180,11 +181,12 @@ class Trainer(object):
                     self.early_stop(val_loss)
                     if self.early_stop.stop:
                         print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_epoch_{}_early_stopped.pt".format(epoch))
+                        utils.save_model(model, save_dir, "checkpoint_final.pt")
+                        return
 
                 if epoch % eval_every == 0:
-                    train_acc = evaluator.eval_acc(logp, labels, train_mask)
-                    val_acc = evaluator.eval_acc(logp, labels, val_mask)
+                    train_acc = metric.eval_acc(logp, labels, train_mask)
+                    val_acc = metric.eval_acc(logp, labels, val_mask)
                     train_acc_list.append(train_acc)
                     val_acc_list.append(val_acc)
                     if val_acc > best_val_acc:
@@ -207,13 +209,13 @@ class Trainer(object):
                                   model_type=model.model_type)
         logits = model(self.features, adj, dropout=0)
         logp = F.softmax(logits, 1)
-        test_acc = evaluator.eval_acc(logp, self.labels, self.test_mask)
+        test_acc = metric.eval_acc(logp, self.labels, self.test_mask)
 
         return logits, test_acc
 
 
 class EarlyStop(object):
-    def __init__(self, patience=100, epsilon=1e-5):
+    def __init__(self, patience=1000, epsilon=1e-5):
         self.patience = patience
         self.epsilon = epsilon
         self.min_loss = None

@@ -1,12 +1,9 @@
-import cogdl
-import numpy as np
-import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
 from grb.dataset.dataset import Dataset
-from grb.model.gcn import GCN
-from grb.utils import evaluator
+from grb.model.torch.gcn import GCN
+from grb.evaluator import metric
 from grb.attack.tdgia import TDGIA
 from grb.utils.normalize import GCNAdjNorm
 
@@ -32,7 +29,7 @@ if __name__ == '__main__':
 
     # Prediction test
     pred = model.forward(features, adj_tensor, dropout=0)
-    acc = evaluator.eval_acc(pred, labels, mask=dataset.test_mask)
+    acc = metric.eval_acc(pred, labels, mask=dataset.test_mask)
     print("Test accuracy: {:.4f}".format(acc))
 
     config = {}

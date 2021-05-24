@@ -352,7 +352,7 @@ class GINConv(nn.Module):
             gain = nn.init.calculate_gain('leaky_relu')
         else:
             gain = nn.init.calculate_gain('relu')
-        nn.init.xavier_normal_(self.linear.weight, gain=gain)
+        nn.init.xavier_normal_(self.linear.weights, gain=gain)
 
     def forward(self, x, adj, dropout=0):
         y = torch.spmm(adj, x)

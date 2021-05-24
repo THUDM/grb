@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 import grb.utils as utils
 from grb.attack.base import InjectionAttack
-from grb.utils import evaluator
+from grb.evaluator import metric
 
 
 class RND(InjectionAttack):
@@ -93,8 +93,8 @@ class RND(InjectionAttack):
         pred_loss = -F.nll_loss(pred[:self.n_total][self.dataset.test_mask],
                                 origin_labels[self.dataset.test_mask]).to(self.device)
 
-        test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
-                                      origin_labels[self.dataset.test_mask])
+        test_acc = metric.eval_acc(pred[:self.n_total][self.dataset.test_mask],
+                                   origin_labels[self.dataset.test_mask])
 
         print("Loss: {:.5f}, Test acc: {:.5f}".format(pred_loss, test_acc))
 

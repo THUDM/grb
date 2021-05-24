@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 import grb.utils as utils
 from grb.attack.base import InjectionAttack
-from grb.utils import evaluator
+from grb.evaluator import metric
 
 
 class TDGIA(InjectionAttack):
@@ -236,8 +236,8 @@ class TDGIA(InjectionAttack):
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
-            test_acc = evaluator.eval_acc(pred[:self.n_total][self.dataset.test_mask],
-                                          origin_labels[self.dataset.test_mask])
+            test_acc = metric.eval_acc(pred[:self.n_total][self.dataset.test_mask],
+                                       origin_labels[self.dataset.test_mask])
             print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
                   end='\r' if i != n_epoch - 1 else '\n')
 
