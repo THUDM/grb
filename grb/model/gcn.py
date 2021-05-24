@@ -55,6 +55,10 @@ class GCN(nn.Module):
         self.layers.append(GCNConv(hidden_features[-1], out_features))
         self.reset_parameters()
 
+    @property
+    def model_type(self):
+        return "torch"
+
     def reset_parameters(self):
         for layer in self.layers:
             layer.reset_parameters()

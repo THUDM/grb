@@ -46,6 +46,10 @@ class GraphSAGE(nn.Module):
                                         hidden_features[i + 1], activation=F.relu, dropout=dropout))
         self.layers.append(SAGEConv(hidden_features[-1], hidden_features[-1], out_features))
 
+    @property
+    def model_type(self):
+        return "torch"
+
     def forward(self, x, adj, dropout=0):
         for layer in self.layers:
             x = F.normalize(x, dim=1)

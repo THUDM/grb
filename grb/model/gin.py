@@ -52,6 +52,10 @@ class GIN(nn.Module):
         self.linear1 = nn.Linear(hidden_features[-2], hidden_features[-1])
         self.linear2 = nn.Linear(hidden_features[-1], out_features)
 
+    @property
+    def model_type(self):
+        return "torch"
+
     def reset_parameters(self):
         for layer in self.layers:
             layer.reset_parameters()

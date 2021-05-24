@@ -1,5 +1,32 @@
 import numpy as np
 
+URLs = {
+    "grb-cora": {"adj.npz": "https://cloud.tsinghua.edu.cn/f/2e522f282e884907a39f/?dl=1",
+                 "features.npz": "https://cloud.tsinghua.edu.cn/f/46fd09a8c1d04f11afbb/?dl=1",
+                 "labels.npz": "https://cloud.tsinghua.edu.cn/f/88fccac46ee94161b48f/?dl=1",
+                 "index.npz": "https://cloud.tsinghua.edu.cn/f/d8488cbf78a34a8c9c5b/?dl=1"},
+    "grb-reddit": {"adj.npz": "https://cloud.tsinghua.edu.cn/f/22e91d7f34494784a670/?dl=1",
+                   "features.npz": "https://cloud.tsinghua.edu.cn/f/000dc5cd8dd643dcbfc6/?dl=1",
+                   "labels.npz": "https://cloud.tsinghua.edu.cn/f/3e228140ede64b7886b2/?dl=1",
+                   "index.npz": "https://cloud.tsinghua.edu.cn/f/24310393f5394e3a8b73/?dl=1"},
+    "grb-aminer": {"adj.npz": "https://cloud.tsinghua.edu.cn/f/dca1075cd8cc408bb4c0/?dl=1",
+                   "features.npz": "https://cloud.tsinghua.edu.cn/f/e93ba93dbdd94673bce3/?dl=1",
+                   "labels.npz": "https://cloud.tsinghua.edu.cn/f/0ddbca54864245f3b4e1/?dl=1",
+                   "index.npz": "https://cloud.tsinghua.edu.cn/f/3444a2e87ef745e89828/?dl=1"},
+    "grb-amazon": {"adj.npz": "",
+                   "features.npz": "",
+                   "labels.npz": "",
+                   "index.npz": ""},
+    "grb-yelp": {"adj.npz": "",
+                 "features.npz": "",
+                 "labels.npz": "",
+                 "index.npz": ""},
+    "grb-ppi": {"adj.npz": "",
+                "features.npz": "",
+                "labels.npz": "",
+                "index.npz": ""},
+}
+
 
 def splitting(adj, range_min=(0.0, 0.05), range_max=(0.95, 1.0),
               range_easy=(0.05, 0.35), range_medium=(0.35, 0.65),

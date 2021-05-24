@@ -82,7 +82,7 @@ class RND(InjectionAttack):
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
 
         adj_attacked_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
-        features_attack = np.random.normal(loc=0, scale=self.config['feat_lim_max'] / 10,
+        features_attack = np.random.normal(loc=0, scale=self.config['feat_lim_max'],
                                            size=(self.n_inject_max, self.n_feat))
         features_attack = np.clip(features_attack, feat_lim_min, feat_lim_max)
         features_attack = torch.FloatTensor(features_attack).to(self.device)

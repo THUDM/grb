@@ -1,26 +1,86 @@
 import os
-import torch
+
 import networkx as nx
 import numpy as np
 import scipy.sparse as sp
-
+import torch
 from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
-from grb.dataset import splitting
+from grb.dataset import splitting, URLs
+from grb.utils import download
 
 
 class Dataset(object):
-    def __init__(self, name, data_dir, mode="easy", verbose=True):
-        """
+    r"""
+    Description
+    -----------
+    Dataset class that helps to load GRB datasets for evaluating adversarial robustness.
 
-        :param name:
-        :param data_dir:
-        :param mode:
-        :param verbose:
-        """
-        adj = sp.load_npz(os.path.join(data_dir, "adj.npz"))
-        features = np.load(os.path.join(data_dir, "features.npz")).get("data")
-        labels = np.load(os.path.join(data_dir, "labels.npz")).get("data")
+    Parameters
+    ----------
+    name: str
+        Name of the dataset, supported datasets: ["grb-cora", "grb-aminer", "grb-reddit", "grb-amazon"]
+    data_dir: str, optional
+        Directory for dataset. If not provided, default is "./data/".
+    mode: str, optional
+        Difficulty of the dataset, which is determined mainly according to the average degree of nodes.
+        Choose from ["easy", "medium", "hard", "normal"]. "normal" is to use the entire test set.
+    feat_norm: str, optional
+        Feature normalization that transform all features to range [-1, 1].
+        Choose from ["arctan", "sigmoid", "tanh"].
+    verbose: bool, optional
+        Whether to display logs.
+
+    Attributes
+    ----------
+
+
+    Note
+    ----
+    TBD
+
+    Examples
+    --------
+    TBD
+    """
+
+    def __init__(self, name, data_dir=None, mode="easy", feat_norm=None, verbose=True):
+        # Create data dir
+        if name not in self.GRB_DATASETS:
+            print("{} dataset not supported.".format(name))
+            exit(1)
+        if data_dir is None:
+            if not os.path.exists("./data"):
+                os.mkdir("./data")
+            data_dir = os.path.join("./data", name)
+        else:
+            if data_dir.split("/")[-1] not in self.GRB_DATASETS:
+                data_dir = os.path.join(data_dir, name)
+        if not os.path.exists(data_dir):
+            os.mkdir(data_dir)
+
+        # Load adj
+        adj_name = "adj.npz"
+        if not os.path.exists(os.path.join(data_dir, adj_name)):
+            download(url=URLs[name][adj_name],
+                     save_path=os.path.join(data_dir, adj_name))
+        adj = sp.load_npz(os.path.join(data_dir, adj_name))
+
+        # Load features
+        features_name = "features.npz"
+        if not os.path.exists(os.path.join(data_dir, features_name)):
+            download(url=URLs[name][features_name],
+                     save_path=os.path.join(data_dir, features_name))
+        features = np.load(os.path.join(data_dir, features_name)).get("data")
+        if feat_norm is not None:
+            features = feat_normalize(features, norm=feat_norm)
+
+        # Load labels
+        labels_name = "labels.npz"
+        if not os.path.exists(os.path.join(data_dir, labels_name)):
+            download(url=URLs[name][labels_name],
+                     save_path=os.path.join(data_dir, labels_name))
+        labels = np.load(os.path.join(data_dir, labels_name)).get("data")
 
         self.adj = adj
         self.features = torch.FloatTensor(features)
@@ -30,15 +90,22 @@ class Dataset(object):
         self.num_features = features.shape[1]
         self.num_classes = int(labels.max() + 1)
 
-        index = np.load(os.path.join(data_dir, "index.npz"))
+        # Load index
+        index_name = "index.npz"
+        if not os.path.exists(os.path.join(data_dir, index_name)):
+            download(url=URLs[name][index_name],
+                     save_path=os.path.join(data_dir, index_name))
+        index = np.load(os.path.join(data_dir, index_name))
         index_train = index.get("index_train")
         train_mask = torch.zeros(self.num_nodes, dtype=bool)
         train_mask[index_train] = True
+        self.index_train = index_train
         self.train_mask = train_mask
 
         index_val = index.get("index_val")
         val_mask = torch.zeros(self.num_nodes, dtype=bool)
         val_mask[index_val] = True
+        self.index_val = index_val
         self.val_mask = val_mask
 
         if mode == "easy":
@@ -54,6 +121,7 @@ class Dataset(object):
 
         test_mask = torch.zeros(self.num_nodes, dtype=bool)
         test_mask[index_test] = True
+        self.index_test = index_test
         self.test_mask = test_mask
 
         self.num_train = int(torch.sum(self.train_mask))
@@ -70,6 +138,11 @@ class Dataset(object):
             print("    Number of val samples: {}".format(self.num_val))
             print("    Number of test samples: {}".format(self.num_test))
             print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+
+    GRB_DATASETS = {"grb-cora",
+                    "grb-aminer",
+                    "grb-reddit",
+                    "grb-amazon"}
 
 
 class CogDLDataset(object):
@@ -222,7 +295,7 @@ class CogDLDataset(object):
 
 class CustomDataset(object):
     def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
-                 name=None, data_dir=None, mode='normal', save=False, verbose=True):
+                 name=None, data_dir=None, mode='normal', feat_norm=None, save=False, verbose=True):
         self.adj = adj
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz() // 2
@@ -232,6 +305,8 @@ class CustomDataset(object):
             features = torch.FloatTensor(features)
         elif features.type() != 'torch.FloatTensor':
             features = features.float()
+        if feat_norm is not None:
+            features = feat_normalize(features, norm=feat_norm)
         self.features = features
 
         if type(labels) != torch.Tensor:
@@ -240,7 +315,9 @@ class CustomDataset(object):
             labels = labels.long()
         self.labels = labels
 
-        index = splitting(adj)
+        if (train_mask is None) or (val_mask is None) or (test_mask is None):
+            index = splitting(adj)
+            self.index = index
         if train_mask is None:
             index_train = index.get("index_train")
             train_mask = torch.zeros(self.num_nodes, dtype=bool)
@@ -283,7 +360,6 @@ class CustomDataset(object):
                 test_mask = test_mask.bool()
         self.test_mask = test_mask
 
-        self.index = index
         self.num_train = int(torch.sum(self.train_mask))
         self.num_val = int(torch.sum(self.val_mask))
         self.num_test = int(torch.sum(self.test_mask))
@@ -310,3 +386,14 @@ class CustomDataset(object):
             print("    Number of val samples: {}".format(self.num_val))
             print("    Number of test samples: {}".format(self.num_test))
             print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+
+
+def feat_normalize(feat, norm=None):
+    if norm == "arctan":
+        feat = 2 * np.arctan(feat) / np.pi
+    elif norm == "tanh":
+        feat = np.tanh(feat)
+    else:
+        feat = feat
+
+    return feat

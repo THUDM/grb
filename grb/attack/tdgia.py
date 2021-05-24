@@ -241,4 +241,6 @@ class TDGIA(InjectionAttack):
             print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
                   end='\r' if i != n_epoch - 1 else '\n')
 
+        features_attack = features_attacked
+
         return features_attack

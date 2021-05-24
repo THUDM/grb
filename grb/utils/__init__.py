@@ -1,12 +1,16 @@
 import os
 import time
+import scipy
 import random
 import pickle
 import torch
 import numpy as np
+from urllib import request
 
 
 def adj_to_tensor(adj):
+    if type(adj) != scipy.sparse.coo.coo_matrix:
+        adj = adj.tocoo()
     sparse_row = torch.LongTensor(adj.row).unsqueeze(1)
     sparse_col = torch.LongTensor(adj.col).unsqueeze(1)
     sparse_concat = torch.cat((sparse_row, sparse_col), 1)
@@ -74,4 +78,44 @@ def save_model(model, save_dir, name, verbose=True):
     if verbose:
         print("Model saved in '{}'.".format(os.path.join(save_dir, name)))
 
-#
+
+def get_index_induc(index_a, index_b):
+    i_a, i_b = 0, 0
+    l_a, l_b = len(index_a), len(index_b)
+    i_new = 0
+    index_a_new, index_b_new = [], []
+    while i_new < l_a + l_b:
+        if i_a == l_a:
+            while i_b < l_b:
+                i_b += 1
+                index_b_new.append(i_new)
+                i_new += 1
+            continue
+        elif i_b == l_b:
+            while i_a < l_a:
+                i_a += 1
+                index_a_new.append(i_new)
+                i_new += 1
+            continue
+        if index_a[i_a] < index_b[i_b]:
+            i_a += 1
+            index_a_new.append(i_new)
+            i_new += 1
+        else:
+            i_b += 1
+            index_b_new.append(i_new)
+            i_new += 1
+
+    return index_a_new, index_b_new
+
+
+def download(url, save_path):
+    print("Downloading from {}".format(url))
+    try:
+        data = request.urlopen(url)
+    except Exception as e:
+        print(e)
+        print("Failed to download the dataset.")
+        exit(1)
+    with open(save_path, "wb") as f:
+        f.write(data.read())

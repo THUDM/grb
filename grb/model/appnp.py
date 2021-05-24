@@ -27,6 +27,10 @@ class APPNP(nn.Module):
         self.dropout = SparseEdgeDrop(edge_drop)
         self.activation = activation
 
+    @property
+    def model_type(self):
+        return "torch"
+
     def forward(self, x, adj, dropout=0):
         x = self.linear1(x)
         x = self.activation(x)
