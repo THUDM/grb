@@ -1,13 +1,13 @@
 python train_pipeline.py \
 --n_epoch 12000 \
---dataset grb-yelp \
+--dataset grb-ppi \
 --feat_norm arctan \
---data_dir ../data/grb-yelp \
---model_dir ../saved_models/grb-yelp-arctan-ind/ \
---config_dir ./grb-yelp/ \
+--data_dir ../data/grb-ppi \
+--model_dir ../saved_models/grb-ppi-arctan-ind/ \
+--config_dir ./grb-flickr/ \
 --dropout 0.5 \
 --eval_every 10 \
---save_after 100 \
+--save_after 0 \
 --early_stop \
 --n_train 1 \
 --train_mode inductive \

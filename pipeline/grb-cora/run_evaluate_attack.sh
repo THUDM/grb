@@ -1,0 +1,11 @@
+python evaluate_attack.py \
+--dataset grb-cora \
+--dataset_mode full \
+--feat_norm arctan \
+--data_dir ../data/grb-cora/ \
+--config_dir ./grb-cora/ \
+--model_dir ../saved_models/grb-cora-arctan-ind/ \
+--model_file "0/checkpoint.pt" \
+--attack_dir '' \
+--weight_type 'polynomial' \
+--gpu 0

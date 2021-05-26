@@ -1,16 +1,17 @@
 python attack_pipeline.py \
---n_epoch 5000 \
---lr 0.001 \
+--n_epoch 2000 \
+--lr 0.01 \
 --dataset grb-reddit \
---dataset_mode normal \
---data_dir /home/stanislas/Research/GRB/data/grb-reddit/ \
---config_dir /home/stanislas/Research/GRB/pipeline/grb-reddit/ \
+--dataset_mode full \
 --feat_norm arctan \
---model_dir /home/stanislas/Research/GRB/saved_models/grb-reddit-arctan-ind-sur/ \
+--data_dir ../data/grb-reddit/ \
+--config_dir ./grb-reddit/ \
+--model_dir ../saved_models/grb-reddit-arctan-ind-sur/ \
 --model gcn \
---save_dir /home/stanislas/Research/GRB/results/grb-reddit-arctan-ind/ \
+--save_dir ../results/grb-reddit-arctan-ind/ \
 --n_attack 10 \
---n_inject 500 \
---n_edge_max 100 \
+--n_inject 600 \
+--n_edge_max 200 \
 --feat_lim_min -1 \
---feat_lim_max 1
+--feat_lim_max 1 \
+--gpu 1

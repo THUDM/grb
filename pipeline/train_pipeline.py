@@ -3,7 +3,6 @@ import os
 import sys
 
 import torch
-import torch.nn.functional as F
 
 sys.path.append('../')
 
@@ -20,9 +19,9 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--feat_norm", type=str, default=None)
     parser.add_argument("--train_mode", type=str, default="inductive")
-    parser.add_argument("--data_dir", type=str, default="/home/stanislas/Research/GRB/data/grb-cora/")
-    parser.add_argument("--model_dir", type=str, default="/home/stanislas/Research/GRB/saved_models/grb-cora/")
-    parser.add_argument("--config_dir", type=str, default="/home/stanislas/Research/GRB/pipeline/grb-cora")
+    parser.add_argument("--data_dir", type=str, default="../data/grb-cora/")
+    parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora/")
+    parser.add_argument("--config_dir", type=str, default="./grb-cora")
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--save_name", type=str, default="checkpoint.pt")
     parser.add_argument("--early_stop", action='store_true')
@@ -46,7 +45,7 @@ if __name__ == '__main__':
 
     dataset = Dataset(name=args.dataset,
                       data_dir=args.data_dir,
-                      mode='normal',
+                      mode='full',
                       feat_norm=args.feat_norm,
                       verbose=True)
 
@@ -67,17 +66,19 @@ if __name__ == '__main__':
             print("{} time training..........".format(i))
             model, adj_norm_func = config.build_model(model_name=model_name,
                                                       num_features=num_features,
-                                                      num_classes=num_classes)
-
-            adam = torch.optim.Adam(model.parameters(), lr=args.lr)
+                                                      num_classes=num_classes
+                                                      )
+            optimizer = config.build_optimizer(model=model, lr=args.lr)
+            loss = config.build_loss()
+            eval_metric = config.build_metric()
 
             trainer = Trainer(dataset=dataset,
-                              optimizer=adam,
-                              loss=F.nll_loss,
+                              optimizer=optimizer,
+                              loss=loss,
                               adj_norm_func=adj_norm_func,
                               lr_scheduler=args.lr_scheduler,
+                              eval_metric=eval_metric,
                               early_stop=args.early_stop,
-                              train_mode=args.train_mode,
                               device=device)
 
             trainer.train(model=model,
@@ -86,11 +87,12 @@ if __name__ == '__main__':
                           save_name=args.save_name,
                           eval_every=args.eval_every,
                           save_after=args.save_after,
+                          train_mode=args.train_mode,
                           dropout=args.dropout,
                           verbose=args.verbose)
 
-        model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name, args.save_name)))
-        _, test_acc = trainer.inference(model)
+            model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name, str(i), args.save_name)))
+            _, test_acc = trainer.inference(model)
 
-        print("*" * 80)
-        print("Test ACC of {}: {:.4f}".format(model_name, test_acc))
+            print("*" * 80)
+            print("Test ACC of {}: {:.4f}".format(model_name, test_acc))
