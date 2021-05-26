@@ -1,0 +1,14 @@
+python train_pipeline.py \
+--n_epoch 12000 \
+--dataset grb-reddit \
+--feat_norm arctan \
+--data_dir /home/stanislas/Research/GRB/data/grb-yelp \
+--model_dir /home/stanislas/Research/GRB/saved_models/grb-yelp-arctan-ind/ \
+--config_dir /home/stanislas/Research/GRB/pipeline/grb-yelp/ \
+--dropout 0.5 \
+--eval_every 10 \
+--save_after 1000 \
+--early_stop \
+--n_train 1 \
+--train_mode inductive \
+--gpu 0

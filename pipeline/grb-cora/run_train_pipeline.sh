@@ -9,6 +9,6 @@ python train_pipeline.py \
 --eval_every 1 \
 --save_after 0 \
 --early_stop \
---n_train 10 \
+--n_train 1 \
 --train_mode inductive \
 --gpu 0

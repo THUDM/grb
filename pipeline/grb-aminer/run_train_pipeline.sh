@@ -8,7 +8,6 @@ python train_pipeline.py \
 --dropout 0.5 \
 --eval_every 10 \
 --save_after 1000 \
---early_stop \
 --n_train 10 \
 --train_mode inductive \
 --gpu 0

@@ -1,0 +1,16 @@
+python attack_pipeline.py \
+--n_epoch 5000 \
+--lr 0.001 \
+--dataset grb-yelp \
+--dataset_mode normal \
+--data_dir /home/stanislas/Research/GRB/data/grb-yelp/ \
+--config_dir /home/stanislas/Research/GRB/pipeline/grb-yelp/ \
+--feat_norm arctan \
+--model_dir /home/stanislas/Research/GRB/saved_models/grb-yelp-arctan-ind-sur/ \
+--model gcn \
+--save_dir /home/stanislas/Research/GRB/results/grb-yelp-arctan-ind/ \
+--n_attack 10 \
+--n_inject 500 \
+--n_edge_max 100 \
+--feat_lim_min -1 \
+--feat_lim_max 1

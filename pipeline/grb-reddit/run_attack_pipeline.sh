@@ -1,5 +1,5 @@
 python attack_pipeline.py \
---n_epoch 2000 \
+--n_epoch 5000 \
 --lr 0.001 \
 --dataset grb-reddit \
 --dataset_mode normal \
@@ -9,7 +9,7 @@ python attack_pipeline.py \
 --model_dir /home/stanislas/Research/GRB/saved_models/grb-reddit-arctan-ind-sur/ \
 --model gcn \
 --save_dir /home/stanislas/Research/GRB/results/grb-reddit-arctan-ind/ \
---n_attack 1 \
+--n_attack 10 \
 --n_inject 500 \
 --n_edge_max 100 \
 --feat_lim_min -1 \

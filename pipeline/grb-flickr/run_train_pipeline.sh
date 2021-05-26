@@ -1,0 +1,14 @@
+python train_pipeline.py \
+--n_epoch 5000 \
+--dataset grb-flickr \
+--feat_norm arctan \
+--data_dir /home/stanislas/Research/GRB/data/grb-flickr \
+--model_dir /home/stanislas/Research/GRB/saved_models/grb-flickr-arctan-ind/ \
+--config_dir /home/stanislas/Research/GRB/pipeline/grb-flickr/ \
+--dropout 0.5 \
+--eval_every 10 \
+--save_after 0 \
+--early_stop \
+--n_train 1 \
+--train_mode inductive \
+--gpu 0
