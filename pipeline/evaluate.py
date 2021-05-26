@@ -12,7 +12,7 @@ sys.path.append('../')
 
 import grb.utils as utils
 from grb.dataset.dataset import Dataset, CustomDataset
-from grb.utils import evaluator
+from grb.evaluator import metric
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training GNN models')
@@ -20,13 +20,13 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--dataset_mode", type=str, default="easy")
     parser.add_argument("--feat_norm", type=str, default=None)
-    parser.add_argument("--data_dir", type=str, default="/home/stanislas/Research/GRB/data/grb-cora/")
-    parser.add_argument("--model_dir", type=str, default="/home/stanislas/Research/GRB/saved_models/grb-cora/")
+    parser.add_argument("--data_dir", type=str, default="../data/grb-cora/")
+    parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora/")
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--model_list", nargs='+', default=["gcn", "gcn_ln", "graphsage", "sgcn",
                                                             "robustgcn", "tagcn", "appnp", "gin"])
     parser.add_argument("--save_name", type=str, default="checkpoint.pt")
-    parser.add_argument("--attack_dir", type=str, default="/home/stanislas/Research/GRB/results/grb-cora/fgsm_vs_gcn")
+    parser.add_argument("--attack_dir", type=str, default="../results/grb-cora/fgsm_vs_gcn")
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
@@ -108,14 +108,14 @@ if __name__ == '__main__':
         adj_attacked_tensor = utils.adj_preprocess(adj_attacked, adj_norm_func, device)
         logits = model(features, adj_attacked_tensor, dropout=0)
         logp = F.softmax(logits[:num_nodes], 1)
-        test_acc = evaluator.eval_acc(logp, labels, test_mask)
+        test_acc = metric.eval_acc(logp, labels, test_mask)
         test_acc_dict[model_name] = test_acc.cpu().numpy()
         print("Test score of {}: {:.4f}".format(model_name, test_acc))
 
     # print("Test ACC dict:", test_acc_dict)
     test_acc_sorted = sorted(list(test_acc_dict.values()))
     final_score = 0.0
-    weights = evaluator.get_weights_arithmetic(n=len(args.model_list), w_1=0.005)
+    weights = metric.get_weights_arithmetic(n=len(args.model_list), w_1=0.005)
     # weights = evaluator.get_weights_polynomial(n=len(args.model_list), ord=2)
     for i in range(len(weights)):
         final_score += weights[i] * test_acc_sorted[i]
