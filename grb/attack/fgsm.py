@@ -32,9 +32,12 @@ class FGSM(InjectionAttack):
     def attack(self, model):
         model.to(self.device)
         features = self.dataset.features
-        features = torch.FloatTensor(features).to(self.device)
+        features = utils.feat_preprocess(features=features,
+                                         device=self.device)
         adj = self.dataset.adj
-        adj_tensor = utils.adj_preprocess(adj, adj_norm_func=self.adj_norm_func, device=self.device)
+        adj_tensor = utils.adj_preprocess(adj=adj,
+                                          adj_norm_func=self.adj_norm_func,
+                                          device=self.device)
         pred_orig = model(features, adj_tensor)
         origin_labels = torch.argmax(pred_orig, dim=1)
         adj_attack = self.injection(adj=adj,
@@ -57,8 +60,8 @@ class FGSM(InjectionAttack):
         new_edges_y = []
         new_data = []
         for i in range(n_inject):
-            islinked = np.zeros(self.n_test)
-            for j in range(n_inject):
+            islinked = np.zeros(n_test)
+            for j in range(self.n_edge_max):
                 x = i + n_node
 
                 yy = random.randint(0, n_test - 1)
@@ -86,7 +89,7 @@ class FGSM(InjectionAttack):
         feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
 
         adj_attacked_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
-        features_attack = torch.FloatTensor(features_attack).to(self.device)
+        features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         model.eval()
 
         for i in range(n_epoch):

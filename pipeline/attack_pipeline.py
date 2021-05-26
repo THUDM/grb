@@ -17,13 +17,14 @@ if __name__ == '__main__':
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--dataset_mode", type=str, default="easy")
-    parser.add_argument("--data_dir", type=str, default="/home/stanislas/Research/GRB/data/grb-cora")
-    parser.add_argument("--config_dir", type=str, default="/home/stanislas/Research/GRB/pipeline/grb-cora")
+    parser.add_argument("--data_dir", type=str, default="../data/grb-cora")
+    parser.add_argument("--config_dir", type=str, default="./grb-cora")
     parser.add_argument("--feat_norm", type=str, default=None)
-    parser.add_argument("--model_dir", type=str, default="/home/stanislas/Research/GRB/saved_models/grb-cora")
     parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora")
+    parser.add_argument("--model_file", type=str, default="checkpoint.pt")
     parser.add_argument("--attack", type=str, default=None)
-    parser.add_argument("--save_dir", type=str, default="/home/stanislas/Research/GRB/results/grb-cora/")
+    parser.add_argument("--save_dir", type=str, default="../results/grb-cora/")
     parser.add_argument("--n_attack", type=int, default=1)
     parser.add_argument("--n_inject", type=int, default=20)
     parser.add_argument("--n_edge_max", type=int, default=20)
@@ -77,7 +78,9 @@ if __name__ == '__main__':
                                                       num_features=num_features,
                                                       num_classes=num_classes)
             model.load_state_dict(
-                torch.load(os.path.join(args.model_dir, model_name, "checkpoint.pt")))
+                torch.load(os.path.join(args.model_dir, model_name, args.model_file)))
+            print("Model loaded from {}".format(os.path.join(args.model_dir, model_name, args.model_file)))
+
             attack.adj_norm_func = adj_norm_func
             for i in range(args.n_attack):
                 print("{} attack..........".format(i + 1))
@@ -90,4 +93,5 @@ if __name__ == '__main__':
                                         attack_name + "_vs_" + model_name + "_" + args.dataset_mode, str(i))
                 utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
                 utils.save_features(features_attack, save_dir)
+
     print("Attack finished.")

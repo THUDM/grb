@@ -24,7 +24,7 @@ class Dataset(object):
         Directory for dataset. If not provided, default is "./data/".
     mode: str, optional
         Difficulty of the dataset, which is determined mainly according to the average degree of nodes.
-        Choose from ["easy", "medium", "hard", "normal"]. "normal" is to use the entire test set.
+        Choose from ["easy", "medium", "hard", "full"]. "full" is to use the entire test set.
     feat_norm: str, optional
         Feature normalization that transform all features to range [-1, 1].
         Choose from ["arctan", "sigmoid", "tanh"].
@@ -83,6 +83,7 @@ class Dataset(object):
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz() // 2
         self.num_features = features.shape[1]
+        self.mode = mode
         if len(labels.shape) == 1:
             self.num_classes = int(labels.max() + 1)
         else:
@@ -112,7 +113,7 @@ class Dataset(object):
             index_test = index.get("index_test_medium")
         elif mode == "hard":
             index_test = index.get("index_test_hard")
-        elif mode == "normal":
+        elif mode == "full":
             index_test = index.get("index_test")
         else:
             index_test = index.get("index_test")
@@ -135,6 +136,7 @@ class Dataset(object):
             print("    Number of train samples: {}".format(self.num_train))
             print("    Number of val samples: {}".format(self.num_val))
             print("    Number of test samples: {}".format(self.num_test))
+            print("    Dataset mode: {}".format(self.mode))
             print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
     GRB_DATASETS = {"grb-cora",
@@ -301,6 +303,7 @@ class CustomDataset(object):
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz() // 2
         self.num_features = features.shape[1]
+        self.mode = mode
 
         if type(features) != torch.Tensor:
             features = torch.FloatTensor(features)
@@ -389,6 +392,7 @@ class CustomDataset(object):
             print("    Number of train samples: {}".format(self.num_train))
             print("    Number of val samples: {}".format(self.num_val))
             print("    Number of test samples: {}".format(self.num_test))
+            print("    Dataset mode: {}".format(self.mode))
             print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
 

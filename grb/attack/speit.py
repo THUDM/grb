@@ -165,7 +165,7 @@ class SPEIT(InjectionAttack):
             new_data = []
             for i in range(n_inject):
                 islinked = np.zeros(self.n_test)
-                for j in range(n_inject):
+                for j in range(self.n_edge_max):
                     x = i + self.n_total
 
                     yy = random.randint(0, n_test - 1)
