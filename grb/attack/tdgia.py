@@ -238,7 +238,7 @@ class TDGIA(InjectionAttack):
             optimizer.step()
             test_acc = metric.eval_acc(pred[:self.n_total][self.dataset.test_mask],
                                        origin_labels[self.dataset.test_mask])
-            print("Epoch {}, Loss: {:.5f}, Test acc: {:.5f}".format(i, pred_loss, test_acc),
+            print("Epoch {}, Loss: {:.5f}, Surrogate test acc: {:.5f}".format(i, pred_loss, test_acc),
                   end='\r' if i != n_epoch - 1 else '\n')
 
         features_attack = features_attacked

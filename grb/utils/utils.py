@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from urllib import request
 
+pd.set_option('display.width', 1000)
+
 
 def adj_to_tensor(adj):
     if type(adj) != scipy.sparse.coo.coo_matrix:
@@ -156,6 +158,30 @@ def download(url, save_path):
         f.write(data.read())
 
 
-def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0):
+def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, verbose=True):
     df = pd.DataFrame(result_dict, index=[index])
     df.to_excel(os.path.join(file_dir, file_name), index=True)
+    if verbose:
+        print(df)
+
+
+def save_df_to_xlsx(df, file_dir, file_name="result.xlsx", verbose=True):
+    df.to_excel(os.path.join(file_dir, file_name), index=True)
+    if verbose:
+        print(df)
+
+
+def check_symmetry(adj):
+    if np.sum(adj[:, -adj.shape[0]:].T == adj[:, -adj.shape[0]:]) == adj.shape[0] ** 2:
+        return True
+    else:
+        return False
+
+
+def check_feat_range(features, feat_lim_min, feat_lim_max):
+    if isinstance(features, torch.Tensor):
+        features = features.cpu().numpy()
+    if np.min(features) < feat_lim_min or np.max(features) > feat_lim_max:
+        return False
+    else:
+        return True
