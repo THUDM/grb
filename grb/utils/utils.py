@@ -180,7 +180,7 @@ def check_symmetry(adj):
 
 def check_feat_range(features, feat_lim_min, feat_lim_max):
     if isinstance(features, torch.Tensor):
-        features = features.cpu().numpy()
+        features = features.detach().cpu().numpy()
     if np.min(features) < feat_lim_min or np.max(features) > feat_lim_max:
         return False
     else:

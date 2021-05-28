@@ -1,10 +1,10 @@
 python train_pipeline.py \
 --n_epoch 8000 \
 --dataset grb-cora \
---feat_norm arctan \
+--feat_norm linearize \
 --data_dir ../data/grb-cora \
---model_dir ../saved_models/grb-cora-arctan-ind/ \
---config_dir ../grb-cora/ \
+--model_dir ../saved_models/grb-cora-linear-ind/ \
+--config_dir ./grb-cora/ \
 --dropout 0.5 \
 --eval_every 1 \
 --save_after 0 \

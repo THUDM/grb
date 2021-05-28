@@ -11,65 +11,69 @@ from grb.evaluator import metric
 
 
 class TDGIA(InjectionAttack):
-    def __init__(self, dataset, adj_norm_func=None, device='cpu'):
-        self.dataset = dataset
-        self.n_total = dataset.num_nodes
-        self.n_test = dataset.num_test
-        self.n_feat = dataset.num_features
-        self.n_classes = dataset.num_classes
-        self.n_inject_max = 0
-        self.n_edge_max = 0
-        self.adj_norm_func = adj_norm_func
+    def __init__(self,
+                 lr,
+                 n_epoch,
+                 n_inject_max,
+                 n_edge_max,
+                 feat_lim_min,
+                 feat_lim_max,
+                 loss=F.nll_loss,
+                 eval_metric=metric.eval_acc,
+                 inject_mode='random',
+                 device='cpu',
+                 verbose=True):
         self.device = device
-        self.config = {}
+        self.lr = lr
+        self.n_epoch = n_epoch
+        self.n_inject_max = n_inject_max
+        self.n_edge_max = n_edge_max
+        self.feat_lim_min = feat_lim_min
+        self.feat_lim_max = feat_lim_max
+        self.loss = loss
+        self.eval_metric = eval_metric
+        self.inject_mode = inject_mode
+        self.verbose = verbose
 
-    def set_config(self, **kwargs):
-        self.config['lr'] = kwargs['lr']
-        self.config['n_epoch'] = kwargs['n_epoch']
-        self.config['feat_lim_min'] = kwargs['feat_lim_min']
-        self.config['feat_lim_max'] = kwargs['feat_lim_max']
-        self.config['inject_mode'] = kwargs['inject_mode']
-        self.n_inject_max = kwargs['n_inject_max']
-        self.n_edge_max = kwargs['n_edge_max']
-
-    def attack(self, model, mode='sequential', opt='sin'):
-        """attack mode: sequential, one-time, multi-model"""
-        if 'inject_mode' in self.config:
-            inject_mode = self.config['inject_mode']
-        else:
-            inject_mode = 'tdgia'
-
+    def attack(self, model, adj, features, target_mask, adj_norm_func, opt='sin'):
         model.to(self.device)
-        features = self.dataset.features
-        features = torch.FloatTensor(features).to(self.device)
-        adj = self.dataset.adj
-        adj_tensor = utils.adj_preprocess(adj, adj_norm_func=self.adj_norm_func, device=self.device)
+        n_total, n_feat = features.shape
+        features = utils.feat_preprocess(features=features, device=self.device)
+        adj_tensor = utils.adj_preprocess(adj=adj,
+                                          adj_norm_func=adj_norm_func,
+                                          device=self.device)
         pred_orig = model(features, adj_tensor)
         pred_orig_logits = F.softmax(pred_orig, dim=1)
         origin_labels = torch.argmax(pred_orig, dim=1)
 
-        adj_attack = self.injection(origin_labels=origin_labels,
+        adj_attack = self.injection(adj=adj,
+                                    n_inject=self.n_inject_max,
+                                    n_node=n_total,
+                                    target_mask=target_mask,
+                                    origin_labels=origin_labels,
                                     logits=pred_orig_logits,
                                     n_add=0,
-                                    mode=inject_mode)
+                                    mode=self.inject_mode)
 
-        features_attack = np.zeros([self.n_inject_max, self.n_feat])
+        features_attack = np.zeros([self.n_inject_max, n_feat])
         features_attack = self.update_features(model=model,
                                                adj_attack=adj_attack,
                                                features=features,
                                                features_attack=features_attack,
                                                origin_labels=origin_labels,
+                                               target_mask=target_mask,
+                                               adj_norm_func=adj_norm_func,
                                                opt=opt)
 
         return adj_attack, features_attack
 
-    def injection(self, origin_labels, logits, n_add, self_connect_ratio=0.0, mode='uniform', weight1=0.9, weight2=0.1):
+    def injection(self, adj, n_inject, n_node, target_mask,
+                  origin_labels, logits, n_add, self_connect_ratio=0.0, mode='uniform', weight1=0.9, weight2=0.1):
         """Injection mode: uniform, random, tdgia. """
-        adj = self.dataset.adj
         n_inject = self.n_inject_max
-        n_origin = self.n_total
-        n_test = self.n_test
-        n_classes = self.n_classes
+        n_origin = origin_labels.shape[0]
+        n_test = torch.sum(target_mask).item()
+        n_classes = origin_labels.max() + 1
         n_current = n_origin + n_add
         n_connect = int(self.n_edge_max * (1 - self_connect_ratio))
         n_self_connect = int(self.n_edge_max * self_connect_ratio)
@@ -77,7 +81,7 @@ class TDGIA(InjectionAttack):
         new_edges_x = []
         new_edges_y = []
         new_data = []
-        test_index = torch.where(self.dataset.test_mask)[0]
+        test_index = torch.where(target_mask)[0]
 
         if 'uniform' in mode:
             for i in range(n_inject):
@@ -203,17 +207,21 @@ class TDGIA(InjectionAttack):
 
             return adj_attack
 
-    def update_features(self, model, adj_attack, features, features_attack, origin_labels, opt='sin', smooth_factor=4):
-        lr = self.config['lr']
-        n_epoch = self.config['n_epoch']
-        feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
+    def update_features(self, model, adj_attack, features, features_attack, origin_labels,
+                        target_mask, adj_norm_func, opt='sin', smooth_factor=4):
+        lr = self.lr
+        n_epoch = self.n_epoch
+        feat_lim_min, feat_lim_max = self.feat_lim_min, self.feat_lim_max
 
-        adj_attack_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
+        n_total = features.shape[0]
+        adj_attacked_tensor = utils.adj_preprocess(adj=adj_attack,
+                                                   adj_norm_func=adj_norm_func,
+                                                   device=self.device)
 
         if opt == 'sin':
             features_attack = features_attack / feat_lim_max
             features_attack = np.arcsin(features_attack)
-        features_attack = torch.FloatTensor(features_attack).to(self.device)
+        features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         features_attack.requires_grad_(True)
         optimizer = torch.optim.Adam([features_attack], lr=lr)
         loss_func = nn.CrossEntropyLoss(reduction='none')
@@ -225,9 +233,9 @@ class TDGIA(InjectionAttack):
             elif opt == 'clip':
                 features_attacked = torch.clamp(features_attack, feat_lim_min, feat_lim_max)
             features_concat = torch.cat((features, features_attacked), dim=0)
-            pred = model(features_concat, adj_attack_tensor)
-            pred_loss = loss_func(pred[:self.n_total][self.dataset.test_mask],
-                                  origin_labels[self.dataset.test_mask]).to(self.device)
+            pred = model(features_concat, adj_attacked_tensor)
+            pred_loss = loss_func(pred[:n_total][target_mask],
+                                  origin_labels[target_mask]).to(self.device)
             if opt == 'sin':
                 pred_loss = F.relu(-pred_loss + smooth_factor) ** 2
             elif opt == 'clip':
@@ -236,11 +244,11 @@ class TDGIA(InjectionAttack):
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
-            test_acc = metric.eval_acc(pred[:self.n_total][self.dataset.test_mask],
-                                       origin_labels[self.dataset.test_mask])
-            print("Epoch {}, Loss: {:.5f}, Surrogate test acc: {:.5f}".format(i, pred_loss, test_acc),
-                  end='\r' if i != n_epoch - 1 else '\n')
+            test_acc = metric.eval_acc(pred[:n_total][target_mask],
+                                       origin_labels[target_mask])
 
-        features_attack = features_attacked
+            if self.verbose:
+                print("Epoch {}, Loss: {:.5f}, Surrogate test acc: {:.5f}".format(i, pred_loss, test_acc),
+                      end='\r' if i != n_epoch - 1 else '\n')
 
-        return features_attack
+        return features_attacked

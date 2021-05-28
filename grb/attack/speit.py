@@ -10,53 +10,57 @@ from grb.evaluator import metric
 
 
 class SPEIT(InjectionAttack):
-    def __init__(self, dataset, adj_norm_func=None, device='cpu'):
-        self.dataset = dataset
-        self.n_total = dataset.num_nodes
-        self.n_test = dataset.num_test
-        self.n_feat = dataset.num_features
-        self.n_inject_max = 0
-        self.n_edge_max = 0
-        self.adj_norm_func = adj_norm_func
+    def __init__(self,
+                 lr,
+                 n_epoch,
+                 n_inject_max,
+                 n_edge_max,
+                 feat_lim_min,
+                 feat_lim_max,
+                 loss=F.nll_loss,
+                 eval_metric=metric.eval_acc,
+                 inject_mode='random',
+                 device='cpu',
+                 verbose=True):
         self.device = device
-        self.config = {}
+        self.lr = lr
+        self.n_epoch = n_epoch
+        self.n_inject_max = n_inject_max
+        self.n_edge_max = n_edge_max
+        self.feat_lim_min = feat_lim_min
+        self.feat_lim_max = feat_lim_max
+        self.loss = loss
+        self.eval_metric = eval_metric
+        self.inject_mode = inject_mode
+        self.verbose = verbose
 
-    def set_config(self, **kwargs):
-        self.config['lr'] = kwargs['lr']
-        self.config['n_epoch'] = kwargs['n_epoch']
-        self.config['feat_lim_min'] = kwargs['feat_lim_min']
-        self.config['feat_lim_max'] = kwargs['feat_lim_max']
-        self.config['inject_mode'] = kwargs['inject_mode']
-        self.n_inject_max = kwargs['n_inject_max']
-        self.n_edge_max = kwargs['n_edge_max']
-
-    def attack(self, model, target_node):
-        if 'inject_mode' in self.config:
-            inject_mode = self.config['inject_mode']
-        else:
-            inject_mode = 'random-inter'
+    def attack(self, model, adj, features, target_mask, adj_norm_func):
         model.to(self.device)
-        features = self.dataset.features
-        features = torch.FloatTensor(features).to(self.device)
-        adj = self.dataset.adj
-        adj_tensor = utils.adj_preprocess(adj, adj_norm_func=self.adj_norm_func, device=self.device)
+        n_total, n_feat = features.shape
+        features = utils.feat_preprocess(features=features, device=self.device)
+        adj_tensor = utils.adj_preprocess(adj=adj,
+                                          adj_norm_func=adj_norm_func,
+                                          device=self.device)
         pred_orig = model(features, adj_tensor)
         origin_labels = torch.argmax(pred_orig, dim=1)
         adj_attack = self.injection(adj=adj,
                                     n_inject=self.n_inject_max,
-                                    target_node=target_node,
-                                    mode=inject_mode)
+                                    n_node=n_total,
+                                    target_mask=target_mask,
+                                    mode=self.inject_mode)
 
-        features_attack = np.zeros([self.n_inject_max, self.n_feat])
+        features_attack = np.zeros([self.n_inject_max, n_feat])
         features_attack = self.update_features(model=model,
                                                adj_attack=adj_attack,
                                                features=features,
                                                features_attack=features_attack,
-                                               origin_labels=origin_labels)
+                                               origin_labels=origin_labels,
+                                               target_mask=target_mask,
+                                               adj_norm_func=adj_norm_func)
 
         return adj_attack, features_attack
 
-    def injection(self, adj, n_inject, target_node, mode='random-inter'):
+    def injection(self, adj, n_inject, n_node, target_mask, target_node=None, mode='random-inter'):
         def get_inject_list(adj, n_inter, inject_id, inject_tmp_list):
             i = 1
             res = []
@@ -153,20 +157,20 @@ class SPEIT(InjectionAttack):
                     adj[inject_list + n_inject_layer_1, i + n_test] = 1
                     adj[i, inject_list + n_inject_layer_1 + n_test] = 1
             else:
-                print("Mode ERROR: 'mode' should be one of ['random-inter', 'multi-layer', 'random']")
+                print("Mode ERROR: 'mode' should be one of ['random', 'random-inter', 'multi-layer']")
 
             return adj
 
         if mode == 'random':
-            test_index = torch.where(self.dataset.test_mask)[0]
+            test_index = torch.where(target_mask)[0]
             n_test = test_index.shape[0]
             new_edges_x = []
             new_edges_y = []
             new_data = []
             for i in range(n_inject):
-                islinked = np.zeros(self.n_test)
+                islinked = np.zeros(n_test)
                 for j in range(self.n_edge_max):
-                    x = i + self.n_total
+                    x = i + n_node
 
                     yy = random.randint(0, n_test - 1)
                     while islinked[yy] > 0:
@@ -177,8 +181,8 @@ class SPEIT(InjectionAttack):
                     new_edges_y.extend([y, x])
                     new_data.extend([1, 1])
 
-            add1 = sp.csr_matrix((n_inject, self.n_total))
-            add2 = sp.csr_matrix((self.n_total + n_inject, n_inject))
+            add1 = sp.csr_matrix((n_inject, n_node))
+            add2 = sp.csr_matrix((n_node + n_inject, n_inject))
             adj_attack = sp.vstack([adj, add1])
             adj_attack = sp.hstack([adj_attack, add2])
             adj_attack.row = np.hstack([adj_attack.row, new_edges_x])
@@ -188,22 +192,27 @@ class SPEIT(InjectionAttack):
             return adj_attack
         else:
             # construct injected adjacency matrix
-            adj_inject = inject(target_node, n_inject, self.n_test, mode)
-            adj_inject = sp.hstack([sp.csr_matrix((n_inject, self.n_total - self.n_test)), adj_inject])
+            test_index = torch.where(target_mask)[0]
+            n_test = test_index.shape[0]
+            adj_inject = inject(target_node, n_inject, n_test, mode)
+            adj_inject = sp.hstack([sp.csr_matrix((n_inject, n_node - n_test)), adj_inject])
             adj_inject = sp.csr_matrix(adj_inject)
-            adj_attack = sp.vstack([self.dataset.adj, adj_inject[:, :self.n_total]])
+            adj_attack = sp.vstack([adj, adj_inject[:, :n_node]])
             adj_attack = sp.hstack([adj_attack, adj_inject.T])
             adj_attack = sp.coo_matrix(adj_attack)
 
             return adj_attack
 
-    def update_features(self, model, adj_attack, features, features_attack, origin_labels):
-        lr = self.config['lr']
-        n_epoch = self.config['n_epoch']
-        feat_lim_min, feat_lim_max = self.config['feat_lim_min'], self.config['feat_lim_max']
+    def update_features(self, model, adj_attack, features, features_attack, origin_labels, target_mask, adj_norm_func):
+        lr = self.lr
+        n_epoch = self.n_epoch
+        feat_lim_min, feat_lim_max = self.feat_lim_min, self.feat_lim_max
 
-        adj_attacked_tensor = utils.adj_preprocess(adj_attack, adj_norm_func=self.adj_norm_func, device=self.device)
-        features_attack = torch.FloatTensor(features_attack).to(self.device)
+        n_total = features.shape[0]
+        adj_attacked_tensor = utils.adj_preprocess(adj=adj_attack,
+                                                   adj_norm_func=adj_norm_func,
+                                                   device=self.device)
+        features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         features_attack.requires_grad_(True)
         optimizer = torch.optim.Adam([features_attack], lr=lr)
         model.eval()
@@ -211,8 +220,8 @@ class SPEIT(InjectionAttack):
         for i in range(n_epoch):
             features_concat = torch.cat((features, features_attack), dim=0)
             pred = model(features_concat, adj_attacked_tensor)
-            pred_loss = -F.nll_loss(pred[:self.n_total][self.dataset.test_mask],
-                                    origin_labels[self.dataset.test_mask]).to(self.device)
+            pred_loss = -F.nll_loss(pred[:n_total][target_mask],
+                                    origin_labels[target_mask]).to(self.device)
             optimizer.zero_grad()
             pred_loss.backward(retain_graph=True)
             optimizer.step()
@@ -220,9 +229,11 @@ class SPEIT(InjectionAttack):
             with torch.no_grad():
                 features_attack.clamp_(feat_lim_min, feat_lim_max)
 
-            test_acc = metric.eval_acc(pred[:self.n_total][self.dataset.test_mask],
-                                       origin_labels[self.dataset.test_mask])
-            print("Epoch {}, Loss: {:.5f}, Surrogate test acc: {:.5f}".format(i, pred_loss, test_acc),
-                  end='\r' if i != n_epoch - 1 else '\n')
+            test_acc = metric.eval_acc(pred[:n_total][target_mask],
+                                       origin_labels[target_mask])
+
+            if self.verbose:
+                print("Attacking: Epoch {}, Loss: {:.5f}, Surrogate test score: {:.5f}".format(i, pred_loss, test_acc),
+                      end='\r' if i != n_epoch - 1 else '\n')
 
         return features_attack

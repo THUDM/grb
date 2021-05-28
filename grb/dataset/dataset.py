@@ -396,8 +396,11 @@ class CustomDataset(object):
             print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
 
-def feat_normalize(feat, norm=None):
-    if norm == "arctan":
+def feat_normalize(feat, norm=None, lim_min=-1, lim_max=1):
+    if norm == "linearize":
+        k = (lim_max - lim_min) / (feat.max() - feat.min())
+        feat = lim_min + k * (feat - feat.min())
+    elif norm == "arctan":
         feat = 2 * np.arctan(feat) / np.pi
     elif norm == "tanh":
         feat = np.tanh(feat)

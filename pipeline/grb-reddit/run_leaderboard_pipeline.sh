@@ -1,0 +1,13 @@
+python leaderboard_pipeline.py \
+--dataset grb-reddit \
+--feat_norm arctan \
+--data_dir ../data/grb-reddit/ \
+--config_dir ./grb-reddit/ \
+--model_dir ../saved_models/grb-reddit-arctan-ind/ \
+--model_file "0/checkpoint.pt" \
+--attack_dir ../results/grb-reddit-arctan-ind \
+--attack_adj_name "0/adj.pkl" \
+--attack_feat_name "0/features.npy" \
+--weight_type 'polynomial' \
+--save_dir ./exp_results/grb-reddit/ \
+--gpu 0

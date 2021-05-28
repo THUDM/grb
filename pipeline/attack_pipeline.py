@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 
-import numpy as np
 import torch
 
 sys.path.append('../')
@@ -24,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora")
     parser.add_argument("--model_file", type=str, default="checkpoint.pt")
     parser.add_argument("--attack", type=str, default=None)
-    parser.add_argument("--save_dir", type=str, default="../results/grb-cora/")
+    parser.add_argument("--save_dir", type=str, default="../results/test/")
     parser.add_argument("--n_attack", type=int, default=1)
     parser.add_argument("--n_inject", type=int, default=20)
     parser.add_argument("--n_edge_max", type=int, default=20)
@@ -55,6 +54,7 @@ if __name__ == '__main__':
     labels = dataset.labels
     num_features = dataset.num_features
     num_classes = dataset.num_classes
+    target_mask = dataset.test_mask
 
     print("Attack vs. Defense..........")
     if args.attack is not None:
@@ -81,25 +81,28 @@ if __name__ == '__main__':
                 torch.load(os.path.join(args.model_dir, model_name, args.model_file)))
             print("Model loaded from {}".format(os.path.join(args.model_dir, model_name, args.model_file)))
 
-            attack.adj_norm_func = adj_norm_func
             for i in range(args.n_attack):
                 print("{} attack..........".format(i + 1))
-                if attack_name in "speit":
-                    target_node = np.random.choice(dataset.num_test, int(dataset.num_test * 0.8))
-                    adj_attack, features_attack = attack.attack(model, target_node)
-                else:
-                    adj_attack, features_attack = attack.attack(model)
+                adj_attack, features_attack = attack.attack(model=model,
+                                                            adj=adj,
+                                                            features=features,
+                                                            target_mask=target_mask,
+                                                            adj_norm_func=adj_norm_func)
                 save_dir = os.path.join(args.save_dir,
                                         attack_name + "_vs_" + model_name + "_" + args.dataset_mode, str(i))
-                if utils.check_symmetry(adj_attack.tocsr()):
-                    utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
-                else:
-                    print("The generated adjacency matrix is not symmetric!")
-                if utils.check_feat_range(features_attack,
-                                          feat_lim_min=args.feat_lim_min,
-                                          feat_lim_max=args.feat_lim_max):
-                    utils.save_features(features_attack, save_dir)
-                else:
-                    print("The generated features exceed the feature limit!")
+
+                utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
+                utils.save_features(features_attack, save_dir)
+
+                # if utils.check_symmetry(adj_attack.tocsr()):
+                #     utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
+                # else:
+                #     print("The generated adjacency matrix is not symmetric!")
+                # if utils.check_feat_range(features_attack,
+                #                           feat_lim_min=args.feat_lim_min,
+                #                           feat_lim_max=args.feat_lim_max):
+                #     utils.save_features(features_attack, save_dir)
+                # else:
+                #     print("The generated features exceed the feature limit!")
 
     print("Attack finished.")

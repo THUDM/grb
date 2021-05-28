@@ -2,8 +2,8 @@ python attack_pipeline.py \
 --n_epoch 5000 \
 --lr 0.001 \
 --dataset grb-yelp \
---dataset_mode normal \
---data_dir /home/stanislas/Research/GRB/data/grb-yelp/ \
+--dataset_mode full \
+--data_dir ../data/grb-yelp/ \
 --config_dir /home/stanislas/Research/GRB/pipeline/grb-yelp/ \
 --feat_norm arctan \
 --model_dir /home/stanislas/Research/GRB/saved_models/grb-yelp-arctan-ind-sur/ \

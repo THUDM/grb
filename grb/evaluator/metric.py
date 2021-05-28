@@ -83,6 +83,6 @@ def get_weights_polynomial(n, p=2, order='a'):
         weights.append(1 / i ** p)
     weights_norm = [weights[i] / sum(weights) for i in range(n)]
     if 'a' in order:
-        weights_norm = np.sort(weights_norm)[::-1]
+        weights_norm = weights_norm[::-1]
 
     return weights_norm

@@ -2,16 +2,9 @@ from abc import ABCMeta, abstractmethod
 
 
 class Attack(metaclass=ABCMeta):
-    @abstractmethod
-    def set_config(self, **kwargs):
-        """
-
-        :param kwargs:
-        :return:
-        """
 
     @abstractmethod
-    def attack(self, model, features, adj, **kwargs):
+    def attack(self, model, adj, features, **kwargs):
         """
 
         :param model:

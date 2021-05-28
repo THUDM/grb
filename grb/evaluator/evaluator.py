@@ -18,7 +18,7 @@ class AttackEvaluator(object):
             model, adj_norm_func = self.build_model(model_name=model_name,
                                                     num_features=self.dataset.num_features,
                                                     num_classes=self.dataset.num_classes)
-            model.load_state_dict(torch.load(model_dict[model_name]))
+            model.load_state_dict(torch.load(model_dict[model_name], map_location=self.device))
             model.to(self.device)
             model.eval()
 
@@ -51,9 +51,9 @@ class AttackEvaluator(object):
     def eval_metric(test_score_sorted, metric_type="polynomial"):
         n = len(test_score_sorted)
         if metric_type == "polynomial":
-            weights = metric.get_weights_polynomial(n, p=2)
+            weights = metric.get_weights_polynomial(n, p=2, order='a')
         elif metric_type == "arithmetic":
-            weights = metric.get_weights_arithmetic(n, w_1=0.005)
+            weights = metric.get_weights_arithmetic(n, w_1=0.005, order='a')
         else:
             weights = np.ones(n) / n
 
