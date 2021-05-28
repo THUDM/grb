@@ -1,13 +1,13 @@
 python train_pipeline.py \
---n_epoch 8000 \
+--n_epoch 12000 \
 --dataset grb-flickr \
---feat_norm linearize \
+--feat_norm arctan \
 --data_dir ../data/grb-flickr \
---model_dir ../saved_models/grb-flickr-linear-ind/ \
+--model_dir ../saved_models/grb-flickr-arctan-ind/ \
 --config_dir ./grb-flickr/ \
 --dropout 0.5 \
---eval_every 10 \
---save_after 0 \
+--eval_every 5 \
+--save_after 100 \
 --early_stop \
 --n_train 1 \
 --train_mode inductive \

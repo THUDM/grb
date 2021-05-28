@@ -23,4 +23,8 @@ URLs = {
                 "features.npz": "https://cloud.tsinghua.edu.cn/f/76c50746d3424fb1b998/?dl=1",
                 "labels.npz": "https://cloud.tsinghua.edu.cn/f/0bbd7c62f21a4de9b035/?dl=1",
                 "index.npz": "https://cloud.tsinghua.edu.cn/f/8f00d2546d194bd3bd7e/?dl=1"},
+    "grb-flickr": {"adj.npz": "https://cloud.tsinghua.edu.cn/f/90a513e35f0a4f3896eb/?dl=1",
+                   "features.npz": "https://cloud.tsinghua.edu.cn/f/54b2f1d7ee7c4d5bbcd4/?dl=1",
+                   "labels.npz": "https://cloud.tsinghua.edu.cn/f/43e9ec09458e4d30b528/?dl=1",
+                   "index.npz": "https://cloud.tsinghua.edu.cn/f/8239dc6a729e489da44f/?dl=1"},
 }
