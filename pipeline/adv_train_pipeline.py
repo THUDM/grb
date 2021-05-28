@@ -172,3 +172,7 @@ if __name__ == '__main__':
 
             print("*" * 80)
             print("Test ACC of {}: {:.4f}".format(model_name, test_acc))
+
+            del model, trainer
+
+    print("Adversarial training finished.")

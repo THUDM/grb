@@ -29,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_edge_max", type=int, default=20)
     parser.add_argument("--feat_lim_min", type=float)
     parser.add_argument("--feat_lim_max", type=float)
+    parser.add_argument("--early_stop", action='store_true')
 
     args = parser.parse_args()
 

@@ -115,6 +115,7 @@ def build_attack(attack_name, device="cpu", args=None):
                       n_edge_max=args.n_edge_max,
                       feat_lim_min=args.feat_lim_min,
                       feat_lim_max=args.feat_lim_max,
+                      early_stop=args.early_stop,
                       device=device)
     elif attack_name in "pgd":
         from grb.attack.pgd import PGD
@@ -125,6 +126,7 @@ def build_attack(attack_name, device="cpu", args=None):
                      n_edge_max=args.n_edge_max,
                      feat_lim_min=args.feat_lim_min,
                      feat_lim_max=args.feat_lim_max,
+                     early_stop=args.early_stop,
                      device=device)
     elif attack_name in "speit":
         from grb.attack.speit import SPEIT
@@ -135,6 +137,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
+                       early_stop=args.early_stop,
                        device=device)
     elif attack_name in "tdgia":
         from grb.attack.tdgia import TDGIA
@@ -145,6 +148,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
+                       early_stop=args.early_stop,
                        device=device)
 
     return attack

@@ -1,5 +1,5 @@
 import sys
-
+import torch
 import torch.nn.functional as F
 
 sys.path.append('..')
@@ -23,13 +23,15 @@ if __name__ == '__main__':
     # Load model
     from grb.model.torch.gcn import GCN
 
+    from grb.utils import fix_seed
+
+    fix_seed(42)
     model = GCN(in_features=num_features,
                 out_features=num_classes,
                 hidden_features=[64, 64],
                 activation=F.relu)
 
     print("Number of parameters: {}.".format(utils.get_num_params(model)))
-    print(model)
 
     # Prepare attack
     from grb.attack.fgsm import FGSM
@@ -38,11 +40,12 @@ if __name__ == '__main__':
     device = 'cuda:0'
 
     attack = FGSM(epsilon=0.01,
-                  n_epoch=10,
-                  n_inject_max=100,
+                  n_epoch=5000,
+                  n_inject_max=10,
                   n_edge_max=20,
                   feat_lim_min=-1,
                   feat_lim_max=1,
+                  early_stop=True,
                   device=device)
 
     adj_attack, features_attack = attack.attack(model=model,

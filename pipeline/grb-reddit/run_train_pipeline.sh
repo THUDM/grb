@@ -1,9 +1,9 @@
 python train_pipeline.py \
 --n_epoch 12000 \
 --dataset grb-reddit \
---feat_norm linearize \
+--feat_norm arctan \
 --data_dir ../data/grb-reddit \
---model_dir ../saved_models/grb-reddit-linear-ind/ \
+--model_dir ../saved_models/grb-reddit-arctan-ind/ \
 --config_dir ./grb-reddit/ \
 --dropout 0.5 \
 --eval_every 10 \
