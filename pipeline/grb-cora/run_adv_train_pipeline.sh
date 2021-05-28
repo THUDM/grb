@@ -1,9 +1,9 @@
 python adv_train_pipeline.py \
 --n_epoch 8000 \
 --dataset grb-cora \
---feat_norm linearize \
+--feat_norm arctan \
 --data_dir ../data/grb-cora \
---model_dir ../saved_models/grb-cora-linear-ind-adv-fgsm-10/ \
+--model_dir ../saved_models/grb-cora-arctan-ind-adv-fgsm-10/ \
 --config_dir ./grb-cora/ \
 --dropout 0.5 \
 --eval_every 1 \
@@ -15,8 +15,6 @@ python adv_train_pipeline.py \
 --attack_epoch 10 \
 --attack_lr 0.1 \
 --n_attack 1 \
---n_inject 20 \
+--n_inject 60 \
 --n_edge_max 20 \
---feat_lim_min -1 \
---feat_lim_max 1 \
 --gpu 0

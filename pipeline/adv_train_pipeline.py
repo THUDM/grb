@@ -95,8 +95,8 @@ if __name__ == '__main__':
     parser.add_argument("--n_attack", type=int, default=1)
     parser.add_argument("--n_inject", type=int, default=20)
     parser.add_argument("--n_edge_max", type=int, default=20)
-    parser.add_argument("--feat_lim_min", type=float, default=-1)
-    parser.add_argument("--feat_lim_max", type=float, default=1)
+    parser.add_argument("--feat_lim_min", type=float)
+    parser.add_argument("--feat_lim_max", type=float)
 
     args = parser.parse_args()
 
@@ -122,6 +122,11 @@ if __name__ == '__main__':
     labels = dataset.labels
     num_features = dataset.num_features
     num_classes = dataset.num_classes
+
+    if args.feat_lim_min is None:
+        args.feat_lim_min = features.min()
+    if args.feat_lim_max is None:
+        args.feat_lim_max = features.max()
 
     if args.model is not None:
         model_list = [args.model]

@@ -6,8 +6,8 @@ import scipy.sparse as sp
 import torch
 from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
-from grb.utils import download
 from grb.dataset.URLs import URLs
+from grb.utils import download
 
 
 class Dataset(object):
@@ -401,9 +401,13 @@ def feat_normalize(feat, norm=None, lim_min=-1, lim_max=1):
         k = (lim_max - lim_min) / (feat.max() - feat.min())
         feat = lim_min + k * (feat - feat.min())
     elif norm == "arctan":
+        feat = (feat - feat.mean()) / feat.std()
         feat = 2 * np.arctan(feat) / np.pi
     elif norm == "tanh":
+        feat = (feat - feat.mean()) / feat.std()
         feat = np.tanh(feat)
+    elif norm == "standardize":
+        feat = (feat - feat.mean()) / feat.std()
     else:
         feat = feat
 

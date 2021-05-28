@@ -1,4 +1,5 @@
 import random
+
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -20,6 +21,7 @@ class FGSM(InjectionAttack):
                  loss=F.nll_loss,
                  eval_metric=metric.eval_acc,
                  device='cpu',
+                 early_stop=None,
                  verbose=True):
         self.device = device
         self.epsilon = epsilon
@@ -31,6 +33,12 @@ class FGSM(InjectionAttack):
         self.loss = loss
         self.eval_metric = eval_metric
         self.verbose = verbose
+
+        # Early stop
+        if early_stop:
+            self.early_stop = EarlyStop(patience=1000, epsilon=1e-4)
+        else:
+            self.early_stop = early_stop
 
     def attack(self, model, adj, features, target_mask, adj_norm_func):
         model.to(self.device)
@@ -114,11 +122,39 @@ class FGSM(InjectionAttack):
             features_attack = torch.clamp(features_attack, feat_lim_min, feat_lim_max)
             features_attack = features_attack.detach()
 
-            test_acc = self.eval_metric(pred[:n_total][target_mask],
-                                        origin_labels[target_mask])
+            test_score = self.eval_metric(pred[:n_total][target_mask],
+                                          origin_labels[target_mask])
+
+            if self.early_stop is not None:
+                self.early_stop(test_score)
+                if self.early_stop.stop:
+                    print('\n')
+                    print("Attacking: Early stopped.")
+                    return features_attack
 
             if self.verbose:
-                print("Attacking: Epoch {}, Loss: {:.5f}, Surrogate test score: {:.5f}".format(i, pred_loss, test_acc),
-                      end='\r' if i != n_epoch - 1 else '\n')
+                print(
+                    "Attacking: Epoch {}, Loss: {:.5f}, Surrogate test score: {:.5f}".format(i, pred_loss, test_score),
+                    end='\r' if i != n_epoch - 1 else '\n')
 
         return features_attack
+
+
+class EarlyStop(object):
+    def __init__(self, patience=1000, epsilon=1e-4):
+        self.patience = patience
+        self.epsilon = epsilon
+        self.min_score = None
+        self.stop = False
+        self.count = 0
+
+    def __call__(self, score):
+        if self.min_score is None:
+            self.min_score = score
+        elif self.min_score - score > 0:
+            self.count = 0
+            self.min_score = score
+        elif self.min_score - score < self.epsilon:
+            self.count += 1
+            if self.count > self.patience:
+                self.stop = True

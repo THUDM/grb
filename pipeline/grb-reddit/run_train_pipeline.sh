@@ -1,14 +1,14 @@
 python train_pipeline.py \
 --n_epoch 12000 \
 --dataset grb-reddit \
---feat_norm arctan \
---data_dir /home/stanislas/Research/GRB/data/grb-reddit \
---model_dir /home/stanislas/Research/GRB/saved_models/grb-reddit-arctan-ind/ \
---config_dir /home/stanislas/Research/GRB/pipeline/grb-reddit/ \
+--feat_norm linearize \
+--data_dir ../data/grb-reddit \
+--model_dir ../saved_models/grb-reddit-linear-ind/ \
+--config_dir ./grb-reddit/ \
 --dropout 0.5 \
 --eval_every 10 \
---save_after 1000 \
+--save_after 100 \
 --early_stop \
---n_train 10 \
+--n_train 1 \
 --train_mode inductive \
 --gpu 0
