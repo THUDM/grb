@@ -4,10 +4,10 @@ import torch.nn.functional as F
 import grb.utils as utils
 from grb.evaluator import metric
 
-model_list = ["robustgcn", "gin", "graphsage", "appnp", "tagcn", "sgcn", "gcn"]
+# model_list = ["robustgcn", "gin", "graphsage", "appnp", "tagcn", "sgcn", "gcn"]
 
-# model_list = ["gcn", "gcn_ln", "graphsage", "sgcn",
-#               "robustgcn", "tagcn", "appnp", "gin"]
+model_list = ["gcn", "gcn_ln", "graphsage", "sgcn",
+              "robustgcn", "tagcn", "appnp", "gin"]
 
 attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
 
@@ -20,7 +20,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[256, 128, 64],
+                    hidden_features=[128, 128, 128],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
     elif model_name in "gcn_ln":
@@ -28,7 +28,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[256, 128, 64],
+                    hidden_features=[128, 128, 128],
                     layer_norm=True,
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
@@ -45,7 +45,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = SGCN(in_features=num_features,
                      out_features=num_classes,
-                     hidden_features=[128, 128, 128, 128],
+                     hidden_features=[128, 128, 128],
                      activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
     elif model_name in "robustgcn":
@@ -76,7 +76,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GIN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128, 128],
+                    hidden_features=[128, 128, 128],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
 

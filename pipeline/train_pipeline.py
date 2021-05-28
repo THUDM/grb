@@ -92,7 +92,11 @@ if __name__ == '__main__':
                           verbose=args.verbose)
 
             model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name, str(i), args.save_name)))
-            _, test_acc = trainer.inference(model)
+            _, test_score = trainer.inference(model)
 
             print("*" * 80)
-            print("Test ACC of {}: {:.4f}".format(model_name, test_acc))
+            print("Test ACC of {}: {:.4f}".format(model_name, test_score))
+
+            del model, trainer
+
+    print("Training completed.")

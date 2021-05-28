@@ -1,9 +1,9 @@
 python train_pipeline.py \
 --n_epoch 12000 \
 --dataset grb-aminer \
---feat_norm linearize \
+--feat_norm arctan \
 --data_dir ../data/grb-aminer \
---model_dir ../saved_models/grb-aminer-linear-ind/ \
+--model_dir ../saved_models/grb-aminer-arctan-ind/ \
 --config_dir ./grb-aminer/ \
 --dropout 0.5 \
 --eval_every 10 \
