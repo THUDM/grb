@@ -20,25 +20,7 @@ model_list = ["gcn",
               "gat",
               "gat_ln"]
 
-# model_list = ["gcn",
-#               "graphsage",
-#               "sgcn",
-#               "robustgcn",
-#               "tagcn",
-#               "appnp",
-#               "gin",
-#               "gat"]
-
-# model_list = ["gcn_ln",
-#               "graphsage_ln",
-#               "sgcn_ln",
-#               "robustgcn",
-#               "tagcn_ln",
-#               "appnp_ln",
-#               "gin_ln",
-#               "gat_ln"]
-
-attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
+attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia", "tdgia_uniform", "tdgia_random"]
 
 model_sur_list = ["gcn"]
 
@@ -259,7 +241,33 @@ def build_attack(attack_name, device="cpu", args=None):
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
                        early_stop=args.early_stop,
-                       inject_mode='tdgia',
+                       inject_mode='random',
+                       sequential_step=1.0,
+                       device=device)
+    elif attack_name in "tdgia_random":
+        from grb.attack.tdgia import TDGIA
+
+        attack = TDGIA(lr=args.lr,
+                       n_epoch=args.n_epoch,
+                       n_inject_max=args.n_inject,
+                       n_edge_max=args.n_edge_max,
+                       feat_lim_min=args.feat_lim_min,
+                       feat_lim_max=args.feat_lim_max,
+                       early_stop=args.early_stop,
+                       inject_mode='random',
+                       device=device)
+    elif attack_name in "tdgia_uniform":
+        from grb.attack.tdgia import TDGIA
+
+        attack = TDGIA(lr=args.lr,
+                       n_epoch=args.n_epoch,
+                       n_inject_max=args.n_inject,
+                       n_edge_max=args.n_edge_max,
+                       feat_lim_min=args.feat_lim_min,
+                       feat_lim_max=args.feat_lim_max,
+                       early_stop=args.early_stop,
+                       inject_mode='uniform',
+                       sequential_step=1.0,
                        device=device)
     else:
         raise NotImplementedError

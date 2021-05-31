@@ -66,8 +66,8 @@ if __name__ == '__main__':
             print("{} time training..........".format(i))
             model, adj_norm_func = config.build_model(model_name=model_name,
                                                       num_features=num_features,
-                                                      num_classes=num_classes
-                                                      )
+                                                      num_classes=num_classes)
+
             optimizer = config.build_optimizer(model=model, lr=args.lr)
             loss = config.build_loss()
             eval_metric = config.build_metric()

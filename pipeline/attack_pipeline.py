@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora")
     parser.add_argument("--model_file", type=str, default="checkpoint.pt")
-    parser.add_argument("--attack", type=str, default=None)
+    parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--save_dir", type=str, default="../results/test/")
     parser.add_argument("--n_attack", type=int, default=1)
     parser.add_argument("--n_inject", type=int, default=20)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         print("    Injected feature range: [{:.4f}, {:.4f}]".format(args.feat_lim_min, args.feat_lim_max))
 
         if args.attack is not None:
-            attack_list = [args.attack]
+            attack_list = args.attack
         else:
             attack_list = config.attack_list
         if args.model is not None:

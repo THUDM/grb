@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import grb.utils as utils
 from grb.evaluator import metric
 
-model_list = ["graphsage", "sgcn",
+model_list = ["gcn", "gcn_ln", "graphsage", "sgcn",
               "robustgcn", "appnp", "gin"]
 
 attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
@@ -18,18 +18,20 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[256, 128, 64],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "gcn_ln":
         from grb.model.torch.gcn import GCN
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[256, 128, 64],
                     layer_norm=True,
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "graphsage":
         from grb.model.torch.graphsage import GraphSAGE
 
@@ -38,14 +40,36 @@ def build_model(model_name, num_features, num_classes):
                           hidden_features=[128, 128, 128],
                           activation=F.relu)
         adj_norm_func = utils.normalize.SAGEAdjNorm
+
+    elif model_name in "graphsage_ln":
+        from grb.model.torch.graphsage import GraphSAGE
+
+        model = GraphSAGE(in_features=num_features,
+                          out_features=num_classes,
+                          hidden_features=[128, 128, 128],
+                          layer_norm=True,
+                          activation=F.relu)
+        adj_norm_func = utils.normalize.SAGEAdjNorm
+
     elif model_name in "sgcn":
         from grb.model.torch.sgcn import SGCN
 
         model = SGCN(in_features=num_features,
                      out_features=num_classes,
-                     hidden_features=[128, 128, 128],
+                     hidden_features=[256, 256, 256],
                      activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "sgcn_ln":
+        from grb.model.torch.sgcn import SGCN
+
+        model = SGCN(in_features=num_features,
+                     out_features=num_classes,
+                     hidden_features=[128, 128, 128],
+                     layer_norm=True,
+                     activation=F.relu)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "robustgcn":
         from grb.model.torch.robustgcn import RobustGCN
 
@@ -53,6 +77,7 @@ def build_model(model_name, num_features, num_classes):
                           out_features=num_classes,
                           hidden_features=[128, 128, 128])
         adj_norm_func = utils.normalize.RobustGCNAdjNorm
+
     elif model_name in "tagcn":
         from grb.model.torch.tagcn import TAGCN
 
@@ -61,6 +86,17 @@ def build_model(model_name, num_features, num_classes):
                       hidden_features=[128, 128, 128],
                       k=2, activation=F.leaky_relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "tagcn_ln":
+        from grb.model.torch.tagcn import TAGCN
+
+        model = TAGCN(in_features=num_features,
+                      out_features=num_classes,
+                      hidden_features=[128, 128, 128],
+                      layer_norm=True,
+                      k=2, activation=F.leaky_relu)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "appnp":
         from grb.model.torch.appnp import APPNP
 
@@ -69,14 +105,59 @@ def build_model(model_name, num_features, num_classes):
                       hidden_features=128,
                       alpha=0.01, k=10)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "appnp_ln":
+        from grb.model.torch.appnp import APPNP
+
+        model = APPNP(in_features=num_features,
+                      out_features=num_classes,
+                      hidden_features=128,
+                      layer_norm=True,
+                      alpha=0.01, k=10)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "gin":
         from grb.model.torch.gin import GIN
 
         model = GIN(in_features=num_features,
                     out_features=num_classes,
+                    hidden_features=[256, 256, 256, 256],
+                    activation=F.leaky_relu)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "gin_ln":
+        from grb.model.torch.gin import GIN
+
+        model = GIN(in_features=num_features,
+                    out_features=num_classes,
                     hidden_features=[128, 128, 128],
+                    layer_norm=True,
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "gat":
+        from grb.model.dgl.gat import GAT
+
+        model = GAT(in_features=num_features,
+                    out_features=num_classes,
+                    hidden_features=[128, 128, 128],
+                    num_heads=4,
+                    layer_norm=False,
+                    activation=F.leaky_relu)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+
+    elif model_name in "gat_ln":
+        from grb.model.dgl.gat import GAT
+
+        model = GAT(in_features=num_features,
+                    out_features=num_classes,
+                    hidden_features=[128, 128, 128],
+                    num_heads=4,
+                    layer_norm=True,
+                    activation=F.leaky_relu)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+    else:
+        raise NotImplementedError
 
     return model, adj_norm_func
 
@@ -147,6 +228,9 @@ def build_attack(attack_name, device="cpu", args=None):
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
                        early_stop=args.early_stop,
+                       inject_mode='tdgia',
                        device=device)
+    else:
+        raise NotImplementedError
 
     return attack

@@ -4,6 +4,7 @@ import scipy
 import random
 import pickle
 import torch
+import json
 import numpy as np
 import pandas as pd
 from urllib import request
@@ -180,16 +181,23 @@ def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, v
         print(df)
 
 
-def save_df_to_xlsx(df, file_dir, file_name="result.xlsx", verbose=True):
+def save_df_to_xlsx(df, file_dir, file_name="result.xlsx", verbose=False):
     df.to_excel(os.path.join(file_dir, file_name), index=True)
     if verbose:
         print(df)
 
 
-def save_df_to_csv(df, file_dir, file_name="result.csv", verbose=True):
+def save_df_to_csv(df, file_dir, file_name="result.csv", verbose=False):
     df.to_csv(os.path.join(file_dir, file_name), index=True)
     if verbose:
         print(df)
+
+
+def save_dict_to_json(result_dict, file_dir, file_name, verbose=False):
+    with open(os.path.join(file_dir, file_name), 'w') as f:
+        json.dump(result_dict, f)
+        if verbose:
+            print(result_dict)
 
 
 def check_symmetry(adj):
