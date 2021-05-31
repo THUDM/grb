@@ -59,7 +59,6 @@ class TDGIA(InjectionAttack):
         n_inject = 0
         features_attack = features
         while n_inject < self.n_inject_max:
-            print("Attacking: Sequential inject {} nodes".format(n_inject))
             with torch.no_grad():
                 adj_tensor = utils.adj_preprocess(adj=adj,
                                                   adj_norm_func=adj_norm_func,
@@ -70,6 +69,7 @@ class TDGIA(InjectionAttack):
             if n_inject_cur > self.n_inject_max * self.sequential_step:
                 n_inject_cur = int(self.n_inject_max * self.sequential_step)
 
+            print("Attacking: Sequential inject {}/{} nodes".format(n_inject + n_inject_cur, self.n_inject_max))
             adj_attack = self.injection(adj=adj,
                                         n_inject=n_inject_cur,
                                         n_origin=n_total,

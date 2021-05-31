@@ -131,6 +131,7 @@ class PGD(InjectionAttack):
                 self.early_stop(test_score)
                 if self.early_stop.stop:
                     print("Attacking: Early stopped.")
+                    self.early_stop = EarlyStop()
                     return features_attack
 
             if self.verbose:
