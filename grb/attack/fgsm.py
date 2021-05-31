@@ -46,6 +46,7 @@ class FGSM(InjectionAttack):
         features = utils.feat_preprocess(features=features, device=self.device)
         adj_tensor = utils.adj_preprocess(adj=adj,
                                           adj_norm_func=adj_norm_func,
+                                          model_type=model.model_type,
                                           device=self.device)
         pred_orig = model(features, adj_tensor)
         origin_labels = torch.argmax(pred_orig, dim=1)
@@ -103,6 +104,7 @@ class FGSM(InjectionAttack):
         n_total = features.shape[0]
         adj_attacked_tensor = utils.adj_preprocess(adj=adj_attack,
                                                    adj_norm_func=adj_norm_func,
+                                                   model_type=model.model_type,
                                                    device=self.device)
         features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         model.eval()
@@ -125,10 +127,9 @@ class FGSM(InjectionAttack):
             test_score = self.eval_metric(pred[:n_total][target_mask],
                                           origin_labels[target_mask])
 
-            if self.early_stop is not None:
+            if self.early_stop:
                 self.early_stop(test_score)
                 if self.early_stop.stop:
-                    print('\n')
                     print("Attacking: Early stopped.")
                     return features_attack
 

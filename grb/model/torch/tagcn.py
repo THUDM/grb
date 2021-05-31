@@ -43,7 +43,8 @@ class TAGConv(nn.Module):
 
 
 class TAGCN(nn.Module):
-    def __init__(self, in_features, out_features, hidden_features, k, activation=F.leaky_relu, dropout=True):
+    def __init__(self, in_features, out_features, hidden_features, k, activation=F.leaky_relu,
+                 layer_norm=True, dropout=True):
         super(TAGCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -51,8 +52,13 @@ class TAGCN(nn.Module):
             hidden_features = [hidden_features]
 
         self.layers = nn.ModuleList()
+        if layer_norm:
+            self.layers.append(nn.LayerNorm(in_features))
+
         self.layers.append(TAGConv(in_features, hidden_features[0], k, activation=activation, dropout=dropout))
         for i in range(len(hidden_features) - 1):
+            if layer_norm:
+                self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(
                 TAGConv(hidden_features[i], hidden_features[i + 1], k, activation=activation, dropout=dropout))
         self.layers.append(TAGConv(hidden_features[-1], out_features, k))
@@ -67,7 +73,10 @@ class TAGCN(nn.Module):
             layer.reset_parameters()
 
     def forward(self, x, adj, dropout=0):
-        for i in range(len(self.layers)):
-            x = self.layers[i](x, adj, dropout=dropout)
+        for layer in self.layers:
+            if isinstance(layer, nn.LayerNorm):
+                x = layer(x)
+            else:
+                x = layer(x, adj, dropout=dropout)
 
         return x

@@ -23,17 +23,32 @@ def adj_to_tensor(adj):
     return adj_tensor
 
 
-def adj_preprocess(adj, adj_norm_func=None, device='cpu'):
+def adj_preprocess(adj, adj_norm_func=None, mask=None, model_type="torch", device='cpu'):
     if adj_norm_func is not None:
-        adj_ = adj_norm_func(adj)
-    else:
-        adj_ = adj
-    if type(adj_) is tuple:
-        adj_tensor = [adj_to_tensor(adj_tmp).to(device) for adj_tmp in adj_]
-    else:
-        adj_tensor = adj_to_tensor(adj_).to(device)
-
-    return adj_tensor
+        adj = adj_norm_func(adj)
+    if model_type == "torch":
+        if type(adj) is tuple:
+            if mask is not None:
+                adj = [adj_to_tensor(adj_[mask][:, mask]).to(device) for adj_ in adj]
+            else:
+                adj = [adj_to_tensor(adj_).to(device) for adj_ in adj]
+        else:
+            if mask is not None:
+                adj = adj_to_tensor(adj[mask][:, mask]).to(device)
+            else:
+                adj = adj_to_tensor(adj).to(device)
+    elif model_type == "dgl":
+        if type(adj) is tuple:
+            if mask is not None:
+                adj = [adj_[mask][:, mask] for adj_ in adj]
+            else:
+                adj = [adj_ for adj_ in adj]
+        else:
+            if mask is not None:
+                adj = adj[mask][:, mask]
+            else:
+                adj = adj
+    return adj
 
 
 def feat_preprocess(features, feat_norm=None, device='cpu'):
@@ -167,6 +182,12 @@ def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, v
 
 def save_df_to_xlsx(df, file_dir, file_name="result.xlsx", verbose=True):
     df.to_excel(os.path.join(file_dir, file_name), index=True)
+    if verbose:
+        print(df)
+
+
+def save_df_to_csv(df, file_dir, file_name="result.csv", verbose=True):
+    df.to_csv(os.path.join(file_dir, file_name), index=True)
     if verbose:
         print(df)
 

@@ -30,6 +30,7 @@ class GINConv(nn.Module):
         x = self.linear2(x)
         if self.batchnorm:
             x = self.norm(x)
+        x = self.activation(x)
         if self.dropout:
             x = F.dropout(x, dropout)
 
@@ -37,7 +38,7 @@ class GINConv(nn.Module):
 
 
 class GIN(nn.Module):
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, dropout=True):
+    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
         super(GIN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -45,8 +46,13 @@ class GIN(nn.Module):
             hidden_features = [hidden_features]
         self.layers = nn.ModuleList()
 
+        if layer_norm:
+            self.layers.append(nn.LayerNorm(in_features))
+
         self.layers.append(GINConv(in_features, hidden_features[0], activation=activation, dropout=dropout))
         for i in range(len(hidden_features) - 1):
+            if layer_norm:
+                self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(
                 GINConv(hidden_features[i], hidden_features[i + 1], activation=activation))
         self.linear1 = nn.Linear(hidden_features[-2], hidden_features[-1])
@@ -62,9 +68,9 @@ class GIN(nn.Module):
 
     def forward(self, x, adj, dropout=0):
         for layer in self.layers:
-            x = layer(x, adj, dropout=dropout)
-        x = F.relu(self.linear1(x))
-        x = F.dropout(x, dropout)
-        x = self.linear2(x)
+            if isinstance(layer, nn.LayerNorm):
+                x = layer(x)
+            else:
+                x = layer(x, adj, dropout=dropout)
 
         return x

@@ -7,11 +7,10 @@ python attack_pipeline.py \
 --data_dir ../data/grb-reddit/ \
 --config_dir ./grb-reddit/ \
 --model_dir ../saved_models/grb-reddit-arctan-ind-sur/ \
+--model_file 0/checkpoint.pt \
 --model gcn \
 --save_dir ../results/grb-reddit-arctan-ind/ \
---n_attack 10 \
---n_inject 600 \
+--n_attack 1 \
+--n_inject 1500 \
 --n_edge_max 200 \
---feat_lim_min -1 \
---feat_lim_max 1 \
---gpu 1
+--gpu 3

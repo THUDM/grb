@@ -140,6 +140,7 @@ class Dataset(object):
             print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
     GRB_DATASETS = {"grb-cora",
+                    "grb-citeseer",
                     "grb-aminer",
                     "grb-reddit",
                     "grb-amazon",

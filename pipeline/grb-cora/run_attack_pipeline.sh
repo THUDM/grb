@@ -2,7 +2,7 @@ python attack_pipeline.py \
 --n_epoch 5000 \
 --lr 0.01 \
 --dataset grb-cora \
---dataset_mode easy medium hard full \
+--dataset_mode easy medium hard \
 --data_dir ../data/grb-cora/ \
 --config_dir ./grb-cora/ \
 --feat_norm arctan \
@@ -13,6 +13,7 @@ python attack_pipeline.py \
 --n_attack 1 \
 --n_inject 20 \
 --n_edge_max 20 \
+--early_stop \
 --gpu 0
 
 python attack_pipeline.py \

@@ -32,18 +32,24 @@ class SAGEConv(nn.Module):
 
 
 class GraphSAGE(nn.Module):
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, dropout=True):
+    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
         super(GraphSAGE, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
+
         self.layers = nn.ModuleList()
+        if layer_norm:
+            self.layers.append(nn.LayerNorm(in_features))
         self.layers.append(SAGEConv(in_features, in_features, hidden_features[0],
                                     activation=activation, dropout=dropout))
         for i in range(len(hidden_features) - 1):
+            if layer_norm:
+                self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(SAGEConv(hidden_features[i], hidden_features[i],
-                                        hidden_features[i + 1], activation=F.relu, dropout=dropout))
+                                        hidden_features[i + 1], activation=activation, dropout=dropout))
         self.layers.append(SAGEConv(hidden_features[-1], hidden_features[-1], out_features))
 
     @property
@@ -52,7 +58,10 @@ class GraphSAGE(nn.Module):
 
     def forward(self, x, adj, dropout=0):
         for layer in self.layers:
-            x = F.normalize(x, dim=1)
-            x = layer(x, adj, dropout=dropout)
+            if isinstance(layer, nn.LayerNorm):
+                x = layer(x)
+            else:
+                x = F.normalize(x, dim=1)
+                x = layer(x, adj, dropout=dropout)
 
         return x

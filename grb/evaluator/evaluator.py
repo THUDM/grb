@@ -39,7 +39,10 @@ class AttackEvaluator(object):
         return test_score_dict
 
     def eval(self, model, adj, features, adj_norm_func=None):
-        adj_tensor = utils.adj_preprocess(adj, adj_norm_func, self.device)
+        adj_tensor = utils.adj_preprocess(adj=adj,
+                                          adj_norm_func=adj_norm_func,
+                                          device=self.device,
+                                          model_type=model.model_type)
         logits = model(features, adj_tensor, dropout=0)
         logp = F.softmax(logits[:self.dataset.num_nodes], 1)
         test_score = metric.eval_acc(logp, self.dataset.labels.to(self.device),

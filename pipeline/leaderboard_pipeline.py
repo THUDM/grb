@@ -124,6 +124,11 @@ if __name__ == '__main__':
                               file_dir=args.save_dir,
                               file_name=file_name,
                               verbose=True)
+        # file_name = "{}.csv".format(args.dataset)
+        # utils.save_df_to_csv(df=result_df,
+        #                      file_dir=args.save_dir,
+        #                      file_name=file_name,
+        #                      verbose=True)
         print("Test scores saved in {}.".format(os.path.join(args.save_dir, file_name)))
     else:
         pd.set_option('display.width', 1000)

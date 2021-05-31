@@ -60,34 +60,9 @@ class Trainer(object):
         else:
             self.early_stop = early_stop
 
-    def adj_preprocess(self, adj, adj_norm_func=None, mask=None, model_type="torch"):
-        if adj_norm_func is not None:
-            adj = adj_norm_func(adj)
-        if model_type == "torch":
-            if type(adj) is tuple:
-                if mask is not None:
-                    adj = [utils.adj_to_tensor(adj_[mask][:, mask]).to(self.device) for adj_ in adj]
-                else:
-                    adj = [utils.adj_to_tensor(adj_).to(self.device) for adj_ in adj]
-            else:
-                if mask is not None:
-                    adj = utils.adj_to_tensor(adj[mask][:, mask]).to(self.device)
-                else:
-                    adj = utils.adj_to_tensor(adj).to(self.device)
-        elif model_type == "dgl":
-            if type(adj) is tuple:
-                if mask is not None:
-                    adj = [adj_[mask][:, mask].to(self.device) for adj_ in adj]
-                else:
-                    adj = [adj_.to(self.device) for adj_ in adj]
-            else:
-                if mask is not None:
-                    adj = adj[mask][:, mask].to(self.device)
-                else:
-                    adj = adj.to(self.device)
-        return adj
-
-    def train(self, model, n_epoch,
+    def train(self,
+              model,
+              n_epoch,
               save_dir=None,
               save_name=None,
               eval_every=10,
@@ -132,14 +107,16 @@ class Trainer(object):
 
             features_train = features[train_mask]
             features_val = features[train_val_mask]
-            adj_train = self.adj_preprocess(self.adj,
-                                            adj_norm_func=self.adj_norm_func,
-                                            mask=self.train_mask,
-                                            model_type=model.model_type)
-            adj_val = self.adj_preprocess(self.adj,
-                                          adj_norm_func=self.adj_norm_func,
-                                          mask=train_val_mask,
-                                          model_type=model.model_type)
+            adj_train = utils.adj_preprocess(self.adj,
+                                             adj_norm_func=self.adj_norm_func,
+                                             mask=self.train_mask,
+                                             model_type=model.model_type,
+                                             device=self.device)
+            adj_val = utils.adj_preprocess(self.adj,
+                                           adj_norm_func=self.adj_norm_func,
+                                           mask=train_val_mask,
+                                           model_type=model.model_type,
+                                           device=self.device)
 
             for epoch in range(n_epoch):
                 logits = model(features_train, adj_train, dropout)
@@ -198,10 +175,11 @@ class Trainer(object):
                                 epoch, train_loss, train_score, val_loss, val_score))
         else:
             # Transductive setting
-            adj = self.adj_preprocess(self.adj,
-                                      adj_norm_func=self.adj_norm_func,
-                                      mask=None,
-                                      model_type=model.model_type)
+            adj = utils.adj_preprocess(self.adj,
+                                       adj_norm_func=self.adj_norm_func,
+                                       mask=None,
+                                       model_type=model.model_type,
+                                       device=self.device)
             for epoch in range(n_epoch):
                 logits = model(features, adj, dropout)
                 if self.loss == F.nll_loss:
@@ -255,9 +233,10 @@ class Trainer(object):
     def inference(self, model):
         model.to(self.device)
         model.eval()
-        adj = self.adj_preprocess(self.adj,
-                                  adj_norm_func=self.adj_norm_func,
-                                  model_type=model.model_type)
+        adj = utils.adj_preprocess(self.adj,
+                                   adj_norm_func=self.adj_norm_func,
+                                   model_type=model.model_type,
+                                   device=self.device)
         logits = model(self.features, adj, dropout=0)
         if self.loss == F.nll_loss:
             out = F.log_softmax(logits, 1)

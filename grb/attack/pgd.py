@@ -127,10 +127,9 @@ class PGD(InjectionAttack):
             test_score = self.eval_metric(pred[:n_total][target_mask],
                                           origin_labels[target_mask])
 
-            if self.early_stop is not None:
+            if self.early_stop:
                 self.early_stop(test_score)
                 if self.early_stop.stop:
-                    print('\n')
                     print("Attacking: Early stopped.")
                     return features_attack
 

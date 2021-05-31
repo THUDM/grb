@@ -4,8 +4,8 @@ import torch.nn.functional as F
 import grb.utils as utils
 from grb.evaluator import metric
 
-model_list = ["graphsage", "sgcn",
-              "robustgcn", "appnp", "gin"]
+model_list = ["gcn", "gcn_ln", "graphsage", "sgcn",
+              "robustgcn", "tagcn", "appnp", "gin"]
 
 attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
 
@@ -18,15 +18,16 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[64, 64, 64],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+
     elif model_name in "gcn_ln":
         from grb.model.torch.gcn import GCN
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[64, 64, 64],
                     layer_norm=True,
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
@@ -35,7 +36,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GraphSAGE(in_features=num_features,
                           out_features=num_classes,
-                          hidden_features=[128, 128, 128],
+                          hidden_features=[64, 64, 64],
                           activation=F.relu)
         adj_norm_func = utils.normalize.SAGEAdjNorm
     elif model_name in "sgcn":
@@ -43,7 +44,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = SGCN(in_features=num_features,
                      out_features=num_classes,
-                     hidden_features=[128, 128, 128],
+                     hidden_features=[64, 64, 64],
                      activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
     elif model_name in "robustgcn":
@@ -51,14 +52,14 @@ def build_model(model_name, num_features, num_classes):
 
         model = RobustGCN(in_features=num_features,
                           out_features=num_classes,
-                          hidden_features=[128, 128, 128])
+                          hidden_features=[64, 64, 64])
         adj_norm_func = utils.normalize.RobustGCNAdjNorm
     elif model_name in "tagcn":
         from grb.model.torch.tagcn import TAGCN
 
         model = TAGCN(in_features=num_features,
                       out_features=num_classes,
-                      hidden_features=[128, 128, 128],
+                      hidden_features=[64, 64, 64],
                       k=2, activation=F.leaky_relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
     elif model_name in "appnp":
@@ -66,7 +67,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = APPNP(in_features=num_features,
                       out_features=num_classes,
-                      hidden_features=128,
+                      hidden_features=64,
                       alpha=0.01, k=10)
         adj_norm_func = utils.normalize.GCNAdjNorm
     elif model_name in "gin":
@@ -74,7 +75,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GIN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[64, 64, 64],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
 
