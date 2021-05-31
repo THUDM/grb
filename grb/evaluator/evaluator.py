@@ -32,9 +32,9 @@ class AttackEvaluator(object):
                 print("Model {}, Test score: {:.4f}".format(model_name, test_score))
 
         test_score_sorted = sorted(list(test_score_dict.values()))
-        test_score_dict["weighted"] = self.eval_metric(test_score_sorted, metric_type="polynomial")
         test_score_dict["average"] = np.mean(test_score_sorted)
         test_score_dict["3-max"] = np.mean(test_score_sorted[-3:])
+        test_score_dict["weighted"] = self.eval_metric(test_score_sorted, metric_type="polynomial")
 
         return test_score_dict
 
@@ -51,12 +51,12 @@ class AttackEvaluator(object):
         return test_score.detach().cpu().numpy()
 
     @staticmethod
-    def eval_metric(test_score_sorted, metric_type="polynomial"):
+    def eval_metric(test_score_sorted, metric_type="polynomial", order='a'):
         n = len(test_score_sorted)
         if metric_type == "polynomial":
-            weights = metric.get_weights_polynomial(n, p=2, order='a')
+            weights = metric.get_weights_polynomial(n, p=2, order=order)
         elif metric_type == "arithmetic":
-            weights = metric.get_weights_arithmetic(n, w_1=0.005, order='a')
+            weights = metric.get_weights_arithmetic(n, w_1=0.005, order=order)
         else:
             weights = np.ones(n) / n
 

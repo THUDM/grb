@@ -73,4 +73,8 @@ class GIN(nn.Module):
             else:
                 x = layer(x, adj, dropout=dropout)
 
+        x = F.relu(self.linear1(x))
+        x = F.dropout(x, dropout)
+        x = self.linear2(x)
+
         return x
