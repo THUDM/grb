@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_dir", type=str, default="../data/grb-cora/")
     parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora/")
     parser.add_argument("--config_dir", type=str, default="./grb-cora")
-    parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--model", nargs='+', default=None)
     parser.add_argument("--save_name", type=str, default="checkpoint.pt")
     parser.add_argument("--early_stop", action='store_true')
     parser.add_argument("--lr_scheduler", action='store_true')
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     num_classes = dataset.num_classes
 
     if args.model is not None:
-        model_list = [args.model]
+        model_list = args.model
     else:
         model_list = config.model_list
     for model_name in model_list:
@@ -91,7 +91,8 @@ if __name__ == '__main__':
                           dropout=args.dropout,
                           verbose=args.verbose)
 
-            model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name, str(i), args.save_name)))
+            model.load_state_dict(torch.load(os.path.join(args.model_dir, model_name, str(i), args.save_name),
+                                             map_location=device))
             _, test_score = trainer.inference(model)
 
             print("*" * 80)

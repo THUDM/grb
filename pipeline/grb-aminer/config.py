@@ -140,7 +140,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GAT(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[64, 64, 64],
                     num_heads=4,
                     layer_norm=False,
                     activation=F.leaky_relu)
@@ -151,7 +151,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GAT(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
+                    hidden_features=[64, 64, 64],
                     num_heads=4,
                     layer_norm=True,
                     activation=F.leaky_relu)

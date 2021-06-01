@@ -42,8 +42,9 @@ if __name__ == '__main__':
     import config
 
     result_dict = {"no_attack": {}}
-    for attack_name in config.attack_list:
-        result_dict[attack_name] = {}
+    if args.attack_dir:
+        for attack_name in config.attack_list:
+            result_dict[attack_name] = {}
     for dataset_mode in args.dataset_mode:
         dataset = Dataset(name=args.dataset,
                           data_dir=args.data_dir,
@@ -109,7 +110,6 @@ if __name__ == '__main__':
                                                         adj_attack=adj_attacked,
                                                         features_attack=features_attacked)
                 result_dict[attack_name][dataset_mode] = test_score_dict
-    print(result_dict)
     sorted_result_keys = sorted(result_dict, key=lambda x: (result_dict[x]['full']['weighted']))
     result_df = pd.DataFrame.from_dict({(i, j): result_dict[i][j]
                                         for i in sorted_result_keys

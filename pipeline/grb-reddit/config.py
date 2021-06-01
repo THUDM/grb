@@ -18,7 +18,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[256, 128, 64],
+                    hidden_features=[128, 128, 128],
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
 
@@ -27,7 +27,7 @@ def build_model(model_name, num_features, num_classes):
 
         model = GCN(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[256, 128, 64],
+                    hidden_features=[128, 128, 128],
                     layer_norm=True,
                     activation=F.relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
@@ -140,8 +140,8 @@ def build_model(model_name, num_features, num_classes):
 
         model = GAT(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
-                    num_heads=4,
+                    hidden_features=[64, 64],
+                    num_heads=2,
                     layer_norm=False,
                     activation=F.leaky_relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
@@ -151,8 +151,8 @@ def build_model(model_name, num_features, num_classes):
 
         model = GAT(in_features=num_features,
                     out_features=num_classes,
-                    hidden_features=[128, 128, 128],
-                    num_heads=4,
+                    hidden_features=[64, 64],
+                    num_heads=2,
                     layer_norm=True,
                     activation=F.leaky_relu)
         adj_norm_func = utils.normalize.GCNAdjNorm

@@ -88,7 +88,7 @@ if __name__ == '__main__':
                                                           num_features=num_features,
                                                           num_classes=num_classes)
                 model.load_state_dict(
-                    torch.load(os.path.join(args.model_dir, model_name, args.model_file)))
+                    torch.load(os.path.join(args.model_dir, model_name, args.model_file), map_location=device))
                 print("Model loaded from {}".format(os.path.join(args.model_dir, model_name, args.model_file)))
 
                 for i in range(args.n_attack):

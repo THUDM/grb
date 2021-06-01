@@ -13,4 +13,4 @@ python attack_pipeline.py \
 --n_attack 1 \
 --n_inject 1500 \
 --n_edge_max 200 \
---gpu 3
+--gpu 1

@@ -7,7 +7,7 @@ python train_pipeline.py \
 --config_dir ./grb-reddit/ \
 --dropout 0.5 \
 --eval_every 10 \
---save_after 100 \
+--save_after 10 \
 --early_stop \
 --n_train 1 \
 --train_mode inductive \

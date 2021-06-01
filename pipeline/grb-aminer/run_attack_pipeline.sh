@@ -8,7 +8,7 @@ python attack_pipeline.py \
 --config_dir ./grb-aminer/ \
 --model gcn \
 --model_dir ../saved_models/grb-aminer-arctan-ind-sur/ \
---model_file "0/checkpoint.pt" \
+--model_file 0/checkpoint.pt \
 --save_dir ../results/grb-aminer-arctan-ind/ \
 --n_attack 1 \
 --n_inject 1500 \

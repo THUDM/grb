@@ -20,7 +20,7 @@ model_list = ["gcn",
               "gat",
               "gat_ln"]
 
-attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia", "tdgia_uniform", "tdgia_random"]
+attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
 
 model_sur_list = ["gcn"]
 

@@ -4,10 +4,11 @@ python leaderboard_pipeline.py \
 --data_dir ../data/grb-reddit/ \
 --config_dir ./grb-reddit/ \
 --model_dir ../saved_models/grb-reddit-arctan-ind/ \
---model_file "0/checkpoint.pt" \
+--model_file 0/checkpoint.pt \
 --attack_dir ../results/grb-reddit-arctan-ind \
---attack_adj_name "0/adj.pkl" \
---attack_feat_name "0/features.npy" \
---weight_type 'polynomial' \
---save_dir ./exp_results/grb-reddit/ \
---gpu 0
+--attack_adj_name 0/adj.pkl \
+--attack_feat_name 0/features.npy \
+--weight_type polynomial \
+--save_dir ../leaderboard/exp_results_0531/grb-reddit/ \
+--gpu 0 \
+--model gcn gat graphsage gin appnp tagcn robustgcn sgcn
