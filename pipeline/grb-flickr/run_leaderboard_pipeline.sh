@@ -9,5 +9,6 @@ python leaderboard_pipeline.py \
 --attack_adj_name 0/adj.pkl \
 --attack_feat_name 0/features.npy \
 --weight_type polynomial \
---save_dir ../exp_results_0531/grb-flickr/ \
---gpu 0
+--save_dir ../leaderboard/exp_results_0531/grb-flickr/ \
+--gpu 0 \
+--model gcn gat graphsage tagcn sgcn appnp gin robustgcn

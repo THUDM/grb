@@ -23,6 +23,7 @@ class TDGIA(InjectionAttack):
                  eval_metric=metric.eval_acc,
                  inject_mode='random',
                  sequential_step=0.2,
+                 opt='sin',
                  device='cpu',
                  early_stop=None,
                  verbose=True):
@@ -37,6 +38,7 @@ class TDGIA(InjectionAttack):
         self.eval_metric = eval_metric
         self.inject_mode = inject_mode
         self.sequential_step = sequential_step
+        self.opt = opt
         self.verbose = verbose
 
         # Early stop
@@ -45,7 +47,7 @@ class TDGIA(InjectionAttack):
         else:
             self.early_stop = early_stop
 
-    def attack(self, model, adj, features, target_mask, adj_norm_func, opt='sin'):
+    def attack(self, model, adj, features, target_mask, adj_norm_func):
         model.to(self.device)
         n_total, n_feat = features.shape
         features = utils.feat_preprocess(features=features, device=self.device)
@@ -90,7 +92,7 @@ class TDGIA(InjectionAttack):
                                                            origin_labels=origin_labels,
                                                            target_mask=target_mask,
                                                            adj_norm_func=adj_norm_func,
-                                                           opt=opt)
+                                                           opt=self.opt)
                 features_attack = torch.cat((features, features_attack_add), dim=0)
 
         features_attack = features_attack[n_total:]

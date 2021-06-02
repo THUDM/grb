@@ -37,16 +37,18 @@ if __name__ == '__main__':
 
     device = 'cuda:0'
 
-    attack = TDGIA(lr=0.01,
+    attack = TDGIA(lr=0.001,
                    n_epoch=10,
-                   n_inject_max=100,
+                   n_inject_max=20,
                    n_edge_max=20,
-                   feat_lim_min=-1,
-                   feat_lim_max=1,
-                   device=device)
+                   feat_lim_min=-0.99,
+                   feat_lim_max=0.99,
+                   device=device,
+                   inject_mode='tdgia')
 
     adj_attack, features_attack = attack.attack(model=model,
                                                 adj=adj,
                                                 features=features,
                                                 target_mask=test_mask,
                                                 adj_norm_func=GCNAdjNorm)
+    print(adj_attack, features_attack)

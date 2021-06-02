@@ -156,6 +156,25 @@ def build_model(model_name, num_features, num_classes):
                     layer_norm=True,
                     activation=F.leaky_relu)
         adj_norm_func = utils.normalize.GCNAdjNorm
+    elif model_name in "gcnguard":
+        from grb.defense.gnnguard import GCNGuard
+
+        model = GCNGuard(in_features=num_features,
+                         out_features=num_classes,
+                         hidden_features=[128, 128, 128],
+                         activation=F.relu,
+                         drop=True)
+        adj_norm_func = utils.normalize.GCNAdjNorm
+    elif model_name in "gatguard":
+        from grb.defense.gnnguard import GATGuard
+
+        model = GATGuard(in_features=num_features,
+                         out_features=num_classes,
+                         hidden_features=[64, 64, 64],
+                         num_heads=4,
+                         activation=F.relu,
+                         drop=True)
+        adj_norm_func = utils.normalize.GCNAdjNorm
     else:
         raise NotImplementedError
 
