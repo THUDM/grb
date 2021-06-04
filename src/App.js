@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button,
+  Divider,
+  Drawer,
   Layout,
   Menu,
   Spin,
@@ -12,6 +14,9 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-d
 import './App.less';
 import _ from 'lodash';
 import { ReactComponent as Logo } from './logo.svg';
+import Features from './features';
+import ReactMarkdown from 'react-markdown';
+import { getChart, getTableColumns, getTableItems, getTableSelection } from './leaderboard';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Paragraph } = Typography;
@@ -31,96 +36,102 @@ const AppHeader = ({history}) => {
   </Header>
 }
 
-const AppHome = ({history}) => (
-  <div className="home" style={{maxWidth: 720}}>
-    <Title style={{textAlign: 'center'}}>
-      {/* Graph Robustness Benchmark */}
-      <Logo/>
-    </Title>
-    <Paragraph style={{fontSize: 24, marginTop: 30, marginBottom: 30}}>
-      <b>Graph Robustness Benchmark (GRB)</b> focuses on evaluating the robustness of graph machine learning models, especially the adversarial robustness of Graph Neural Networks (GNNs).
-    </Paragraph>
-    <div style={{display: "flex", justifyContent: "center"}}>
-      <Button style={{margin: 10, width: 180}} type="primary" size="large" onClick={() => history.push('leaderboard')}>Go to Leaderboard</Button>
-      <Button style={{margin: 10, width: 180}} size="large" onClick={() => history.push('docs')}>Read Documents</Button>
+const AppHomeFeature = ({icon, title, description}) => (
+  <div className="app-home-feature">
+    <div className="header">
+      <div className="icon"><i className={`iconfont icon-${icon}`}/></div>
+      <div>{title}</div>
+    </div>
+    <div className="content">
+      {description}
     </div>
   </div>
 )
 
-const AppLeaderboard = () => {
-  const [data, setData] = useState({datagrid: [], methods: [], models: [], metrics: [], columns: [], items: []})
+const AppHome = ({history}) => (
+  <div className="home">
+    <Title style={{textAlign: 'center'}}>
+      {/* Graph Robustness Benchmark */}
+      <Logo/>
+    </Title>
+    <div className="desc">
+      <Paragraph style={{fontSize: '1.35em', marginTop: 30, marginBottom: 30, maxWidth: 720}}>
+        <b>Graph Robustness Benchmark (GRB)</b> focuses on evaluating the robustness of graph machine learning models, especially the adversarial robustness of Graph Neural Networks (GNNs).
+      </Paragraph>
+    </div>
+    <div style={{display: "flex", justifyContent: "center"}}>
+      <Button style={{margin: 10, width: 180}} type="primary" size="large" onClick={() => history.push('leaderboard')}>Go to Leaderboard</Button>
+      <Button style={{margin: 10, width: 180}} size="large" onClick={() => history.push('docs')}>Read Documents</Button>
+    </div>
+    <div className="features">
+      {Features.map((feature, idx) => <AppHomeFeature key={idx} {...feature}/>)}
+    </div>
+  </div>
+)
+
+const AppDoc = () => {
+  const [data, setData] = useState("")
   const [loading, setLoading] = useState(false)
   useEffect(() => {
     setLoading(true)
-    // fetch(`http://webplus-cn-zhangjiakou-s-5d3021e74130ed2505537ee6.oss-cn-zhangjiakou.aliyuncs.com/keg/grb.csv`)
-    fetch(`https://raw.githubusercontent.com/Stanislas0/grb/results/leaderboard.csv?token=ADK6VYPSLY6CFL6INBUZKGLAXJFW4`)
+    fetch('https://raw.githubusercontent.com/Stanislas0/grb/main/README.md?token=ADK6VYNK27NGG7I3IQR53QDAXM7CS')
       .then(resp => resp.text()).then(text => {
-        const datagrid = text.split('\n').map(line => line.split(';'))
-        const nrows = datagrid.length, ncols = datagrid[0].length;
-        let models = [], metrics = [];
-        for (let i = 3; i < ncols; ++i) {
-          if (datagrid[1][i].length === 0) metrics.push({colIndex: i, name: datagrid[0][i]})
-          else models.push({colIndex: i, id: parseInt(datagrid[0][i]), name: datagrid[1][i]})
-        }
-        let methods = [], currentMethod = {};
-        for (let i = 2; i < nrows; ++i) {
-          if (datagrid[i][0].length > 0) {
-            if (currentMethod.type) methods.push(currentMethod)
-            if (datagrid[i][1].length > 0) currentMethod = {type: "method", rank: parseInt(datagrid[i][0]), name: datagrid[i][1], subKeys: [{rowIndex: i, name: datagrid[i][2]}]}
-            else currentMethod = {rowIndex: i, type: "summary", name: datagrid[i][0]}
-          } else {
-            if (currentMethod.subKeys) currentMethod.subKeys.push({rowIndex: i, name: datagrid[i][2]})
-          }
-        }
-        if (currentMethod.type) methods.push(currentMethod)
-        const columns = [
-          {title: "Rank", colSpan: 3, fixed: 'left', align: 'center', render: (value, row, index) => {
-            if (row.method.length > 0 && row.rank.length === 0) return {children: row.method, props: {colSpan: 3}}
-            else if (row.rowSpan !== 1) return {children: row.rank, props: {rowSpan: row.rowSpan}}
-            else return {children: row.rank, props: {colSpan: 1}}
-          }},
-          {title: "Method", colSpan: 0, fixed: 'left', align: 'center', render: (value, row, index) => {
-            if (row.method.length > 0 && row.rank.length === 0) return {children: "", props: {colSpan: 0}}
-            else if (row.rowSpan !== 1) return {children: row.method, props: {rowSpan: row.rowSpan}}
-            else return {children: row.method, props: {colSpan: 1}}
-          }},
-          {title: "SubKey", colSpan: 0, fixed: 'left', align: 'center', render: (value, row, index) => {
-            if (row.method.length > 0 && row.rank.length === 0) return {children: "", props: {colSpan: 0}}
-            else return {children: row.subKey, props: {colSpan: 1}}
-          }},
-          {title: "Models", children: models.map(model => { return {title: model.name, dataIndex: model.name, key: model.name, align: 'center'} })}
-        ].concat(metrics.map(metric => { return {title: metric.name, dataIndex: metric.name, key: metric.name, align: 'center'} }))
-
-        const parseValue = (value) => {
-          try {
-            const s = parseFloat(value).toFixed(4);
-            return (s === 'NaN') ? '-' : s;
-          } catch {
-            return value;
-          }
-        }
-        let items = _.flatten(methods.map(method => {
-          if (method.type === "method") return method.subKeys.map((key, idx) => {
-            let item = {key: `${method.name}.${key.name}`, rank: idx === 0 ? method.rank : "", method: idx === 0 ? method.name : "", subKey: key.name, rowSpan: idx === 0 ? method.subKeys.length : 0}
-            models.forEach(model => item[model.name] = parseValue(datagrid[key.rowIndex][model.colIndex]))
-            metrics.forEach(metric => item[metric.name] = parseValue(datagrid[key.rowIndex][metric.colIndex]))
-            return item
-          })
-          else {
-            let item = {key: method.name, rank: "", method: method.name, subKey: "", rowSpan: 1}
-            models.forEach(model => item[model.name] = parseValue(datagrid[method.rowIndex][model.colIndex]))
-            metrics.forEach(metric => item[metric.name] = parseValue(datagrid[method.rowIndex][metric.colIndex]))
-            return [item]
-          }
-        }))
-        console.log({datagrid, methods, models, metrics, columns, items})
         setLoading(false)
-        setData({datagrid, methods, models, metrics, columns, items})
+        setData(text)
       })
   }, [])
-  return <div className="leaderboard" style={{width: '100%'}}>
+  return <div className="docs">
+    <Spin spinning={loading}>
+      <ReactMarkdown>{data}</ReactMarkdown>
+    </Spin>
+  </div>
+}
+
+const AppLeaderboard = () => {
+  const [leaderboard, setLeaderboard] = useState({updated_time: null, data: {}, attacks: [], models: [], levels: [], attacksSummary: [], modelsSummary: []})
+  const [configs, setConfigs] = useState({levels: [], attacks: [], models: [], attacksSummary: [], modelsSummary: []})
+  const [loading, setLoading] = useState(false)
+  const [drawerData, setDrawerData] = useState(undefined)
+  useEffect(() => {
+    setLoading(true)
+    fetch(`https://raw.githubusercontent.com/Stanislas0/grb/results/leaderboard.json?token=ADK6VYJ3MU26KVKUN3DS6HDAYL2DC`)
+        .then(resp => resp.json()).then(lb => {
+          console.log('lb', lb)
+          setLeaderboard(lb)
+          setConfigs({
+            levels: _.clone(lb.levels),
+            attacks: _.clone(lb.attacks),
+            models: _.clone(lb.models),
+            attacksSummary: _.clone(lb.attacks_summary),
+            modelsSummary: _.clone(lb.models_summary)
+          })
+          setLoading(false)
+        })
+  }, [])
+  const columns = getTableColumns(configs, setDrawerData)
+  const items = getTableItems(leaderboard.data, configs)
+  return <div className="leaderboard" style={{width: '100%', paddingTop: 30, paddingBottom: 30}}>
     <Title style={{textAlign: 'center'}}>Leaderboard</Title>
-    <Table loading={loading} columns={data.columns} dataSource={data.items} bordered pagination={false} scroll={{y: '60vh'}}/>
+    {getTableSelection('attacks', leaderboard, configs, setConfigs)}
+    {getTableSelection('models', leaderboard, configs, setConfigs)}
+    {getTableSelection('levels', leaderboard, configs, setConfigs)}
+    <div style={{marginTop: 10, marginBottom: 10, display: "flex", justifyContent: "center"}}>
+      <Button style={{width: 150, margin: 10}} onClick={() => setConfigs({...configs, levels: ['full'], models: leaderboard.models.slice(0, 5), attacks: leaderboard.attacks.slice(0, 3)})}>Brief</Button>
+      <Button style={{width: 150, margin: 10}} onClick={() => setConfigs({...configs, levels: _.clone(leaderboard.levels), models: _.clone(leaderboard.models), attacks: _.clone(leaderboard.attacks)})}>Completed</Button>
+    </div>
+    <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{x: 1300, y: '80vh'}}/>
+    <Divider style={{marginTop: 50, fontSize: 24}}>Comparison of Attacks</Divider>
+    <div className="charts" style={{width: '100%'}}>
+      {leaderboard.levels.map(level =>
+        <div className="chart" style={{width: 'calc(50% - 20px)', margin: 10, display: 'inline-block'}}>
+          <div id={`level-chart:${level}`} style={{textAlign: "center", fontSize: 16, fontWeight: 500, marginBottom: 10, marginTop: 20}}>{_.capitalize(level)}</div>
+          {getChart(leaderboard.data, level, configs)}
+        </div>
+      )}
+    </div>
+    <Drawer width="360px" title={drawerData ? drawerData.title : ''} placement="right" closable={false} onClose={() => setDrawerData(undefined)} visible={drawerData !== undefined}>
+      {drawerData && drawerData.description}
+    </Drawer>
   </div>
 }
 
@@ -133,21 +144,13 @@ const App = () => (
       <Content className="site-layout" style={{ padding: '0 50px', marginTop: 64, minHeight: 'calc(100vh - 134px)', display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Switch>
           <Route path="/home" render={({history}) => <AppHome history={history}/>}/>
-          <Route path="/docs"></Route>
+          <Route path="/docs" render={() => <AppDoc/>}/>
           <Route path="/datasets"></Route>
           <Route path="/leaderboard" render={({history}) => <AppLeaderboard history={history}/>}/>
           <Route path="*"><Redirect to="/home"/></Route>
         </Switch>
-        {/* <Breadcrumb style={{ margin: '16px 0' }}>
-          <Breadcrumb.Item>Home</Breadcrumb.Item>
-          <Breadcrumb.Item>List</Breadcrumb.Item>
-          <Breadcrumb.Item>App</Breadcrumb.Item>
-        </Breadcrumb>
-        <div className="site-layout-background" style={{ padding: 24, minHeight: 380 }}>
-          Content
-        </div> */}
       </Content>
-      <Footer style={{ textAlign: 'center' }}>Knowledge Engineering Group, Department of Computer Science and Technology, Tsinghua University</Footer>
+      <Footer style={{ textAlign: 'center', color: '#888' }}>Knowledge Engineering Group, Department of Computer Science and Technology, Tsinghua University</Footer>
     </Layout>
   </Router>
 );

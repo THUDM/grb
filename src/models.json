@@ -1,0 +1,114 @@
+[{
+    "id": "gat_at",
+    "name": "GAT",
+    "ref": "Petar Velickovic, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Liò, and Yoshua Bengio. Graph attention networks. In ICLR’18, 2018."
+}, {
+    "id": "robustgcn_at",
+    "name": "RobustGCN",
+    "ref": "Dingyuan Zhu, Ziwei Zhang, Peng Cui, and Wenwu Zhu. Robust graph convolutional networks against adversarial attacks. In KDD’19, pages 1399–1407, 2019."
+}, {
+    "id": "tagcn_at",
+    "name": "TAGCN",
+    "ref": "Jian Du, Shanghang Zhang, Guanhang Wu, José MF Moura, and Soummya Kar. Topology adaptive graph convolutional networks. arXiv preprint arXiv:1710.10370, 2017."
+}, {
+    "id": "sgcn_ln",
+    "name": "SGCN",
+    "ref": "Felix Wu, Amauri Souza, Tianyi Zhang, Christopher Fifty, Tao Yu, and Kilian Weinberger Simplifying graph convolutional networks. In ICML’19, pages 6861–6871. PMLR, 2019."
+}, {
+    "id": "tagcn",
+    "name": "TAGCN",
+    "ref": "Jian Du, Shanghang Zhang, Guanhang Wu, José MF Moura, and Soummya Kar. Topology adaptive graph convolutional networks. arXiv preprint arXiv:1710.10370, 2017."
+}, {
+    "id": "tagcn_ln",
+    "name": "TAGCN",
+    "ref": "Jian Du, Shanghang Zhang, Guanhang Wu, José MF Moura, and Soummya Kar. Topology adaptive graph convolutional networks. arXiv preprint arXiv:1710.10370, 2017."
+}, {
+    "id": "robustgcn",
+    "name": "RobustGCN",
+    "ref": "Dingyuan Zhu, Ziwei Zhang, Peng Cui, and Wenwu Zhu. Robust graph convolutional networks against adversarial attacks. In KDD’19, pages 1399–1407, 2019."
+}, {
+    "id": "gin_ln",
+    "name": "GIN",
+    "ref": "Keyulu Xu, Weihua Hu, Jure Leskovec, and Stefanie Jegelka. How powerful are graph neural networks? In ICLR’18, 2018."
+}, {
+    "id": "gatguard",
+    "name": "GATGuard",
+    "refs": [
+        "Xiang Zhang and Marinka Zitnik. Gnnguard: Defending graph neural networks against adversarial attacks. arXiv preprint arXiv:2006.08149, 2020.",
+        "Petar Velickovic, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Liò, and Yoshua Bengio. Graph attention networks. In ICLR’18, 2018."
+    ]
+}, {
+    "id": "gcn_ln_at",
+    "name": "GCN",
+    "ref": "Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907, 2016."
+}, {
+    "id": "gin_at",
+    "name": "GIN",
+    "ref": "Keyulu Xu, Weihua Hu, Jure Leskovec, and Stefanie Jegelka. How powerful are graph neural networks? In ICLR’18, 2018."
+}, {
+    "id": "appnp_ln",
+    "name": "APPNP",
+    "ref": "Johannes Klicpera, Aleksandar Bojchevski, and Stephan Günnemann. Predict then propagate:366Graph neural networks meet personalized pagerank.arXiv preprint arXiv:1810.05997, 2018."
+}, {
+    "id": "gcn_ln",
+    "name": "GCN",
+    "ref": "Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907, 2016."
+}, {
+    "id": "graphsage_at",
+    "name": "GraphSage",
+    "ref": "Will Hamilton, Zhitao Ying, and Jure Leskovec. Inductive representation learning on large graphs. In NeurIPS’17, pages 1024–1034, 2017."
+}, {
+    "id": "gcnguard",
+    "name": "GCNGuard",
+    "refs": [
+        "Xiang Zhang and Marinka Zitnik. Gnnguard: Defending graph neural networks against adversarial attacks. arXiv preprint arXiv:2006.08149, 2020.",
+        "Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907, 2016."
+    ]
+}, {
+    "id": "gat_ln",
+    "name": "GAT",
+    "ref": "Petar Velickovic, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Liò, and Yoshua Bengio. Graph attention networks. In ICLR’18, 2018."
+}, {
+    "id": "gin",
+    "name": "GIN",
+    "ref": "Keyulu Xu, Weihua Hu, Jure Leskovec, and Stefanie Jegelka. How powerful are graph neural networks? In ICLR’18, 2018."
+}, {
+    "id": "graphsage_ln",
+    "name": "GraphSage",
+    "ref": "Will Hamilton, Zhitao Ying, and Jure Leskovec. Inductive representation learning on large graphs. In NeurIPS’17, pages 1024–1034, 2017."
+}, {
+    "id": "gat",
+    "name": "GAT",
+    "ref": "Petar Velickovic, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro Liò, and Yoshua Bengio. Graph attention networks. In ICLR’18, 2018."
+}, {
+    "id": "gcn_at",
+    "name": "GCN",
+    "ref": "Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907, 2016."
+}, {
+    "id": "sgcn_at",
+    "name": "SGCN",
+    "ref": "Felix Wu, Amauri Souza, Tianyi Zhang, Christopher Fifty, Tao Yu, and Kilian Weinberger Simplifying graph convolutional networks. In ICML’19, pages 6861–6871. PMLR, 2019."
+}, {
+    "id": "appnp",
+    "name": "APPNP",
+    "ref": "Johannes Klicpera, Aleksandar Bojchevski, and Stephan Günnemann. Predict then propagate:366Graph neural networks meet personalized pagerank.arXiv preprint arXiv:1810.05997, 2018."
+}, {
+    "id": "graphsage",
+    "name": "GraphSage",
+    "ref": "Will Hamilton, Zhitao Ying, and Jure Leskovec. Inductive representation learning on large graphs. In NeurIPS’17, pages 1024–1034, 2017."
+}, {
+    "id": "gcn",
+    "name": "GCN",
+    "ref": "Thomas N Kipf and Max Welling. Semi-supervised classification with graph convolutional networks. arXiv preprint arXiv:1609.02907, 2016."
+}, {
+    "id": "appnp_at",
+    "name": "APPNP",
+    "ref": "Johannes Klicpera, Aleksandar Bojchevski, and Stephan Günnemann. Predict then propagate:366Graph neural networks meet personalized pagerank.arXiv preprint arXiv:1810.05997, 2018."
+}, {
+    "id": "sgcn",
+    "name": "SGCN",
+    "ref": "Felix Wu, Amauri Souza, Tianyi Zhang, Christopher Fifty, Tao Yu, and Kilian Weinberger Simplifying graph convolutional networks. In ICML’19, pages 6861–6871. PMLR, 2019."
+}, {
+    "id": "gcnsvd",
+    "name": "GCNSVD"
+}]
