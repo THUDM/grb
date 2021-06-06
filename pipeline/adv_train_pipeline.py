@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_dir", type=str, default="../data/grb-cora/")
     parser.add_argument("--model_dir", type=str, default="../saved_models/grb-cora/")
     parser.add_argument("--config_dir", type=str, default="./grb-cora")
-    parser.add_argument("--model", type=str, default=None)
+    parser.add_argument("--model", nargs='+', default=None)
     parser.add_argument("--save_name", type=str, default="checkpoint.pt")
     parser.add_argument("--early_stop", action='store_true')
     parser.add_argument("--lr_scheduler", action='store_true')
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         args.feat_lim_max = features.max()
 
     if args.model is not None:
-        model_list = [args.model]
+        model_list = args.model
     else:
         model_list = config.model_list
 

@@ -141,6 +141,10 @@ if __name__ == '__main__':
         result_df[name] = pd.to_numeric(result_df[name] * 100,
                                         errors='ignore').map('{:,.2f}'.format)
     if args.save_dir is not None:
+        result_dict.update(eval_dict)
+        utils.save_dict_to_json(result_dict=result_dict,
+                                file_dir=args.save_dir,
+                                file_name="{}.json".format(args.dataset))
         utils.save_df_to_xlsx(df=result_df,
                               file_dir=args.save_dir,
                               file_name="{}.xlsx".format(args.dataset),
