@@ -2,8 +2,6 @@
 
 Graph Robustness Benchmark (GRB) is a scalable, unified, extendable benchmark for evaluating the adversarial robustness of graph neural networks.
 
-![process](./figures/process.png)
-
 ## Installation
 
 ```
