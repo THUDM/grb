@@ -44,7 +44,7 @@ class TAGConv(nn.Module):
 
 class TAGCN(nn.Module):
     def __init__(self, in_features, out_features, hidden_features, k, activation=F.leaky_relu,
-                 layer_norm=True, dropout=True):
+                 layer_norm=False, dropout=True):
         super(TAGCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
