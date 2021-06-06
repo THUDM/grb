@@ -175,6 +175,8 @@ def download(url, save_path):
 
 
 def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, verbose=True):
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
     df = pd.DataFrame(result_dict, index=[index])
     df.to_excel(os.path.join(file_dir, file_name), index=True)
     if verbose:
@@ -182,18 +184,24 @@ def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, v
 
 
 def save_df_to_xlsx(df, file_dir, file_name="result.xlsx", verbose=False):
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
     df.to_excel(os.path.join(file_dir, file_name), index=True)
     if verbose:
         print(df)
 
 
 def save_df_to_csv(df, file_dir, file_name="result.csv", verbose=False):
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
     df.to_csv(os.path.join(file_dir, file_name), index=True)
     if verbose:
         print(df)
 
 
 def save_dict_to_json(result_dict, file_dir, file_name, verbose=False):
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
     with open(os.path.join(file_dir, file_name), 'w') as f:
         json.dump(result_dict, f)
         if verbose:
