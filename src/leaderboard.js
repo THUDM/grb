@@ -40,8 +40,8 @@ function renderModelHeader(model_id, updateDrawer) {
     const inner = <a onClick={() => updateDrawer(convertModelDataToDrawerData(model_id))}>{model.name}</a>
     return <div>
         {inner}
-        {layer_norm && <Tooltip title="Layer Normalization"><span className="model-header-badge" style={{color: '#1890ff'}}>+LN</span></Tooltip>}
-        {adversarial_training && <Tooltip title="Adversarial Training"><span className="model-header-badge" style={{color: '#ff9c6e'}}>+AT</span></Tooltip>}
+        {layer_norm && <Tooltip title="Layer Normalization"><sub className="model-header-badge" style={{color: '#1890ff'}}>+LN</sub></Tooltip>}
+        {adversarial_training && <Tooltip title="Adversarial Training"><sub className="model-header-badge" style={{color: '#ff9c6e'}}>+AT</sub></Tooltip>}
     </div>
 }
 
@@ -61,25 +61,20 @@ function convertModelDataToDrawerData(model_id) {
     return renderDrawer(model.id.split('_')[0].toUpperCase(), refs)
 }
 
-export function fetchLeaderboard() {
-    return fetch(`https://raw.githubusercontent.com/Stanislas0/grb/results/leaderboard.json?token=ADK6VYJ3MU26KVKUN3DS6HDAYL2DC`)
-        .then(resp => resp.json())
-}
-
 export function getTableColumns(configs, updateDrawer) {
-    const {levels, models, modelsSummary} = configs
-    const width = configs.width || 140
+    const {difficulties, models, modelsSummary} = configs
+    const width = configs.width || 120
     return [{
         title: "Rank",
         // colSpan: 3,
         fixed: 'left',
         align: 'center',
-        width: 100,
+        width: 60,
         render: (value, row, index) => {
             if (!row.isFirstRow) return {props: {rowSpan: 0, colSpan: 0}}
             else {
-                if (row.rank === 0) return {children: <b>{renderSummaryCell(row.attack, 'attack')}</b>, props: {rowSpan: levels.length, colSpan: 2}}
-                else return {children: <b>{row.rank}</b>, props: {rowSpan: levels.length, colSpan: 1}}
+                if (row.rank === 0) return {children: <b>{renderSummaryCell(row.attack, 'attack')}</b>, props: {rowSpan: difficulties.length, colSpan: 2}}
+                else return {children: <b>{row.rank}</b>, props: {rowSpan: difficulties.length, colSpan: 1}}
             }
         }
     }, {
@@ -87,7 +82,7 @@ export function getTableColumns(configs, updateDrawer) {
         // colSpan: 0,
         fixed: 'left',
         align: 'center',
-        width: 100,
+        width: 75,
         render: (value, row, index) => {
             if (!row.isFirstRow) return {props: {rowSpan: 0, colSpan: 0}}
             else {
@@ -96,7 +91,7 @@ export function getTableColumns(configs, updateDrawer) {
                     children: <a className="table-attack-header" onClick={() => updateDrawer(convertAttackDataToDrawerData(row.attack))}>
                         <b>{row.attack.toUpperCase()}</b>
                     </a>,
-                    props: {rowSpan: levels.length, colSpan: 1}}
+                    props: {rowSpan: difficulties.length, colSpan: 1}}
             }
         }
     }, {
@@ -104,10 +99,10 @@ export function getTableColumns(configs, updateDrawer) {
         // colSpan: 0,
         fixed: 'left',
         align: 'center',
-        width: 100,
+        width: 80,
         render: (value, row, index) => {
-            return {children: <b>{_.capitalize(row.level)}</b>, props: {rowSpan: 1, colSpan: 1}}
-            // return {children: <a href={`#level-chart:${row.level}`}>{_.capitalize(row.level)}</a>, props: {rowSpan: 1, colSpan: 1}}
+            return {children: <b>{_.capitalize(row.difficulty)}</b>, props: {rowSpan: 1, colSpan: 1}}
+            // return {children: <a href={`#difficulty-chart:${row.difficulty}`}>{_.capitalize(row.difficulty)}</a>, props: {rowSpan: 1, colSpan: 1}}
         }
     }, {
         title: "Models",
@@ -119,7 +114,8 @@ export function getTableColumns(configs, updateDrawer) {
                 align: 'center',
                 width,
                 render: (value, row, index) => {
-                    return row.bold.indexOf(model) >= 0 ? <b>{value}</b> : value
+                    const inner = <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
+                    return row.bold.indexOf(model) >= 0 ? <b>{inner}</b> : inner
                 }
             }
         })
@@ -131,45 +127,47 @@ export function getTableColumns(configs, updateDrawer) {
             align: 'center',
             width,
             render: (value, row, index) => {
-                return row.bold.indexOf(model) >= 0 ? <b>{value}</b> : value
+                const inner = <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
+                return row.bold.indexOf(model) >= 0 ? <b>{inner}</b> : inner
             }
         }
     }))
 }
 
 export function getTableItems(data, configs) {
-    const {attacks, attacksSummary, models, modelsSummary, levels} = configs
+    const {attacks, attacksSummary, models, modelsSummary, difficulties} = configs
     const bestModelScore = {}
-    attacksSummary.forEach(attackSummary => levels.forEach(level => {
+    attacksSummary.forEach(attackSummary => difficulties.forEach(difficulty => {
         let best = 0
-        models.forEach(model => best = Math.max(best, data[attackSummary][level][model]))
+        models.forEach(model => best = Math.max(best, data[attackSummary][difficulty][model].mean))
         if (!bestModelScore[attackSummary]) bestModelScore[attackSummary] = {}
-        bestModelScore[attackSummary][level] = best
+        bestModelScore[attackSummary][difficulty] = best
     }))
     const bestAttackScore = {}
-    levels.forEach(level => modelsSummary.forEach(modelSummary => {
-        let best = 1
-        attacks.forEach(attack => best = Math.min(best, data[attack][level][modelSummary]))
-        if (!bestAttackScore[level]) bestAttackScore[level] = {}
-        bestAttackScore[level][modelSummary] = best
+    difficulties.forEach(difficulty => modelsSummary.forEach(modelSummary => {
+        let best = 100
+        attacks.forEach(attack => best = Math.min(best, data[attack][difficulty][modelSummary].mean))
+        if (!bestAttackScore[difficulty]) bestAttackScore[difficulty] = {}
+        bestAttackScore[difficulty][modelSummary] = best
     }))
 
     const items = _.flatMap(attacks.concat(attacksSummary), atk => {
-        return levels.map((level, lid) => {
+        return difficulties.map((difficulty, lid) => {
             let item = {
                 'attack': atk,
                 'rank': attacks.indexOf(atk) + 1,
-                'level': level,
+                'difficulty': difficulty,
                 'isFirstRow': lid === 0,
                 'bold': []
             }
             models.concat(modelsSummary).forEach(m => {
-                if (data[atk][level][m]) item[m] = data[atk][level][m].toFixed(4)
-                else item[m] = '-'
+                item[m] = data[atk][difficulty][m]
+                // if (data[atk][difficulty][m].mean) item[m] = data[atk][difficulty][m].mean.toFixed(2)
+                // else item[m] = '-'
                 if (attacksSummary.indexOf(atk) >= 0 && models.indexOf(m) >= 0) {
-                    if (data[atk][level][m] === bestModelScore[atk][level]) item['bold'].push(m)
+                    if (data[atk][difficulty][m].mean === bestModelScore[atk][difficulty]) item['bold'].push(m)
                 } else if (attacks.indexOf(atk) >= 0 && modelsSummary.indexOf(m) >= 0) {
-                    if (data[atk][level][m] === bestAttackScore[level][m]) item['bold'].push(m)
+                    if (data[atk][difficulty][m].mean === bestAttackScore[difficulty][m]) item['bold'].push(m)
                 }
             })
             return item
@@ -180,7 +178,7 @@ export function getTableItems(data, configs) {
 
 export function getTableSelection(key, leaderboard, configs, setConfigs) {
     return <div className="table-config">
-        <div style={{width: 100}}><Title level={5}>{(key === 'levels') ? 'Difficulty' : _.capitalize(key)}:</Title></div>
+        <div style={{width: 100}}><Title level={5}>{(key === 'difficulties') ? 'Difficulty' : _.capitalize(key)}:</Title></div>
         <div className="selection-box">
         {leaderboard[key] && <Select mode="multiple" value={configs[key]} onChange={(value) => {
             const newConfigs = _.clone(configs)
@@ -189,16 +187,48 @@ export function getTableSelection(key, leaderboard, configs, setConfigs) {
         }} style={{width: '100%', marginLeft: 10}}>
             {leaderboard[key].map(v => <Option key={v}>{
                 (key === 'attacks') ? v.toUpperCase() :
-                (key === 'levels') ? _.capitalize(v) : v}</Option>)}
+                (key === 'difficulties') ? _.capitalize(v) : v}</Option>)}
         </Select>}
         </div>
     </div>
 }
 
-export function getChart(data, level, configs) {
+export function getAttackChart(data, difficulties, summary, configs) {
+    const {attacks} = configs
+    let barData = _.flatMap(attacks, atk => difficulties.map(difficulty => {
+        return { label: atk.toUpperCase(), type: difficulty, value: parseFloat(data[atk][difficulty][summary].mean.toFixed(2)) }
+    }))
+    return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
+        label={{
+            position: "middle",
+            layout: [
+                { type: 'interval-adjust-position' },
+                { type: 'interval-hide-overlap' },
+                { type: 'adjust-color' },
+            ]
+    }}/>
+}
+
+export function getDefenceChart(data, difficulties, summary, configs) {
+    const {models} = configs
+    let barData = _.flatMap(models, model => difficulties.map(difficulty => {
+        return { label: model, type: difficulty, value: parseFloat(data[summary][difficulty][model].mean.toFixed(2)) }
+    }))
+    return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
+        label={{
+            position: "middle",
+            layout: [
+                { type: 'interval-adjust-position' },
+                // { type: 'interval-hide-overlap' },
+                { type: 'adjust-color' },
+            ]
+    }}/>
+}
+
+export function getChart(data, difficulty, configs) {
     const {attacks, modelsSummary} = configs
     let barData = _.flatMap(attacks, atk => modelsSummary.map(modelSummary => {
-        return { label: atk.toUpperCase(), type: modelSummary, value: parseFloat(data[atk][level][modelSummary].toFixed(4)) }
+        return { label: atk.toUpperCase(), type: modelSummary, value: parseFloat(data[atk][difficulty][modelSummary].mean.toFixed(2)) }
     }))
     return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
         label={{

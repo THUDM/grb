@@ -1,0 +1,104 @@
+[{
+    "dataset": "cora",
+    "type": "academic networks",
+    "scale": "small",
+    "nodes": 2680,
+    "edges": 5148,
+    "features": 302,
+    "classes": 7,
+    "avg_degree": 3.84,
+    "avg_degrees": {
+        "easy": 1.53,
+        "medium": 2.96,
+        "hard": 5.23,
+        "full": 3.24
+    },
+    "feature_range": [-2.30, 2.40],
+    "feature_range_arctan_norm": [-0.94, 0.94],
+    "description": "The Cora dataset consists of 2708 scientific publications classified into one of seven classes. The citation network consists of 5429 links. Each publication in the dataset is described by a 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
+    "link": "https://relational.fit.cvut.cz/dataset/CORA",
+    "refs": [{
+        "mla": "McCallum, Andrew Kachites, et al. \"Automating the construction of internet portals with machine learning.\" Information Retrieval 3.2 (2000): 127-163.",
+        "url": "http://www-2.cs.cmu.edu/~knigam/papers/cora-jnl.pdf"
+    }]
+}, {
+    "dataset": "citeseer",
+    "type": "academic networks",
+    "scale": "small",
+    "nodes": 3191,
+    "edges": 4172,
+    "features": 768,
+    "classes": 6,
+    "avg_degree": 2.61,
+    "avg_degrees": {
+        "easy": 1.01,
+        "medium": 1.74,
+        "hard": 3.82,
+        "full": 2.19
+    },
+    "feature_range": [-4.55, 1.67],
+    "feature_range_arctan_norm": [-0.96, 0.89],
+    "description": "The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. The citation network consists of 4732 links. Each publication in the dataset is described by a 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
+    "link": "https://linqs.soe.ucsc.edu/data",
+    "refs": [{
+        "mla": "Giles, C. Lee, Kurt D. Bollacker, and Steve Lawrence. \"CiteSeer: An automatic citation indexing system.\" Proceedings of the third ACM conference on Digital libraries. 1998.",
+        "url": "https://clgiles.ist.psu.edu/pubs/DL98citeseer.pdf"
+    }]
+}, {
+    "dataset": "flickr",
+    "type": "social networks",
+    "scale": "medium",
+    "nodes": 89250,
+    "edges": 449878,
+    "features": 500,
+    "classes": 7,
+    "avg_degree": 10.08,
+    "avg_degrees": {
+        "easy": 5.00,
+        "medium": 6.02,
+        "hard": 11.03,
+        "full": 7.35
+    },
+    "feature_range": [-0.90, 269.96],
+    "feature_range_arctan_norm": [-0.47, 1.00]
+}, {
+    "dataset": "reddit",
+    "type": "social networks",
+    "scale": "large",
+    "nodes": 232965,
+    "edges": 11606919,
+    "features": 602,
+    "classes": 41,
+    "avg_degree": 99.65,
+    "avg_degrees": {
+        "easy": 29.23,
+        "medium": 68.36,
+        "hard": 150.99,
+        "full": 82.86
+    },
+    "feature_range": [-28.19, 120.96],
+    "feature_range_arctan_norm": [-0.98, 0.99],
+    "description": "The Reddit dataset is a graph dataset from Reddit posts made in the month of September, 2014. The node label in this case is the community, or “subreddit”, that a post belongs to. 50 large communities have been sampled to build a post-to-post graph, connecting posts if the same user comments on both. In total this dataset contains 232,965 posts with an average degree of 492. The first 20 days are used for training and the remaining days for testing (with 30% used for validation). For features, off-the-shelf 300-dimensional GloVe CommonCrawl word vectors are used.",
+    "link": "http://snap.stanford.edu/graphsage/",
+    "refs": [{
+        "mla": "Hamilton, William L., Rex Ying, and Jure Leskovec. \"Inductive representation learning on large graphs.\" arXiv preprint arXiv:1706.02216 (2017).",
+        "url": "https://www-cs-faculty.stanford.edu/people/jure/pubs/graphsage-nips17.pdf"
+    }]
+}, {
+    "dataset": "aminer",
+    "type": "academic networks",
+    "scale": "large",
+    "nodes": 659574,
+    "edges": 2878577,
+    "features": 100,
+    "classes": 18,
+    "avg_degree": 8.73,
+    "avg_degrees": {
+        "easy": 1.99,
+        "medium": 5.12,
+        "hard": 13.25,
+        "full": 6.79
+    },
+    "feature_range": [-1.74, 1.62],
+    "feature_range_arctan_norm": [-0.93, 0.93]
+}]

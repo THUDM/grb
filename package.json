@@ -2,7 +2,7 @@
   "name": "create-react-app-antd",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "/grb/",
   "dependencies": {
     "@ant-design/charts": "^1.1.8",
     "@craco/craco": "^5.6.4",
@@ -16,7 +16,10 @@
     "react-dom": "^16.13.1",
     "react-markdown": "^6.0.2",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.3"
+    "react-scripts": "3.4.3",
+    "react-syntax-highlighter": "^15.4.3",
+    "rehype-highlight": "^4.1.0",
+    "remark-gfm": "^1.0.0"
   },
   "scripts": {
     "start": "craco start",

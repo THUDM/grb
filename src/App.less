@@ -1,116 +1,52 @@
 @import '~antd/dist/antd.less';
 
-.logo {
-  float: left;
-  padding: 0 24px;
-  font-size: 18px;
-  // background: rgba(255, 255, 255, 0.2);
-  color: white;
+body {
+  overflow-y: scroll;
 }
 
-.home {
-  max-width: 1080px;
-}
-.desc {
+.site-layout {
+  padding: 0 50px;
+  margin-top: 64px;
+  min-height: calc(100vh - 134px);
   display: flex;
   justify-content: center;
-}
-
-.site-layout .site-layout-background {
-  background: #fff;
+  align-items: center;
 }
 
 .App {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+h1 {
+  font-size: 32px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+h2 {
+  font-size: 28px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.features {
-  display: flex;
-  margin: 20px 0;
-}
-
-.app-home-feature {
-  flex: 1 1 0;
-  margin-top: 10px;
-  padding: 15px;
-}
-
-.app-home-feature .header {
-  text-align: center;
+h3 {
   font-size: 24px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid gray;
-  margin-bottom: 10px;
-}
-.app-home-feature .icon {
-  line-height: 1;
 }
 
-.app-home-feature .header .iconfont {
-  font-size: 40px;
+h4 {
+  font-size: 20px;
 }
 
-.docs {
-  max-width: 720px;
-}
-
-.app-home-feature .content {
+p {
   font-size: 16px;
-  margin: 10px 10px;
 }
 
-.table-config {
-  display: flex;
-  // justify-content: center;
-  align-items: center;
-  margin: 10px;
+li {
+  font-size: 16px;
 }
 
-.selection-box {
-  width: 100%;
+.app-container {
+  max-width: 1080px;
+  margin: 50px 40px;
 }
 
-.model-header-badge {
-  font-size: 8px;
-  position: relative;
-  bottom: 7px;
-}
-
-.model-header-badge:hover {
-  cursor: pointer;
+.app-footer {
+  text-align: center;
+  color: #888;
 }
