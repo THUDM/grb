@@ -12,6 +12,7 @@
     "antd": "^4.5.2",
     "craco-less": "^1.17.0",
     "lodash": "^4.17.21",
+    "mathjs": "^9.4.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-markdown": "^6.0.2",

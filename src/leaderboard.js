@@ -4,6 +4,7 @@ import _ from "lodash";
 import { Bar } from '@ant-design/charts';
 import AttacksData from './attacks.json';
 import ModelsData from './models.json';
+import { std, sum, min, max } from 'mathjs';
 
 const { Option } = Select;
 const { Title, Paragraph } = Typography;
@@ -62,11 +63,10 @@ function convertModelDataToDrawerData(model_id) {
 }
 
 export function getTableColumns(configs, updateDrawer) {
-    const {difficulties, models, modelsSummary} = configs
+    const {difficulties, models} = configs
     const width = configs.width || 120
     return [{
         title: "Rank",
-        // colSpan: 3,
         fixed: 'left',
         align: 'center',
         width: 60,
@@ -79,7 +79,6 @@ export function getTableColumns(configs, updateDrawer) {
         }
     }, {
         title: "Attack",
-        // colSpan: 0,
         fixed: 'left',
         align: 'center',
         width: 75,
@@ -96,13 +95,11 @@ export function getTableColumns(configs, updateDrawer) {
         }
     }, {
         title: "Difficulty",
-        // colSpan: 0,
         fixed: 'left',
         align: 'center',
         width: 80,
         render: (value, row, index) => {
             return {children: <b>{_.capitalize(row.difficulty)}</b>, props: {rowSpan: 1, colSpan: 1}}
-            // return {children: <a href={`#difficulty-chart:${row.difficulty}`}>{_.capitalize(row.difficulty)}</a>, props: {rowSpan: 1, colSpan: 1}}
         }
     }, {
         title: "Models",
@@ -119,7 +116,7 @@ export function getTableColumns(configs, updateDrawer) {
                 }
             }
         })
-    }].concat(modelsSummary.map(model => {
+    }].concat(['average', '3-max', 'weighted'].map(model => {
         return {
             title: renderSummaryCell(model, 'model'),
             dataIndex: model,
@@ -127,6 +124,7 @@ export function getTableColumns(configs, updateDrawer) {
             align: 'center',
             width,
             render: (value, row, index) => {
+                if (value === undefined) return '-'
                 const inner = <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
                 return row.bold.indexOf(model) >= 0 ? <b>{inner}</b> : inner
             }
@@ -134,8 +132,73 @@ export function getTableColumns(configs, updateDrawer) {
     }))
 }
 
+function weightedFunc(arr) {
+    return sum(arr.map((v, i) => v / (i + 1) / (i + 1))) / sum(arr.map((v, i) => 1 / (i + 1) / (i + 1)))
+}
+
+export function recalculateData(data, configs, difficulties) {
+    const {attacks, models} = configs
+    difficulties.forEach(difficulty => {
+        // calculate modelsSummary
+        attacks.forEach(atk => {
+            const modelScores = models.map(m => data[atk][difficulty][m])
+            const size = min(modelScores.map(s => s.values.length))
+            let averageValues = []
+            let threeMaxValues = []
+            let weightedValues = []
+            _.range(size).forEach(i => {
+                const _modelValues = modelScores.map(s => s.values[i])
+                _modelValues.sort((a, b) => b - a)
+                averageValues.push(_.mean(_modelValues))
+                threeMaxValues.push(_.mean(_modelValues.slice(0, 3)))
+                weightedValues.push(weightedFunc(_modelValues))
+            });
+            [['average', averageValues], ['3-max', threeMaxValues], ['weighted', weightedValues]].forEach(tup => {
+                const m = tup[0]
+                const values = tup[1]
+                if (!data[atk]) data[atk] = {}
+                if (!data[atk][difficulty]) data[atk][difficulty] = {}
+                data[atk][difficulty][m] = {
+                    'values': values,
+                    'mean': _.mean(values),
+                    'std': std(values)
+                }
+            })
+        })
+        // calculate attacksSummary
+        models.forEach(m => {
+            const attackScores = attacks.map(atk => data[atk][difficulty][m])
+            const size = min(attackScores.map(s => s.values.length))
+            let averageValues = []
+            let threeMinValues = []
+            let weightedValues = []
+            _.range(size).forEach(i => {
+                const _attackValues = attackScores.map(s => s.values[i])
+                _attackValues.sort((a, b) => a - b)
+                averageValues.push(_.mean(_attackValues))
+                threeMinValues.push(_.mean(_attackValues.slice(0, 3)))
+                weightedValues.push(weightedFunc(_attackValues))
+            });
+            [['average', averageValues], ['3-min', threeMinValues], ['weighted', weightedValues]].forEach(tup => {
+                const atk = tup[0]
+                const values = tup[1]
+                if (!data[atk]) data[atk] = {}
+                if (!data[atk][difficulty]) data[atk][difficulty] = {}
+                data[atk][difficulty][m] = {
+                    'values': values,
+                    'mean': _.mean(values),
+                    'std': std(values)
+                }
+            })
+        })
+    })
+    return data
+}
+
 export function getTableItems(data, configs) {
-    const {attacks, attacksSummary, models, modelsSummary, difficulties} = configs
+    const {attacks, models, difficulties} = configs
+    const attacksSummary = ['no_attack', 'average', '3-min', 'weighted']
+    const modelsSummary = ['average', '3-max', 'weighted']
     const bestModelScore = {}
     attacksSummary.forEach(attackSummary => difficulties.forEach(difficulty => {
         let best = 0
@@ -162,8 +225,6 @@ export function getTableItems(data, configs) {
             }
             models.concat(modelsSummary).forEach(m => {
                 item[m] = data[atk][difficulty][m]
-                // if (data[atk][difficulty][m].mean) item[m] = data[atk][difficulty][m].mean.toFixed(2)
-                // else item[m] = '-'
                 if (attacksSummary.indexOf(atk) >= 0 && models.indexOf(m) >= 0) {
                     if (data[atk][difficulty][m].mean === bestModelScore[atk][difficulty]) item['bold'].push(m)
                 } else if (attacks.indexOf(atk) >= 0 && modelsSummary.indexOf(m) >= 0) {
@@ -203,7 +264,6 @@ export function getAttackChart(data, difficulties, summary, configs) {
             position: "middle",
             layout: [
                 { type: 'interval-adjust-position' },
-                { type: 'interval-hide-overlap' },
                 { type: 'adjust-color' },
             ]
     }}/>
@@ -219,7 +279,6 @@ export function getDefenceChart(data, difficulties, summary, configs) {
             position: "middle",
             layout: [
                 { type: 'interval-adjust-position' },
-                // { type: 'interval-hide-overlap' },
                 { type: 'adjust-color' },
             ]
     }}/>
