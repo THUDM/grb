@@ -11,33 +11,39 @@ import {
 import { getAttackChart, getDefenceChart, getTableColumns, getTableItems, getTableSelection, recalculateData } from './leaderboard'
 import _ from 'lodash'
 import { useParams } from 'react-router'
+import configurations from './configurations'
 
 const { Title } = Typography
 
 export const AppLeaderboard = () => {
     const { dataset } = useParams()
     const [leaderboard, setLeaderboard] = useState({ updated_time: null, data: {}, attacks: [], models: [], difficulties: [] })
-    const [configs, setConfigs] = useState({ difficulties: [], attacks: [], models: [] })
+    const [configs, setConfigs] = useState({ difficulties: [], attacks: [], models: [], AttacksData: [], ModelsData: [] })
     const [loading, setLoading] = useState(false)
     const [drawerData, setDrawerData] = useState(undefined)
     useEffect(() => {
         setLoading(true)
-        fetch(`${process.env.PUBLIC_URL}/leaderboards/${dataset}.json`)
-            .then(resp => resp.json()).then(lb => {
-                setLeaderboard(lb)
-                setConfigs({
-                    difficulties: ['full'], //_.clone(lb.difficulties),
-                    attacks: _.clone(lb.attacks.slice(0, 5)),
-                    models: _.clone(lb.models.slice(0, 10))
-                })
-                setLoading(false)
+        Promise.all([
+            fetch(`${configurations.GITHUB_PROXY_URL}/results/leaderboards/${dataset}.json`).then(resp => resp.json()),
+            fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/attacks.json`).then(resp => resp.json()),
+            fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/models.json`).then(resp => resp.json()),
+        ]).then(data => {
+            const lb = data[0], AttacksData = data[1], ModelsData = data[2]
+            setLeaderboard(lb)
+            setConfigs({
+                difficulties: ['full'],
+                attacks: _.clone(lb.attacks.slice(0, 5)),
+                models: _.clone(lb.models.slice(0, 10)),
+                AttacksData, ModelsData
             })
+            setLoading(false)
+        })
     }, [dataset])
     const columns = getTableColumns(configs, setDrawerData)
     const data = recalculateData(leaderboard.data, configs, leaderboard.difficulties)
     const items = getTableItems(data, configs)
     return <div className="app-leaderboard app-container" style={{ width: '100%', paddingTop: 30, paddingBottom: 30 }}>
-        <Title style={{ textAlign: 'center' }}>{_.capitalize(dataset)} Challenge</Title>
+        <Title style={{ textAlign: 'center' }}>{dataset === 'aminer' ? 'AMiner' : _.capitalize(dataset)} Challenge</Title>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Leaderboard</Divider>
         <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ x: 1300, y: '80vh' }} />
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Configurations</Divider>

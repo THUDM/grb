@@ -14,6 +14,10 @@ export const AppHeader = ({history}) => {
         <div className="logo">Graph Robustness Benchmark</div>
         <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['home']} selectedKeys={[key]} style={{float: 'right'}}>
           <Menu.Item key="home" onClick={() => history.push('/home')}>Home</Menu.Item>
+          <SubMenu key="intro" title="Intro" popupOffset={[-20,-2]}>
+            <Menu.Item key="get_started" onClick={() => history.push(`/intro/get_started`)}>Get Started</Menu.Item>
+            <Menu.Item key="rules" onClick={() => history.push(`/intro/rules`)}>Rules</Menu.Item>
+          </SubMenu>
           <Menu.Item key="docs" onClick={() => history.push('/docs')}>Docs</Menu.Item>
           <Menu.Item key="datasets" onClick={() => history.push('/datasets')}>Datasets</Menu.Item>
           <SubMenu key="leaderboard" title="Leaderboard" popupOffset={[-20,-2]}>

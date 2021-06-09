@@ -2,8 +2,6 @@ import React from 'react';
 import { Badge, Select, Typography, Tooltip } from "antd";
 import _ from "lodash";
 import { Bar } from '@ant-design/charts';
-import AttacksData from './attacks.json';
-import ModelsData from './models.json';
 import { std, sum, min, max } from 'mathjs';
 
 const { Option } = Select;
@@ -24,21 +22,23 @@ function renderSummaryCell(summary, type) {
     }
 }
 
-function renderDrawer(title, refs) {
+function renderDrawer(title, refs, desc) {
     return {
         'title': <Title level={4}>{title}</Title>,
         'description': <div className="description">
+            {desc && <Title level={5}>Description</Title>}
+            {desc && <Paragraph>{desc}</Paragraph>}
             <Title level={5}>References</Title>
             {refs.map((ref, idx) => <Paragraph key={idx}>[{idx+1}] {ref}</Paragraph>)}
         </div>
     }
 }
 
-function renderModelHeader(model_id, updateDrawer) {
+function renderModelHeader(model_id, updateDrawer, ModelsData) {
     const model = ModelsData.find(model => model.id === model_id)
     const layer_norm = model_id.split('_').indexOf('ln') >= 0
     const adversarial_training = model_id.split('_').indexOf('at') >= 0
-    const inner = <a onClick={() => updateDrawer(convertModelDataToDrawerData(model_id))}>{model.name}</a>
+    const inner = <a onClick={() => updateDrawer(convertModelDataToDrawerData(model_id, ModelsData))}>{model.name}</a>
     return <div>
         {inner}
         {layer_norm && <Tooltip title="Layer Normalization"><sub className="model-header-badge" style={{color: '#1890ff'}}>+LN</sub></Tooltip>}
@@ -46,24 +46,24 @@ function renderModelHeader(model_id, updateDrawer) {
     </div>
 }
 
-function convertAttackDataToDrawerData(attack_id) {
+function convertAttackDataToDrawerData(attack_id, AttacksData) {
     const atk = AttacksData.find(atk => atk.id === attack_id)
     if (!atk) return undefined
     let refs = atk.refs || []
     if (atk.ref) refs.push(atk.ref)
-    return renderDrawer(atk.id.toUpperCase(), refs)
+    return renderDrawer(atk.id.toUpperCase(), refs, atk.desc || '')
 }
 
-function convertModelDataToDrawerData(model_id) {
+function convertModelDataToDrawerData(model_id, ModelsData) {
     const model = ModelsData.find(model => model.id === model_id)
     if (!model) return undefined
     let refs = model.refs || []
     if (model.ref) refs.push(model.ref)
-    return renderDrawer(model.id.split('_')[0].toUpperCase(), refs)
+    return renderDrawer(model.id.split('_')[0].toUpperCase(), refs, model.desc || '')
 }
 
 export function getTableColumns(configs, updateDrawer) {
-    const {difficulties, models} = configs
+    const {difficulties, models, AttacksData, ModelsData} = configs
     const width = configs.width || 120
     return [{
         title: "Rank",
@@ -87,7 +87,7 @@ export function getTableColumns(configs, updateDrawer) {
             else {
                 if (row.rank === 0) return {props: {rowSpan: 0, colSpan: 0}}
                 else return {
-                    children: <a className="table-attack-header" onClick={() => updateDrawer(convertAttackDataToDrawerData(row.attack))}>
+                    children: <a className="table-attack-header" onClick={() => updateDrawer(convertAttackDataToDrawerData(row.attack, AttacksData))}>
                         <b>{row.attack.toUpperCase()}</b>
                     </a>,
                     props: {rowSpan: difficulties.length, colSpan: 1}}
@@ -105,7 +105,7 @@ export function getTableColumns(configs, updateDrawer) {
         title: "Models",
         children: models.map(model => {
             return {
-                title: renderModelHeader(model, updateDrawer),
+                title: renderModelHeader(model, updateDrawer, ModelsData),
                 dataIndex: model,
                 key: model,
                 align: 'center',
@@ -257,7 +257,7 @@ export function getTableSelection(key, leaderboard, configs, setConfigs) {
 export function getAttackChart(data, difficulties, summary, configs) {
     const {attacks} = configs
     let barData = _.flatMap(attacks, atk => difficulties.map(difficulty => {
-        return { label: atk.toUpperCase(), type: difficulty, value: parseFloat(data[atk][difficulty][summary].mean.toFixed(2)) }
+        return { label: atk.toUpperCase(), type: _.capitalize(difficulty), value: parseFloat(data[atk][difficulty][summary].mean.toFixed(2)) }
     }))
     return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
         label={{
@@ -272,7 +272,7 @@ export function getAttackChart(data, difficulties, summary, configs) {
 export function getDefenceChart(data, difficulties, summary, configs) {
     const {models} = configs
     let barData = _.flatMap(models, model => difficulties.map(difficulty => {
-        return { label: model, type: difficulty, value: parseFloat(data[summary][difficulty][model].mean.toFixed(2)) }
+        return { label: model, type: _.capitalize(difficulty), value: parseFloat(data[summary][difficulty][model].mean.toFixed(2)) }
     }))
     return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
         label={{

@@ -1,16 +1,17 @@
 import './app-home.less'
 import React from 'react'
 import { Button, Typography } from 'antd'
-import Features from './features'
+import configurations from './configurations'
 import { ReactComponent as Logo } from './logo.svg'
 
 const { Title, Paragraph } = Typography;
+const { Features } = configurations;
 
 const AppHomeFeature = ({icon, title, description}) => (
     <div className="app-home-feature">
       <div className="header">
         <div className="icon"><i className={`iconfont icon-${icon}`}/></div>
-        <div>{title}</div>
+        <div className="title">{title}</div>
       </div>
       <div className="content">
         {description}
@@ -23,11 +24,11 @@ export const AppHome = ({history}) => (
     <Title className="title"><Logo/></Title>
     <div className="desc">
         <Paragraph className="para">
-            <b>Graph Robustness Benchmark (GRB)</b> focuses on evaluating the robustness of graph machine learning models, especially the adversarial robustness of Graph Neural Networks (GNNs).
+          <b>Graph Robustness Benchmark (GRB)</b> provides scalable, general, unified, and reproducible evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field.
         </Paragraph>
     </div>
     <div className="btn-group">
-        <Button className="btn" type="primary" size="large" onClick={() => history.push('leaderboard')}>Go to Leaderboard</Button>
+        <Button className="btn" type="primary" size="large" onClick={() => history.push('/intro/get_started')}>Quick Start</Button>
         <Button className="btn" size="large" onClick={() => history.push('docs')}>Read Documents</Button>
     </div>
     <div className="features">

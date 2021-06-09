@@ -8,6 +8,7 @@ import { AppDocs } from './app-docs'
 import { AppHome } from './app-home';
 import { AppLeaderboard } from './app-leaderboard';
 import { AppHeader } from './app-header';
+import { AppIntro } from './app-intro';
 
 const { Content, Footer } = Layout;
 
@@ -20,6 +21,7 @@ const App = () => (
       <Content className="site-layout">
         <Switch>
           <Route path="/home" render={({history}) => <AppHome history={history}/>}/>
+          <Route path="/intro/:entry" render={() => <AppIntro/>}/>
           <Route path="/docs" render={() => <AppDocs/>}/>
           <Route path="/datasets" render={() => <AppDatasets/>}/>
           <Route path="/leaderboard/:dataset" render={({history}) => <AppLeaderboard history={history}/>}/>
