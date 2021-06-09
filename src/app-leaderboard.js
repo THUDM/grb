@@ -45,7 +45,7 @@ export const AppLeaderboard = () => {
     return <div className="app-leaderboard app-container" style={{ width: '100%', paddingTop: 30, paddingBottom: 30 }}>
         <Title style={{ textAlign: 'center' }}>{dataset === 'aminer' ? 'AMiner' : _.capitalize(dataset)} Challenge</Title>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Leaderboard</Divider>
-        <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ x: 1300, y: '80vh' }} />
+        <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '80vh' }} />
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Configurations</Divider>
         {getTableSelection('attacks', leaderboard, configs, setConfigs)}
         {getTableSelection('models', leaderboard, configs, setConfigs)}

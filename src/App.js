@@ -23,7 +23,7 @@ const App = () => (
           <Route path="/home" render={({history}) => <AppHome history={history}/>}/>
           <Route path="/intro/:entry" render={() => <AppIntro/>}/>
           <Route path="/docs" render={() => <AppDocs/>}/>
-          <Route path="/datasets" render={() => <AppDatasets/>}/>
+          <Route path="/datasets" render={({history}) => <AppDatasets history={history}/>}/>
           <Route path="/leaderboard/:dataset" render={({history}) => <AppLeaderboard history={history}/>}/>
           <Route path="*"><Redirect to="/home"/></Route>
         </Switch>
