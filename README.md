@@ -1,13 +1,12 @@
-# Use antd in create-react-app ✨
+![Graph Robustness Benchmark](./public/logo.png)
 
-[Create React App](https://facebook.github.io/create-react-app/) + [Ant Design](https://ant.design).
+You can access the website of GRB [here](https://cogdl.ai/grb/).
 
-## Step by Step Documentation
+This website is created with [Create React App](https://facebook.github.io/create-react-app/) + [Ant Design](https://ant.design).
 
-- 🇺🇸 English: https://ant.design/docs/react/use-with-create-react-app
-- 🇨🇳 中文：https://ant.design/docs/react/use-with-create-react-app-cn
+## Develop
 
-## Preview
+If you want to develop the website of GRB, you need to install **npm** (**yarn** optional) first. Then run the following command.
 
 ```bash
 $ npm install
@@ -21,80 +20,13 @@ $ yarn
 $ yarn start
 ```
 
-## See more
+## Data
 
-- [antd](http://github.com/ant-design/ant-design/)
-- [create-react-app](https://github.com/facebookincubator/create-react-app)
-- [craco](https://github.com/gsoft-inc/craco)
-- [craco-less](https://github.com/DocSpring/craco-less)
+Currently, most of the metadata for models, attacks and datasets plus all the experiment results are retrieved from the branches on Github dynamically (though reverse proxied by cogdl since github sometimes gets blocked for users in China mainland). Therefore, if you only need to update the descriptions of models/attacks/datasets or update the experiment results, you only need to modify the data in other branches and do not need to edit the website code.
 
----
+- [docs](https://github.com/THUDM/grb/tree/docs) for introductions.
+- [results](https://github.com/THUDM/grb/tree/results) for experiment results and other metadata.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Deploy
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+If you edit the website code and want to deploy the code, you need to run `npm run deploy` or `yarn deploy` first to build the website into `build/` folder. Then you can contact [@cenyk1230](https://github.com/cenyk1230) or [@Somefive](https://github.com/Somefive) for more server deploy details.
