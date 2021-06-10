@@ -8,33 +8,26 @@ import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
-sys.path.append('../../')
+sys.path.append('../')
 
 import grb.utils as utils
-from grb.dataset.dataset import Dataset, CustomDataset
-from grb.utils import normalize, evaluator
+from grb.dataset import Dataset, CustomDataset
+from grb.evaluator import metric
 
-import build_model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training GNN models')
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
-    parser.add_argument("--n_epoch", type=int, default=2000, help="Training epoch.")
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
-    parser.add_argument("--eval_every", type=int, default=10)
-    parser.add_argument("--save_after", type=int, default=0)
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--dataset_mode", type=str, default="easy")
+    parser.add_argument("--feat_norm", type=str, default=None)
     parser.add_argument("--data_dir", type=str, default="/home/stanislas/Research/GRB/data/grb-cora/")
     parser.add_argument("--model_dir", type=str, default="/home/stanislas/Research/GRB/saved_models/grb-cora/")
+    parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--model_list", nargs='+', default=["gcn", "gcn_ln", "graphsage", "sgcn",
                                                             "robustgcn", "tagcn", "appnp", "gin"])
     parser.add_argument("--save_name", type=str, default="checkpoint.pt")
-
-    parser.add_argument("--attack_list", nargs='+', default=["fgsm", "pgd", "speit", "tdgia"])
-    parser.add_argument("--attack_name", type=str, default="fgsm")
     parser.add_argument("--attack_dir", type=str, default="/home/stanislas/Research/GRB/results/grb-cora/fgsm_vs_gcn")
-    parser.add_argument("--save_dir", type=str, default="/home/stanislas/Research/GRB/results/grb-cora")
     parser.add_argument("--seed", type=int, default=0)
 
     args = parser.parse_args()
@@ -44,9 +37,13 @@ if __name__ == '__main__':
     else:
         device = "cpu"
 
+    sys.path.append(args.dataset)
+    import build_model
+
     dataset = Dataset(name=args.dataset,
                       data_dir=args.data_dir,
                       mode=args.dataset_mode,
+                      feat_norm=args.feat_norm,
                       verbose=True)
 
     adj = dataset.adj
@@ -96,8 +93,13 @@ if __name__ == '__main__':
     features = torch.FloatTensor(features).to(device)
     labels = torch.LongTensor(labels).to(device)
 
+    if args.model is not None:
+        model_list = [args.model]
+    else:
+        model_list = args.model_list
+
     test_acc_dict = {}
-    for model_name in args.model_list:
+    for model_name in model_list:
         model, adj_norm_func = build_model.build_model(model_name=model_name,
                                                        num_features=num_features,
                                                        num_classes=num_classes)
@@ -107,14 +109,15 @@ if __name__ == '__main__':
         adj_attacked_tensor = utils.adj_preprocess(adj_attacked, adj_norm_func, device)
         logits = model(features, adj_attacked_tensor, dropout=0)
         logp = F.softmax(logits[:num_nodes], 1)
-        test_acc = evaluator.eval_acc(logp, labels, test_mask)
+        test_acc = metric.eval_acc(logp, labels, test_mask)
         test_acc_dict[model_name] = test_acc.cpu().numpy()
         print("Test score of {}: {:.4f}".format(model_name, test_acc))
 
     # print("Test ACC dict:", test_acc_dict)
     test_acc_sorted = sorted(list(test_acc_dict.values()))
     final_score = 0.0
-    weights = evaluator.get_weights_arithmetic(n=len(args.model_list), w_1=0.005)
+    weights = metric.get_weights_arithmetic(n=len(args.model_list), w_1=0.005)
+    # weights = evaluator.get_weights_polynomial(n=len(args.model_list), ord=2)
     for i in range(len(weights)):
         final_score += weights[i] * test_acc_sorted[i]
 
