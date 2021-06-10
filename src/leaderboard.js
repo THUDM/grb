@@ -1,25 +1,32 @@
 import React from 'react';
 import { Badge, Select, Typography, Tooltip } from "antd";
+import { SwapOutlined } from '@ant-design/icons'
 import _ from "lodash";
 import { Bar } from '@ant-design/charts';
 import { std, sum, min, max } from 'mathjs';
+import { tTest } from './t-test';
 
 const { Option } = Select;
 const { Title, Paragraph } = Typography;
 
+const attacksSummary = ['no_attack', 'average', '3-min', 'weighted']
+const modelsSummary = ['average', '3-max', 'weighted']
+
 function renderSummaryCell(summary, type) {
+    let text = ''
     if (type === 'model') {
-        if (summary === 'average') return 'Average Accuracy'
-        else if (summary === '3-max') return 'Average 3-Max Accuracy'
-        else if (summary === 'weighted') return 'Weighted Accuracy'
-        else return summary
+        if (summary === 'average') text = 'Avg. Accuracy'
+        else if (summary === '3-max') text = 'Avg. 3-Max Accuracy'
+        else if (summary === 'weighted') text = 'Weighted Accuracy'
+        else text = summary
     } else {
-        if (summary === 'no_attack') return 'W/O Attack'
-        else if (summary === 'average') return 'Average Accuracy'
-        else if (summary === '3-min') return 'Average 3-Min Accuracy'
-        else if (summary === 'weighted') return 'Weighted Accuracy'
-        else return summary
+        if (summary === 'no_attack') text = 'W/O Attack'
+        else if (summary === 'average') text = 'Avg. Accuracy'
+        else if (summary === '3-min') text = 'Avg. 3-Min Accuracy'
+        else if (summary === 'weighted') text = 'Weighted Accuracy'
+        else text = summary
     }
+    return <span className={`summary-header ${type}`}>{text}</span>
 }
 
 function renderDrawer(title, refs, desc) {
@@ -34,7 +41,7 @@ function renderDrawer(title, refs, desc) {
     }
 }
 
-function renderModelHeader(model_id, updateDrawer, ModelsData) {
+function renderModelHeader(model_id, updateDrawer, ModelsData, configs, setConfigs) {
     const model = ModelsData.find(model => model.id === model_id)
     const layer_norm = model_id.split('_').indexOf('ln') >= 0
     const adversarial_training = model_id.split('_').indexOf('at') >= 0
@@ -43,7 +50,18 @@ function renderModelHeader(model_id, updateDrawer, ModelsData) {
         {inner}
         {layer_norm && <Tooltip title="Layer Normalization"><sub className="model-header-badge" style={{color: '#1890ff'}}>+LN</sub></Tooltip>}
         {adversarial_training && <Tooltip title="Adversarial Training"><sub className="model-header-badge" style={{color: '#ff9c6e'}}>+AT</sub></Tooltip>}
+        {renderCompareBtn(configs, setConfigs, model.id, 'model')}
     </div>
+}
+
+function renderCompareBtn(configs, setConfigs, target, type) {
+    const isActive = configs.compared && configs.compared.type === type && configs.compared.target === target
+    return <Tooltip title={isActive ? 'Reset' : 'Compare'}>
+        <sup><span className={`compare-btn ${isActive ? 'active' : 'inactive'}`}
+            onClick={() => setConfigs({...configs, compared: isActive ? undefined : {target, type}})}>
+            <SwapOutlined />
+        </span></sup>
+    </Tooltip>
 }
 
 function convertAttackDataToDrawerData(attack_id, AttacksData) {
@@ -62,9 +80,57 @@ function convertModelDataToDrawerData(model_id, ModelsData) {
     return renderDrawer(model.id.split('_')[0].toUpperCase(), refs, model.desc || '')
 }
 
-export function getTableColumns(configs, updateDrawer) {
+export function getTableColumns(configs, updateDrawer, setConfigs, data) {
     const {difficulties, models, AttacksData, ModelsData} = configs
-    const width = configs.width || 120
+    const width = configs.width || 150
+    const getComparedValue = (target, comparor) => {
+        let s = ''
+        if (comparor > target) s += '+'
+        s += (comparor - target).toFixed(2)
+        s += ' ('
+        if (comparor > target) s += '+'
+        s += ((comparor - target) / target * 100).toFixed(2)
+        s += '%)'
+        return s
+    }
+    const dataCellRenderer = (model) => (value, row, index) => {
+        let isBolded = false
+        let compareType = ''
+        let inner = (value === undefined) ? '-' : <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
+        if (modelsSummary.indexOf(model) === -1 || attacksSummary.indexOf(row.attack) === -1) {
+            if (configs.compared) {
+                if (configs.compared.type === 'model') {
+                    if (configs.compared.target === model) compareType = 'compare-target'
+                    else {
+                        const comparedValue = data[row.attack][row.difficulty][configs.compared.target]
+                        if (comparedValue && comparedValue.mean && value.mean) {
+                            inner = getComparedValue(comparedValue.mean, value.mean)
+                            if (value.mean < comparedValue.mean) compareType = 'compare-lt'
+                            else if (value.mean === comparedValue.mean) compareType = 'compare-eq'
+                            else compareType = 'compare-gt'
+                            isBolded = tTest(comparedValue.values, value.values).p < .05
+                        }
+                    }
+                }
+                else {
+                    if (configs.compared.target === row.attack) compareType = 'compare-target'
+                    else {
+                        const comparedValue = data[configs.compared.target][row.difficulty][model]
+                        if (comparedValue && comparedValue.mean && value.mean) {
+                            inner = getComparedValue(comparedValue.mean, value.mean)
+                            if (value.mean < comparedValue.mean) compareType = 'compare-lt'
+                            else if (value.mean === comparedValue.mean) compareType = 'compare-eq'
+                            else compareType = 'compare-gt'
+                            isBolded = tTest(comparedValue.values, value.values).p < .05
+                        }
+                    }
+                }
+            }
+        } else {
+            isBolded = row.bold.indexOf(model) >= 0
+        }
+        return <span className={`data-cell ${isBolded ? 'bold' : ''} ${compareType}`}>{inner}</span>
+    }
     return [{
         title: "Rank",
         fixed: 'left',
@@ -73,7 +139,14 @@ export function getTableColumns(configs, updateDrawer) {
         render: (value, row, index) => {
             if (!row.isFirstRow) return {props: {rowSpan: 0, colSpan: 0}}
             else {
-                if (row.rank === 0) return {children: <b>{renderSummaryCell(row.attack, 'attack')}</b>, props: {rowSpan: difficulties.length, colSpan: 2}}
+                if (row.attack === 'no_attack') return {
+                    children: <div>
+                        {renderSummaryCell(row.attack, 'attack')}
+                        {renderCompareBtn(configs, setConfigs, row.attack, 'attack')}
+                    </div>,
+                    props: {rowSpan: difficulties.length, colSpan: 2}
+                }
+                else if (row.rank === 0) return {children: renderSummaryCell(row.attack, 'attack'), props: {rowSpan: difficulties.length, colSpan: 2}}
                 else return {children: <b>{row.rank}</b>, props: {rowSpan: difficulties.length, colSpan: 1}}
             }
         }
@@ -81,15 +154,18 @@ export function getTableColumns(configs, updateDrawer) {
         title: "Attack",
         fixed: 'left',
         align: 'center',
-        width: 75,
+        width: 80,
         render: (value, row, index) => {
             if (!row.isFirstRow) return {props: {rowSpan: 0, colSpan: 0}}
             else {
                 if (row.rank === 0) return {props: {rowSpan: 0, colSpan: 0}}
                 else return {
-                    children: <a className="table-attack-header" onClick={() => updateDrawer(convertAttackDataToDrawerData(row.attack, AttacksData))}>
-                        <b>{row.attack.toUpperCase()}</b>
-                    </a>,
+                    children: <div>
+                        <a className="table-attack-header" onClick={() => updateDrawer(convertAttackDataToDrawerData(row.attack, AttacksData))}>
+                            <b>{row.attack.toUpperCase()}</b>
+                        </a>
+                        {renderCompareBtn(configs, setConfigs, row.attack, 'attack')}
+                    </div>,
                     props: {rowSpan: difficulties.length, colSpan: 1}}
             }
         }
@@ -105,15 +181,12 @@ export function getTableColumns(configs, updateDrawer) {
         title: "Models",
         children: models.map(model => {
             return {
-                title: renderModelHeader(model, updateDrawer, ModelsData),
+                title: renderModelHeader(model, updateDrawer, ModelsData, configs, setConfigs),
                 dataIndex: model,
                 key: model,
                 align: 'center',
                 width,
-                render: (value, row, index) => {
-                    const inner = <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
-                    return row.bold.indexOf(model) >= 0 ? <b>{inner}</b> : inner
-                }
+                render: dataCellRenderer(model)
             }
         })
     }].concat(['average', '3-max', 'weighted'].map(model => {
@@ -123,11 +196,7 @@ export function getTableColumns(configs, updateDrawer) {
             key: model,
             align: 'center',
             width,
-            render: (value, row, index) => {
-                if (value === undefined) return '-'
-                const inner = <span className="value">{value.mean ? value.mean.toFixed(2) : '-'}{(value.std !== null) && <sub className="std">±{value.std.toFixed(2)}</sub>}</span>
-                return row.bold.indexOf(model) >= 0 ? <b>{inner}</b> : inner
-            }
+            render: dataCellRenderer(model)
         }
     }))
 }
@@ -197,8 +266,6 @@ export function recalculateData(data, configs, difficulties) {
 
 export function getTableItems(data, configs) {
     const {attacks, models, difficulties} = configs
-    const attacksSummary = ['no_attack', 'average', '3-min', 'weighted']
-    const modelsSummary = ['average', '3-max', 'weighted']
     const bestModelScore = {}
     attacksSummary.forEach(attackSummary => difficulties.forEach(difficulty => {
         let best = 0
@@ -217,6 +284,7 @@ export function getTableItems(data, configs) {
     const items = _.flatMap(attacks.concat(attacksSummary), atk => {
         return difficulties.map((difficulty, lid) => {
             let item = {
+                'key': `${atk}-${difficulty}`,
                 'attack': atk,
                 'rank': attacks.indexOf(atk) + 1,
                 'difficulty': difficulty,

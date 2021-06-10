@@ -8,19 +8,21 @@ import {
     Tooltip,
     Typography
 } from 'antd'
+import { FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
 import { getAttackChart, getDefenceChart, getTableColumns, getTableItems, getTableSelection, recalculateData } from './leaderboard'
 import _ from 'lodash'
 import { useParams } from 'react-router'
 import configurations from './configurations'
 
-const { Title } = Typography
+const { Title, Paragraph } = Typography
 
 export const AppLeaderboard = () => {
     const { dataset } = useParams()
     const [leaderboard, setLeaderboard] = useState({ updated_time: null, data: {}, attacks: [], models: [], difficulties: [] })
-    const [configs, setConfigs] = useState({ difficulties: [], attacks: [], models: [], AttacksData: [], ModelsData: [] })
+    const [configs, setConfigs] = useState({ difficulties: [], attacks: [], models: [], AttacksData: [], ModelsData: [], compared: undefined })
     const [loading, setLoading] = useState(false)
     const [drawerData, setDrawerData] = useState(undefined)
+    const [fullscreen, setFullscreen] = useState(false)
     useEffect(() => {
         setLoading(true)
         Promise.all([
@@ -28,7 +30,8 @@ export const AppLeaderboard = () => {
             fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/attacks.json`).then(resp => resp.json()),
             fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/models.json`).then(resp => resp.json()),
         ]).then(data => {
-            const lb = data[0], AttacksData = data[1], ModelsData = data[2]
+            let lb = data[0], AttacksData = data[1], ModelsData = data[2]
+            lb.attacks = _.filter(lb.attacks, x => x !== 'no_attack')
             setLeaderboard(lb)
             setConfigs({
                 difficulties: ['full'],
@@ -39,13 +42,25 @@ export const AppLeaderboard = () => {
             setLoading(false)
         })
     }, [dataset])
-    const columns = getTableColumns(configs, setDrawerData)
+    const columns = getTableColumns(configs, setDrawerData, setConfigs, leaderboard.data)
     const data = recalculateData(leaderboard.data, configs, leaderboard.difficulties)
     const items = getTableItems(data, configs)
     return <div className="app-leaderboard app-container" style={{ width: '100%', paddingTop: 30, paddingBottom: 30 }}>
         <Title style={{ textAlign: 'center' }}>{dataset === 'aminer' ? 'AMiner' : _.capitalize(dataset)} Challenge</Title>
-        <Divider style={{ marginTop: 50, fontSize: 24 }}>Leaderboard</Divider>
-        <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '80vh' }} />
+        <Divider style={{ marginTop: 50, fontSize: 24 }}>
+            Leaderboard
+            <sup><a style={{marginLeft: 5}} onClick={() => setFullscreen(true)}><FullscreenOutlined /></a></sup>
+        </Divider>
+        <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '80vh' }}/>
+        {fullscreen && <div className="popup fullscreen">
+            <div className="exit-fullscreen"onClick={() => setFullscreen(false)}><Button shape="circle" type="primary" size="large" icon={<FullscreenExitOutlined />}/></div>
+            <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '100vh' }}/>
+        </div>}
+        <div className="notes">
+            <Paragraph>* All experiments are repeated 10 times with different attack seeds.</Paragraph>
+            <Paragraph>* The 3-Min/Max Accuracy is calculated by taking three most effective models or robust models and averaging their scores.</Paragraph>
+            <Paragraph>* In comparison mode, a bold score indicates that the target model/attack is significantly better/worse than the compared baseline, under a t-test setting with p-value at 0.05.</Paragraph>
+        </div>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Configurations</Divider>
         {getTableSelection('attacks', leaderboard, configs, setConfigs)}
         {getTableSelection('models', leaderboard, configs, setConfigs)}
