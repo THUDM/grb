@@ -18,7 +18,7 @@ function getDatasetTableColumns() {
         align: 'center',
         width: 80,
         render: (value, row, index) => {
-            return {children: <a href={`#${row.name}`}><b>{row.name}</b></a>}
+            return {children: <a href={`#${row.name}`}><b><i>grb-{row.name.toLowerCase()}</i></b></a>}
         }
     }, {
         title: 'Type',
@@ -113,7 +113,7 @@ export const AppDatasets = ({history}) => {
         {datasets.map(dataset => {
             return <div className="dataset-card" key={dataset.name}>
                 <Title level={4} id={dataset.name}>
-                    {dataset.name}
+                    <i>grb-{dataset.name.toLowerCase()}</i>
                     <Tooltip title="Go to leaderboard">
                         <sup><a onClick={() => history.push(`/leaderboard/${dataset.name.toLowerCase()}`)}><BarChartOutlined /></a></sup>
                     </Tooltip>

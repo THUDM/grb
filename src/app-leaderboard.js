@@ -46,15 +46,16 @@ export const AppLeaderboard = () => {
     const data = recalculateData(leaderboard.data, configs, leaderboard.difficulties)
     const items = getTableItems(data, configs)
     return <div className="app-leaderboard app-container" style={{ width: '100%', paddingTop: 30, paddingBottom: 30 }}>
-        <Title style={{ textAlign: 'center' }}>{dataset === 'aminer' ? 'AMiner' : _.capitalize(dataset)} Challenge</Title>
+        <Title style={{ textAlign: 'center' }}><i>grb-{dataset.toLowerCase()}</i> Challenge</Title>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>
             Leaderboard
             <sup><a style={{marginLeft: 5}} onClick={() => setFullscreen(true)}><FullscreenOutlined /></a></sup>
         </Divider>
         <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '80vh' }}/>
         {fullscreen && <div className="popup fullscreen">
+            <div className="holder" onClick={() => setFullscreen(false)}/>
             <div className="exit-fullscreen"onClick={() => setFullscreen(false)}><Button shape="circle" type="primary" size="large" icon={<FullscreenExitOutlined />}/></div>
-            <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ y: '100vh' }}/>
+            <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ x: '90vw', y: '80vh' }}/>
         </div>}
         <div className="notes">
             <Paragraph>* All experiments are repeated 10 times with different attack seeds.</Paragraph>
