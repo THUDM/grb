@@ -1,4 +1,4 @@
-![GRB](./docs/source/_static/grb_logo.png)
+![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_logo.png)
 ===
 
 [![PyPi Latest Release](https://badge.fury.io/py/grb.svg)](https://pypi.org/project/grb/)
@@ -7,20 +7,20 @@
 
 **[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard/cora)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
 
-**Graph Robustness Benchmark (GRB)** provides scalable, general, unified, and reproducible evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
+**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
 
-![GRB](./docs/source/_static/grb_framework.png)
+![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png)
 
 ## Installation
 
-Install grb via ``pip``:
+Install grb via _pip_:
 ```
 pip install grb
 ```
 
 ## GRB Evaluation Scenario
 
-![GRB](./docs/source/_static/grb_scenario.png)
+![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
 
 GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GNN model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
 
