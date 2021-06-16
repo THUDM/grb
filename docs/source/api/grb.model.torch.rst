@@ -1,59 +1,59 @@
-grb.model.torch package
-=======================
+grb.model.torch
+===============
 
 Submodules
 ----------
 
-grb.model.torch.appnp module
-----------------------------
+grb.model.torch.appnp
+---------------------
 
 .. automodule:: grb.model.torch.appnp
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.gcn module
---------------------------
+grb.model.torch.gcn
+-------------------
 
 .. automodule:: grb.model.torch.gcn
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.gin module
---------------------------
+grb.model.torch.gin
+-------------------
 
 .. automodule:: grb.model.torch.gin
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.graphsage module
---------------------------------
+grb.model.torch.graphsage
+-------------------------
 
 .. automodule:: grb.model.torch.graphsage
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.robustgcn module
---------------------------------
+grb.model.torch.robustgcn
+-------------------------
 
 .. automodule:: grb.model.torch.robustgcn
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.sgcn module
----------------------------
+grb.model.torch.sgcn
+--------------------
 
 .. automodule:: grb.model.torch.sgcn
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.torch.tagcn module
-----------------------------
+grb.model.torch.tagcn
+---------------------
 
 .. automodule:: grb.model.torch.tagcn
    :members:

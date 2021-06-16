@@ -1,19 +1,19 @@
-grb.evaluator package
-=====================
+grb.evaluator
+=============
 
 Submodules
 ----------
 
-grb.evaluator.evaluator module
-------------------------------
+grb.evaluator.evaluator
+-----------------------
 
 .. automodule:: grb.evaluator.evaluator
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.evaluator.metric module
----------------------------
+grb.evaluator.metric
+--------------------
 
 .. automodule:: grb.evaluator.metric
    :members:

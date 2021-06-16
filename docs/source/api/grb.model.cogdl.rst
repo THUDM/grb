@@ -1,5 +1,5 @@
-grb.model.cogdl package
-=======================
+grb.model.cogdl
+===============
 
 Module contents
 ---------------

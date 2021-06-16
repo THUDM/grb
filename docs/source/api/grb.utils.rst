@@ -1,35 +1,35 @@
-grb.utils package
-=================
+grb.utils
+=========
 
 Submodules
 ----------
 
-grb.utils.normalize module
---------------------------
+grb.utils.normalize
+-------------------
 
 .. automodule:: grb.utils.normalize
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.utils.trainer module
-------------------------
+grb.utils.trainer
+-----------------
 
 .. automodule:: grb.utils.trainer
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.utils.utils module
-----------------------
+grb.utils.utils
+---------------
 
 .. automodule:: grb.utils.utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.utils.visualize module
---------------------------
+grb.utils.visualize
+-------------------
 
 .. automodule:: grb.utils.visualize
    :members:

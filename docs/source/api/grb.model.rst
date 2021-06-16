@@ -1,5 +1,5 @@
-grb.model package
-=================
+grb.model
+=========
 
 Subpackages
 -----------

@@ -1,5 +1,5 @@
-grb package
-===========
+grb
+===
 
 Subpackages
 -----------

@@ -1,11 +1,11 @@
-grb.dataset package
-===================
+grb.dataset
+===========
 
 Submodules
 ----------
 
-grb.dataset.dataset module
---------------------------
+grb.dataset.dataset
+-------------------
 
 .. automodule:: grb.dataset.dataset
    :members:

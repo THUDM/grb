@@ -1,35 +1,35 @@
-grb.model.dgl package
-=====================
+grb.model.dgl
+=============
 
 Submodules
 ----------
 
-grb.model.dgl.gat module
-------------------------
+grb.model.dgl.gat
+-----------------
 
 .. automodule:: grb.model.dgl.gat
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.dgl.gcn module
-------------------------
+grb.model.dgl.gcn
+-----------------
 
 .. automodule:: grb.model.dgl.gcn
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.dgl.gin module
-------------------------
+grb.model.dgl.gin
+-----------------
 
 .. automodule:: grb.model.dgl.gin
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.model.dgl.grand module
---------------------------
+grb.model.dgl.grand
+-------------------
 
 .. automodule:: grb.model.dgl.grand
    :members:

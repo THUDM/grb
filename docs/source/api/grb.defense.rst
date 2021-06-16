@@ -1,35 +1,35 @@
-grb.defense package
-===================
+grb.defense
+===========
 
 Submodules
 ----------
 
-grb.defense.adv\_trainer module
--------------------------------
+grb.defense.adv\_trainer
+------------------------
 
 .. automodule:: grb.defense.adv_trainer
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.defense.base module
------------------------
+grb.defense.base
+----------------
 
 .. automodule:: grb.defense.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.defense.gcnsvd module
--------------------------
+grb.defense.gcnsvd
+------------------
 
 .. automodule:: grb.defense.gcnsvd
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.defense.gnnguard module
----------------------------
+grb.defense.gnnguard
+--------------------
 
 .. automodule:: grb.defense.gnnguard
    :members:

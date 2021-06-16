@@ -21,3 +21,5 @@ Install from source
 .. code:: bash
 
    git clone git@github.com:THUDM/grb.git
+   cd grb
+   pip install -e .

@@ -1,51 +1,51 @@
-grb.attack package
-==================
+grb.attack
+==========
 
 Submodules
 ----------
 
-grb.attack.base module
-----------------------
+grb.attack.base
+---------------
 
 .. automodule:: grb.attack.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.attack.fgsm module
-----------------------
+grb.attack.fgsm
+---------------
 
 .. automodule:: grb.attack.fgsm
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.attack.pgd module
----------------------
+grb.attack.pgd
+--------------
 
 .. automodule:: grb.attack.pgd
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.attack.rnd module
----------------------
+grb.attack.rnd
+--------------
 
 .. automodule:: grb.attack.rnd
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.attack.speit module
------------------------
+grb.attack.speit
+----------------
 
 .. automodule:: grb.attack.speit
    :members:
    :undoc-members:
    :show-inheritance:
 
-grb.attack.tdgia module
------------------------
+grb.attack.tdgia
+----------------
 
 .. automodule:: grb.attack.tdgia
    :members:
