@@ -5,3 +5,9 @@ sphinx_rtd_theme
 sphinx_copybutton
 torch
 dgl
+matplotlib
+numpy
+pandas
+networkx
+scikit_learn
+cogdl
