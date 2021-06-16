@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'GRB'
-copyright = '2021, Qinkai Zheng'
+copyright = '2021, THU KEG'
 author = 'Qinkai Zheng'
 
 # The full version, including alpha/beta/rc tags
