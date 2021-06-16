@@ -122,7 +122,7 @@
     },
     "feature_range": [-1.74, 1.62],
     "feature_range_arctan_norm": [-0.93, 0.93],
-    "description": " Large-scale citation networks. The papers are collected from the academic searching engine Aminer [1], and the dataset was used in KDD-CUP 2020 Graph Adversarial Attack \& Defense competition [2]. The task is to classify papers into 18 categories.",
+    "description": " Large-scale citation networks. The papers are collected from the academic searching engine Aminer [1], and the dataset was used in KDD-CUP 2020 Graph Adversarial Attack and Defense competition [2]. The task is to classify papers into 18 categories.",
     "links": "https://cloud.tsinghua.edu.cn/d/8bbc3ce6adc74144b346/",
     "refs": [{
         "mla": "Tang, Jie, et al. \"Arnetminer: extraction and mining of academic social networks.\" Proceedings of the 14th ACM SIGKDD international conference on Knowledge discovery and data mining. 2008.",
