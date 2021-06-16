@@ -5,7 +5,7 @@ import './App.less';
 
 import { AppDatasets } from './app-datasets';
 import { AppHome } from './app-home';
-import { AppLeaderboard } from './app-leaderboard';
+import { AppLeaderboard, AppLeaderboardIndex } from './app-leaderboard';
 import { AppHeader } from './app-header';
 import { AppIntro } from './app-intro';
 
@@ -23,6 +23,7 @@ const App = () => (
           <Route path="/intro/:entry" render={() => <AppIntro/>}/>
           <Route path="/datasets" render={({history}) => <AppDatasets history={history}/>}/>
           <Route path="/leaderboard/:dataset" render={({history}) => <AppLeaderboard history={history}/>}/>
+          <Route path="/leaderboard/" render={() => <AppLeaderboardIndex/>}/>
           <Route path="*"><Redirect to="/home"/></Route>
         </Switch>
       </Content>

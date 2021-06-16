@@ -29,7 +29,7 @@ export const AppHome = ({history}) => (
     </div>
     <div className="btn-group">
         <Button className="btn" type="primary" size="large" onClick={() => history.push('/intro/get_started')}>Quick Start</Button>
-        <Button className="btn" size="large" onClick={() => history.push('docs')}>Read Documents</Button>
+        <Button className="btn" size="large" onClick={() => { window.location.href = configurations.DOCS_URL }}>Read Documents</Button>
     </div>
     <div className="features">
         {Features.map((feature, idx) => <AppHomeFeature key={idx} {...feature}/>)}

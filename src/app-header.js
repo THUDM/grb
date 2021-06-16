@@ -20,7 +20,7 @@ export const AppHeader = ({history}) => {
             <Menu.Item key="rules" onClick={() => history.push(`/intro/rules`)}>Rules</Menu.Item>
           </SubMenu>
           <Menu.Item key="datasets" onClick={() => history.push('/datasets')}>Datasets</Menu.Item>
-          <SubMenu key="leaderboard" title="Leaderboard" popupOffset={[-20,-2]}>
+          <SubMenu key="leaderboard" title={<span onClick={() => history.push('/leaderboard/')}>Leaderboard</span>} popupOffset={[-20,-2]}>
             {['grb-citeseer', 'grb-cora', 'grb-flickr', 'grb-reddit', 'grb-aminer'].map(dataset_name => <Menu.Item
               key={dataset_name} onClick={() => history.push(`/leaderboard/${dataset_name}`)}
             >{dataset_name}</Menu.Item>)}

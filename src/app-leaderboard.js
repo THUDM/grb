@@ -13,8 +13,13 @@ import { getAttackChart, getDefenceChart, getTableColumns, getTableItems, getTab
 import _ from 'lodash'
 import { useParams } from 'react-router'
 import configurations from './configurations'
+import { MarkdownLoader, MarkdownPage } from './markdown-page'
 
 const { Title, Paragraph } = Typography
+
+export const AppLeaderboardIndex = () => {
+    return <MarkdownPage url={`${configurations.GITHUB_PROXY_URL}/docs/leaderboard.md`}/>
+}
 
 export const AppLeaderboard = () => {
     const { dataset } = useParams()
@@ -60,9 +65,7 @@ export const AppLeaderboard = () => {
             <Table loading={loading} columns={columns} dataSource={items} bordered pagination={false} scroll={{ x: '90vw', y: '80vh' }}/>
         </div>}
         <div className="notes">
-            <Paragraph>* All experiments are repeated 10 times with different attack seeds.</Paragraph>
-            <Paragraph>* The 3-Min/Max Accuracy is calculated by taking three most effective models or robust models and averaging their scores.</Paragraph>
-            <Paragraph>* In comparison mode, a bold score indicates that the target model/attack is significantly better/worse than the compared baseline, under a t-test setting with p-value at 0.05.</Paragraph>
+            <MarkdownLoader url={`${configurations.GITHUB_PROXY_URL}/docs/leaderboard-hint.md`}/>
         </div>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Configurations</Divider>
         {getTableSelection('attacks', leaderboard, configs, setConfigs)}
