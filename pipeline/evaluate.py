@@ -8,8 +8,6 @@ import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
-sys.path.append('../')
-
 import grb.utils as utils
 from grb.dataset.dataset import Dataset, CustomDataset
 from grb.evaluator import metric

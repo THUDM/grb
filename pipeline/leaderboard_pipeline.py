@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
-sys.path.append('../')
-
 import grb.utils as utils
 from grb.dataset import Dataset
 from grb.evaluator import AttackEvaluator

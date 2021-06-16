@@ -5,12 +5,48 @@ import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
-import grb.utils as utils
-from grb.attack.base import InjectionAttack
-from grb.evaluator import metric
+from .base import InjectionAttack, EarlyStop
+from ..evaluator import metric
+from ..utils import utils
 
 
 class SPEIT(InjectionAttack):
+    r"""
+
+    Description
+    -----------
+    SPEIT graph injection attack, 1st place solution of KDD CUP 2020 Graph Adversarial Attack & Defense.
+    (`SPEIT <https://github.com/Stanislas0/KDD_CUP_2020_MLTrack2_SPEIT>`__).
+
+    Parameters
+    ----------
+    lr : float
+        Learning rate of feature optimization process.
+    n_epoch : int
+        Epoch of perturbations.
+    n_inject_max : int
+        Maximum number of injected nodes.
+    n_edge_max : int
+        Maximum number of edges of injected nodes.
+    feat_lim_min : float
+        Minimum limit of features.
+    feat_lim_max : float
+        Maximum limit of features.
+    loss : func of torch.nn.functional, optional
+        Loss function compatible with ``torch.nn.functional``. Default: ``F.nll_loss``.
+    eval_metric : func of grb.evaluator.metric, optional
+        Evaluation metric. Default: ``metric.eval_acc``.
+    inject_mode : str, optional
+        Mode of injection. Choose from ``["random", "random-inter", "multi-layer"]``. Default: ``random``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+    early_stop : bool, optional
+        Whether to early stop. Default: ``False``.
+    verbose : bool, optional
+        Whether to display logs. Default: ``True``.
+
+    """
+
     def __init__(self,
                  lr,
                  n_epoch,
@@ -22,7 +58,7 @@ class SPEIT(InjectionAttack):
                  eval_metric=metric.eval_acc,
                  inject_mode='random',
                  device='cpu',
-                 early_stop=None,
+                 early_stop=False,
                  verbose=True):
         self.device = device
         self.lr = lr
@@ -43,6 +79,33 @@ class SPEIT(InjectionAttack):
             self.early_stop = early_stop
 
     def attack(self, model, adj, features, target_mask, adj_norm_func):
+        r"""
+        Description
+        -----------
+        Attack process consists of injection and feature update.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        adj : scipy.sparse.csr.csr_matrix
+            Adjacency matrix in form of ``N * N`` sparse matrix.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        target_mask : torch.Tensor
+            Mask of attack target nodes in form of ``N * 1`` torch bool tensor.
+        adj_norm_func : func of utils.normalize
+            Function that normalizes adjacency matrix.
+
+        Returns
+        -------
+        adj_attack : scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+        features_attack : torch.FloatTensor
+            Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+
+        """
+
         model.to(self.device)
         n_total, n_feat = features.shape
         features = utils.feat_preprocess(features=features, device=self.device)
@@ -70,6 +133,34 @@ class SPEIT(InjectionAttack):
         return adj_attack, features_attack
 
     def injection(self, adj, n_inject, n_node, target_mask, target_node=None, mode='random-inter'):
+        r"""
+
+        Description
+        -----------
+        Randomly inject nodes to target nodes.
+
+        Parameters
+        ----------
+        adj : scipy.sparse.csr.csr_matrix
+            Adjacency matrix in form of ``N * N`` sparse matrix.
+        n_inject : int
+            Number of injection.
+        n_node : int
+            Number of all nodes.
+        target_mask : torch.Tensor
+            Mask of attack target nodes in form of ``N * 1`` torch bool tensor.
+        target_node : np.ndarray
+            IDs of target nodes to attack with priority.
+        mode : str, optional
+            Mode of injection. Choose from ``["random", "random-inter", "multi-layer"]``. Default: ``random-inter``.
+
+        Returns
+        -------
+        adj_attack : scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+
+        """
+
         def get_inject_list(adj, n_inter, inject_id, inject_tmp_list):
             i = 1
             res = []
@@ -213,6 +304,36 @@ class SPEIT(InjectionAttack):
             return adj_attack
 
     def update_features(self, model, adj_attack, features, features_attack, origin_labels, target_mask, adj_norm_func):
+        r"""
+
+        Description
+        -----------
+        Adversarial feature generation of injected nodes.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        adj_attack :  scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        features_attack : torch.FloatTensor
+            Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+        origin_labels : torch.LongTensor
+            Labels of target nodes originally predicted by the model.
+        target_mask : torch.Tensor
+            Mask of target nodes in form of ``N * 1`` torch bool tensor.
+        adj_norm_func : func of utils.normalize
+            Function that normalizes adjacency matrix.
+
+        Returns
+        -------
+        features_attack : torch.FloatTensor
+            Updated features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+
+        """
+
         lr = self.lr
         n_epoch = self.n_epoch
         feat_lim_min, feat_lim_max = self.feat_lim_min, self.feat_lim_max
@@ -255,23 +376,3 @@ class SPEIT(InjectionAttack):
                     end='\r' if i != n_epoch - 1 else '\n')
 
         return features_attack
-
-
-class EarlyStop(object):
-    def __init__(self, patience=1000, epsilon=1e-4):
-        self.patience = patience
-        self.epsilon = epsilon
-        self.min_score = None
-        self.stop = False
-        self.count = 0
-
-    def __call__(self, score):
-        if self.min_score is None:
-            self.min_score = score
-        elif self.min_score - score > 0:
-            self.count = 0
-            self.min_score = score
-        elif self.min_score - score < self.epsilon:
-            self.count += 1
-            if self.count > self.patience:
-                self.stop = True

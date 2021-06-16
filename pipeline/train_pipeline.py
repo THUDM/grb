@@ -4,8 +4,6 @@ import sys
 
 import torch
 
-sys.path.append('../')
-
 from grb.dataset import Dataset
 from grb.utils import Trainer
 

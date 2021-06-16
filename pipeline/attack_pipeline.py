@@ -3,9 +3,6 @@ import os
 import sys
 
 import torch
-
-sys.path.append('../')
-
 import grb.utils as utils
 from grb.dataset import Dataset
 

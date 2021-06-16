@@ -6,51 +6,85 @@ import scipy.sparse as sp
 import torch
 from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
-from grb.dataset.URLs import URLs
-from grb.utils import download
+from ..dataset import URLs, SUPPORTED_DATASETS
+from ..utils import download
 
 
 class Dataset(object):
     r"""
+
     Description
     -----------
-    Dataset class that helps to load GRB datasets for evaluating adversarial robustness.
+    Class that loads GRB datasets for evaluating adversarial robustness.
 
     Parameters
     ----------
     name: str
-        Name of the dataset, supported datasets: ["grb-cora", "grb-aminer", "grb-reddit", "grb-amazon"]
+        Name of dataset, supported datasets: ``["grb-cora", "grb-citeseer", "grb-aminer", "grb-reddit", "grb-flickr"]``.
     data_dir: str, optional
-        Directory for dataset. If not provided, default is "./data/".
+        Directory for dataset. If not provided, default is ``"./data/"``.
     mode: str, optional
-        Difficulty of the dataset, which is determined mainly according to the average degree of nodes.
-        Choose from ["easy", "medium", "hard", "full"]. "full" is to use the entire test set.
+        Difficulty determined according to the average degree of test nodes.
+        Choose from ``["easy", "medium", "hard", "full"]``. Default: ``"full"`` is to use the entire test set.
     feat_norm: str, optional
         Feature normalization that transform all features to range [-1, 1].
-        Choose from ["arctan", "sigmoid", "tanh"].
+        Choose from ``["arctan", "sigmoid", "tanh"]``. Default: ``None``.
     verbose: bool, optional
-        Whether to display logs.
+        Whether to display logs. Default: ``True``.
 
     Attributes
     ----------
 
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    features : torch.FloatTensor
+        Features in form of ``N * D`` torch float tensor.
+    labels : torch.LongTensor
+        Labels in form of ``N * L``. L=1 for multi-class classification, otherwise for multi-label classification.
+    num_nodes: int
+        Number of nodes ``N``.
+    num_edges: int
+        Number of edges.
+    num_features: int
+        Dimension of features ``D``.
+    num_classes : int
+        Number of classes ``L``.
+    num_train : int
+        Number of train nodes.
+    num_val: int
+        Number of validation nodes.
+    num_test: int
+        Number of test nodes.
+    mode: str
+        Mode of dataset. One of ``["easy", "medium", "hard", "full"]``.
+    index_train: np.ndarray
+        Index of train nodes.
+    index_val: np.ndarray
+        Index of validation nodes.
+    index_test: np.ndarray
+        Index of test nodes.
+    train_mask: torch.Tensor
+        Mask of train nodes in form of ``N * 1`` torch bool tensor.
+    val_mask : torch.Tensor
+        Mask of validation nodes in form of ``N * 1`` torch bool tensor.
+    test_mask : torch.Tensor
+        Mask of test nodes in form of ``N * 1`` torch bool tensor.
 
-    Note
-    ----
-    TBD
+    Example
+    -------
+    >>> import grb
+    >>> from grb.dataset import Dataset
+    >>> dataset = Dataset(name='grb-cora', mode='easy', feat_norm="arctan")
 
-    Examples
-    --------
-    TBD
     """
 
     def __init__(self, name, data_dir=None, mode="easy", feat_norm=None, verbose=True):
         # Create data dir
-        if name not in self.GRB_DATASETS:
+        if name not in SUPPORTED_DATASETS:
             print("{} dataset not supported.".format(name))
             exit(1)
         if data_dir is None:
-            data_dir = os.path.join("./data", name)
+            data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", name)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
@@ -139,24 +173,27 @@ class Dataset(object):
             print("    Dataset mode: {}".format(self.mode))
             print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
-    GRB_DATASETS = {"grb-cora",
-                    "grb-citeseer",
-                    "grb-aminer",
-                    "grb-reddit",
-                    "grb-amazon",
-                    "grb-yelp",
-                    "grb-ppi",
-                    "grb-flickr"}
-
 
 class CogDLDataset(object):
     def __init__(self, name, data_dir=None, mode='origin', verbose=True):
-        """
+        r"""
 
-        :param name:
-        :param data_dir: e.g. /data/Cora/;
-        :param mode: 'normal', 'lcc';
-        :param verbose:
+        Description
+        -----------
+        Class that loads `CogDL datasets <https://github.com/THUDM/cogdl/tree/master/cogdl/datasets>`__
+        for GRB evaluation.
+
+        Parameters
+        ----------
+        name: str
+            Name of dataset, see supported datasets in self.COGDL_DATASETS.
+        data_dir: str, optional
+            Directory for dataset. If not provided, default is ``"./data/"``.
+        mode: str, optional
+            Choose from ``["original", "lcc"]``. ``lcc`` is to extract the largest connected components.
+            Default: ``original``.
+        verbose: bool, optional
+            Whether to display logs. Default: ``True``.
         """
 
         try:
@@ -231,75 +268,166 @@ class CogDLDataset(object):
         return adj
 
     COGDL_DATASETS = {
-        "kdd_icdm": "cogdl.datasets.gcc_data",
-        "sigir_cikm": "cogdl.datasets.gcc_data",
-        "sigmod_icde": "cogdl.datasets.gcc_data",
-        "usa-airport": "cogdl.datasets.gcc_data",
-        "test_small": "cogdl.datasets.test_data",
-        "ogbn-arxiv": "cogdl.datasets.ogb",
-        "ogbn-products": "cogdl.datasets.ogb",
-        "ogbn-proteins": "cogdl.datasets.ogb",
-        "ogbn-mag": "cogdl.datasets.pyg_ogb",
-        "ogbn-papers100M": "cogdl.datasets.ogb",
-        "ogbg-molbace": "cogdl.datasets.ogb",
-        "ogbg-molhiv": "cogdl.datasets.ogb",
-        "ogbg-molpcba": "cogdl.datasets.ogb",
-        "ogbg-ppa": "cogdl.datasets.ogb",
-        "ogbg-code": "cogdl.datasets.ogb",
-        "amazon": "cogdl.datasets.gatne",
-        "twitter": "cogdl.datasets.gatne",
-        "youtube": "cogdl.datasets.gatne",
-        "gtn-acm": "cogdl.datasets.gtn_data",
-        "gtn-dblp": "cogdl.datasets.gtn_data",
-        "gtn-imdb": "cogdl.datasets.gtn_data",
-        "fb13": "cogdl.datasets.kg_data",
-        "fb15k": "cogdl.datasets.kg_data",
-        "fb15k237": "cogdl.datasets.kg_data",
-        "wn18": "cogdl.datasets.kg_data",
-        "wn18rr": "cogdl.datasets.kg_data",
-        "fb13s": "cogdl.datasets.kg_data",
-        "cora": "cogdl.datasets.planetoid_data",
-        "citeseer": "cogdl.datasets.planetoid_data",
-        "pubmed": "cogdl.datasets.planetoid_data",
-        "blogcatalog": "cogdl.datasets.matlab_matrix",
-        "flickr-ne": "cogdl.datasets.matlab_matrix",
-        "dblp-ne": "cogdl.datasets.matlab_matrix",
-        "youtube-ne": "cogdl.datasets.matlab_matrix",
-        "wikipedia": "cogdl.datasets.matlab_matrix",
-        "ppi-ne": "cogdl.datasets.matlab_matrix",
-        "han-acm": "cogdl.datasets.han_data",
-        "han-dblp": "cogdl.datasets.han_data",
-        "han-imdb": "cogdl.datasets.han_data",
-        "mutag": "cogdl.datasets.tu_data",
-        "imdb-b": "cogdl.datasets.tu_data",
-        "imdb-m": "cogdl.datasets.tu_data",
-        "collab": "cogdl.datasets.tu_data",
-        "proteins": "cogdl.datasets.tu_data",
-        "reddit-b": "cogdl.datasets.tu_data",
-        "reddit-multi-5k": "cogdl.datasets.tu_data",
+        "kdd_icdm"        : "cogdl.datasets.gcc_data",
+        "sigir_cikm"      : "cogdl.datasets.gcc_data",
+        "sigmod_icde"     : "cogdl.datasets.gcc_data",
+        "usa-airport"     : "cogdl.datasets.gcc_data",
+        "test_small"      : "cogdl.datasets.test_data",
+        "ogbn-arxiv"      : "cogdl.datasets.ogb",
+        "ogbn-products"   : "cogdl.datasets.ogb",
+        "ogbn-proteins"   : "cogdl.datasets.ogb",
+        "ogbn-mag"        : "cogdl.datasets.pyg_ogb",
+        "ogbn-papers100M" : "cogdl.datasets.ogb",
+        "ogbg-molbace"    : "cogdl.datasets.ogb",
+        "ogbg-molhiv"     : "cogdl.datasets.ogb",
+        "ogbg-molpcba"    : "cogdl.datasets.ogb",
+        "ogbg-ppa"        : "cogdl.datasets.ogb",
+        "ogbg-code"       : "cogdl.datasets.ogb",
+        "amazon"          : "cogdl.datasets.gatne",
+        "twitter"         : "cogdl.datasets.gatne",
+        "youtube"         : "cogdl.datasets.gatne",
+        "gtn-acm"         : "cogdl.datasets.gtn_data",
+        "gtn-dblp"        : "cogdl.datasets.gtn_data",
+        "gtn-imdb"        : "cogdl.datasets.gtn_data",
+        "fb13"            : "cogdl.datasets.kg_data",
+        "fb15k"           : "cogdl.datasets.kg_data",
+        "fb15k237"        : "cogdl.datasets.kg_data",
+        "wn18"            : "cogdl.datasets.kg_data",
+        "wn18rr"          : "cogdl.datasets.kg_data",
+        "fb13s"           : "cogdl.datasets.kg_data",
+        "cora"            : "cogdl.datasets.planetoid_data",
+        "citeseer"        : "cogdl.datasets.planetoid_data",
+        "pubmed"          : "cogdl.datasets.planetoid_data",
+        "blogcatalog"     : "cogdl.datasets.matlab_matrix",
+        "flickr-ne"       : "cogdl.datasets.matlab_matrix",
+        "dblp-ne"         : "cogdl.datasets.matlab_matrix",
+        "youtube-ne"      : "cogdl.datasets.matlab_matrix",
+        "wikipedia"       : "cogdl.datasets.matlab_matrix",
+        "ppi-ne"          : "cogdl.datasets.matlab_matrix",
+        "han-acm"         : "cogdl.datasets.han_data",
+        "han-dblp"        : "cogdl.datasets.han_data",
+        "han-imdb"        : "cogdl.datasets.han_data",
+        "mutag"           : "cogdl.datasets.tu_data",
+        "imdb-b"          : "cogdl.datasets.tu_data",
+        "imdb-m"          : "cogdl.datasets.tu_data",
+        "collab"          : "cogdl.datasets.tu_data",
+        "proteins"        : "cogdl.datasets.tu_data",
+        "reddit-b"        : "cogdl.datasets.tu_data",
+        "reddit-multi-5k" : "cogdl.datasets.tu_data",
         "reddit-multi-12k": "cogdl.datasets.tu_data",
-        "ptc-mr": "cogdl.datasets.tu_data",
-        "nci1": "cogdl.datasets.tu_data",
-        "nci109": "cogdl.datasets.tu_data",
-        "enzymes": "cogdl.datasets.tu_data",
-        "yelp": "cogdl.datasets.saint_data",
-        "amazon-s": "cogdl.datasets.saint_data",
-        "flickr": "cogdl.datasets.saint_data",
-        "reddit": "cogdl.datasets.saint_data",
-        "ppi": "cogdl.datasets.saint_data",
-        "ppi-large": "cogdl.datasets.saint_data",
-        "test_bio": "cogdl.datasets.strategies_data",
-        "test_chem": "cogdl.datasets.strategies_data",
-        "bio": "cogdl.datasets.strategies_data",
-        "chem": "cogdl.datasets.strategies_data",
-        "bace": "cogdl.datasets.strategies_data",
-        "bbbp": "cogdl.datasets.strategies_data",
+        "ptc-mr"          : "cogdl.datasets.tu_data",
+        "nci1"            : "cogdl.datasets.tu_data",
+        "nci109"          : "cogdl.datasets.tu_data",
+        "enzymes"         : "cogdl.datasets.tu_data",
+        "yelp"            : "cogdl.datasets.saint_data",
+        "amazon-s"        : "cogdl.datasets.saint_data",
+        "flickr"          : "cogdl.datasets.saint_data",
+        "reddit"          : "cogdl.datasets.saint_data",
+        "ppi"             : "cogdl.datasets.saint_data",
+        "ppi-large"       : "cogdl.datasets.saint_data",
+        "test_bio"        : "cogdl.datasets.strategies_data",
+        "test_chem"       : "cogdl.datasets.strategies_data",
+        "bio"             : "cogdl.datasets.strategies_data",
+        "chem"            : "cogdl.datasets.strategies_data",
+        "bace"            : "cogdl.datasets.strategies_data",
+        "bbbp"            : "cogdl.datasets.strategies_data",
     }
 
 
 class CustomDataset(object):
+    r"""
+
+    Description
+    -----------
+    Class that helps to build customized dataset for GRB evaluation.
+
+    Parameters
+    ----------
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    features : torch.FloatTensor
+        Features in form of ``N * D`` torch float tensor.
+    labels : torch.LongTensor
+        Labels in form of ``N * L``. L=1 for multi-class classification, otherwise for multi-label classification.
+    train_mask: torch.Tensor, optional
+        Mask of train nodes in form of ``N * 1`` torch bool tensor. Default: ``None``.
+        If is ``None``, generated by default splitting scheme.
+    val_mask : torch.Tensor, optional
+        Mask of validation nodes in form of ``N * 1`` torch bool tensor. Default: ``None``.
+        If is ``None``, generated by default splitting scheme.
+    test_mask : torch.Tensor, optional
+        Mask of test nodes in form of ``N * 1`` torch bool tensor. Default: ``None``.
+        If is ``None``, generated by default splitting scheme.
+    name : str, optional
+        Name of dataset.
+    data_dir : str, optional
+        Directory of dataset.
+    mode : str, optional
+        Mode of dataset. One of ``["easy", "medium", "hard", "full"]``. Default: ``full``.
+    feat_norm : str, optional
+        Feature normalization that transform all features to range [-1, 1].
+        Choose from ``["arctan", "sigmoid", "tanh"]``. Default: ``None``.
+    save : bool, optional
+        Whether to save data as files.
+    verbose : bool, optional
+        Whether to display logs. Default: ``True``.
+
+    Parameters
+    ----------
+    name: str
+        Name of dataset, supported datasets: ``["grb-cora", "grb-citeseer", "grb-aminer", "grb-reddit", "grb-flickr"]``.
+    data_dir: str, optional
+        Directory for dataset. If not provided, default is ``"./data/"``.
+    mode: str, optional
+        Difficulty determined according to the average degree of test nodes.
+        Choose from ``["easy", "medium", "hard", "full"]``. Default: ``"full"`` is to use the entire test set.
+    feat_norm: str, optional
+        Feature normalization that transform all features to range [-1, 1].
+        Choose from ``["arctan", "sigmoid", "tanh"]``. Default: ``None``.
+    verbose: bool, optional
+        Whether to display logs. Default: ``True``.
+
+    Attributes
+    ----------
+
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    features : torch.FloatTensor
+        Features in form of ``N * D`` torch float tensor.
+    labels : torch.LongTensor
+        Labels in form of ``N * L``. L=1 for multi-class classification, otherwise for multi-label classification.
+    num_nodes: int
+        Number of nodes ``N``.
+    num_edges: int
+        Number of edges.
+    num_features: int
+        Dimension of features ``D``.
+    num_classes : int
+        Number of classes ``L``.
+    num_train : int
+        Number of train nodes.
+    num_val: int
+        Number of validation nodes.
+    num_test: int
+        Number of test nodes.
+    mode: str
+        Mode of dataset. One of ``["easy", "medium", "hard", "full"]``.
+    index_train: np.ndarray
+        Index of train nodes.
+    index_val: np.ndarray
+        Index of validation nodes.
+    index_test: np.ndarray
+        Index of test nodes.
+    train_mask: torch.Tensor
+        Mask of train nodes in form of ``N * 1`` torch bool tensor.
+    val_mask : torch.Tensor
+        Mask of validation nodes in form of ``N * 1`` torch bool tensor.
+    test_mask : torch.Tensor
+        Mask of test nodes in form of ``N * 1`` torch bool tensor.
+
+    """
     def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
-                 name=None, data_dir=None, mode='normal', feat_norm=None, save=False, verbose=True):
+                 name=None, data_dir=None, mode='full', feat_norm=None, save=False, verbose=True):
         self.adj = adj
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz() // 2
@@ -352,7 +480,7 @@ class CustomDataset(object):
                 index_test = index.get("index_test_medium")
             elif mode == "hard":
                 index_test = index.get("index_test_hard")
-            elif mode == "normal":
+            elif mode == "full":
                 index_test = index.get("index_test")
             else:
                 index_test = index.get("index_test")
@@ -397,22 +525,45 @@ class CustomDataset(object):
             print("    Feature range [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
 
-def feat_normalize(feat, norm=None, lim_min=-1, lim_max=1):
-    if norm == "linearize":
-        k = (lim_max - lim_min) / (feat.max() - feat.min())
-        feat = lim_min + k * (feat - feat.min())
-    elif norm == "arctan":
-        feat = (feat - feat.mean()) / feat.std()
-        feat = 2 * np.arctan(feat) / np.pi
-    elif norm == "tanh":
-        feat = (feat - feat.mean()) / feat.std()
-        feat = np.tanh(feat)
-    elif norm == "standardize":
-        feat = (feat - feat.mean()) / feat.std()
-    else:
-        feat = feat
+def feat_normalize(features, norm=None, lim_min=-1.0, lim_max=1.0):
+    r"""
+    Description
+    -----------
+    Feature normalization function.
 
-    return feat
+    Parameters
+    ----------
+    features : torch.FloatTensor
+        Features in form of ``N * D`` torch float tensor.
+    norm : str, optional
+        Type of normalization. Choose from ``["linearize", "arctan", "tanh", "standarize"]``.
+        Default: ``None``.
+    lim_min : float
+        Minimum limit of feature value. Default: ``-1.0``.
+    lim_max : float
+        Minimum limit of feature value. Default: ``1.0``.
+
+    Returns
+    -------
+    features : torch.FloatTensor
+        Normalized features in form of ``N * D`` torch float tensor.
+
+    """
+    if norm == "linearize":
+        k = (lim_max - lim_min) / (features.max() - features.min())
+        features = lim_min + k * (features - features.min())
+    elif norm == "arctan":
+        features = (features - features.mean()) / features.std()
+        features = 2 * np.arctan(features) / np.pi
+    elif norm == "tanh":
+        features = (features - features.mean()) / features.std()
+        features = np.tanh(features)
+    elif norm == "standardize":
+        features = (features - features.mean()) / features.std()
+    else:
+        features = features
+
+    return features
 
 
 def splitting(adj,
@@ -425,6 +576,47 @@ def splitting(adj,
               ratio_val=0.1,
               ratio_test=0.1,
               seed=42):
+    r"""
+
+    Description
+    -----------
+    GRB splitting scheme designed for adversarial robustness evaluation.
+
+    Parameters
+    ----------
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    range_min : tuple of float, optional
+        Range of nodes with minimum degrees to be ignored. Value in percentage.
+        Default: ``(0.0, 0.05)``.
+    range_max : tuple of float, optional
+        Range of nodes with maximum degrees to be ignored. Value in percentage.
+        Default: ``(0.95, 1.0)``.
+    range_easy : tuple of float, optional
+        Range of nodes for ``easy`` difficulty. Value in percentage.
+        Default: ``(0.05, 0.35)``.
+    range_medium : tuple of float, optional
+        Range of nodes for ``medium`` difficulty. Value in percentage.
+        Default: ``(0.35, 0.65)``.
+    range_hard : tuple of float, optional
+        Range of nodes for ``hard`` difficulty. Value in percentage.
+        Default: ``(0.65, 0.95)``.
+    ratio_train : float, optional
+        Ratio of train nodes. Default: ``0.6``.
+    ratio_val : float, optional
+        Ratio of validation nodes. Default: ``0.1``.
+    ratio_test : float, optional
+        Ratio of test nodes. Default: ``0.1``.
+    seed : int, optional
+        Random seed. Default: ``42``.
+
+    Returns
+    -------
+    index : dict
+        Dictionary containing ``{"index_train", "index_val", "index_test",
+        "index_test_easy", "index_test_medium", "index_test_hard"}``.
+
+    """
     def a_not_in_b(a, b):
         c = []
         for i in a:
@@ -495,11 +687,11 @@ def splitting(adj,
     else:
         print("    Find duplicates.")
 
-    index = {"index_train": np.sort(ind_train),
-             "index_val": np.sort(ind_val),
-             "index_test": np.sort(ind_test),
-             "index_test_easy": np.sort(ind_easy_sample),
+    index = {"index_train"      : np.sort(ind_train),
+             "index_val"        : np.sort(ind_val),
+             "index_test"       : np.sort(ind_test),
+             "index_test_easy"  : np.sort(ind_easy_sample),
              "index_test_medium": np.sort(ind_medium_sample),
-             "index_test_hard": np.sort(ind_hard_sample)}
+             "index_test_hard"  : np.sort(ind_hard_sample)}
 
     return index

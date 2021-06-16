@@ -6,12 +6,49 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import grb.utils as utils
-from grb.attack.base import InjectionAttack
-from grb.evaluator import metric
+from .base import InjectionAttack, EarlyStop
+from ..evaluator import metric
+from ..utils import utils
 
 
 class TDGIA(InjectionAttack):
+    r"""
+    Description
+    -----------
+    Topological Defective Graph Injection Attack (`TDGIA <https://github.com/THUDM/GIAAD>`__).
+
+    Parameters
+    ----------
+    lr : float
+        Learning rate of feature optimization process.
+    n_epoch : int
+        Epoch of perturbations.
+    n_inject_max : int
+        Maximum number of injected nodes.
+    n_edge_max : int
+        Maximum number of edges of injected nodes.
+    feat_lim_min : float
+        Minimum limit of features.
+    feat_lim_max : float
+        Maximum limit of features.
+    loss : func of torch.nn.functional, optional
+        Loss function compatible with ``torch.nn.functional``. Default: ``F.nll_loss``.
+    eval_metric : func of grb.evaluator.metric, optional
+        Evaluation metric. Default: ``metric.eval_acc``.
+    inject_mode : str, optional
+        Mode of injection. Choose from ``["random", "uniform", "tdgia"]``. Default: ``tdgia``.
+    sequential_step : float, optional
+        Step of sequential injection, each time injecting :math:`\alpha\times N_{inject}` nodes. Default: ``0.2``.
+    opt : str, optional
+        Optimization option. Choose from ``["sin", "clip"]``. Default: ``sin``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+    early_stop : bool, optional
+        Whether to early stop. Default: ``False``.
+    verbose : bool, optional
+        Whether to display logs. Default: ``True``.
+
+    """
     def __init__(self,
                  lr,
                  n_epoch,
@@ -21,11 +58,11 @@ class TDGIA(InjectionAttack):
                  feat_lim_max,
                  loss=F.nll_loss,
                  eval_metric=metric.eval_acc,
-                 inject_mode='random',
+                 inject_mode='tdgia',
                  sequential_step=0.2,
                  opt='sin',
                  device='cpu',
-                 early_stop=None,
+                 early_stop=False,
                  verbose=True):
         self.device = device
         self.lr = lr
@@ -48,6 +85,34 @@ class TDGIA(InjectionAttack):
             self.early_stop = early_stop
 
     def attack(self, model, adj, features, target_mask, adj_norm_func):
+        r"""
+
+        Description
+        -----------
+        Attack process consists of injection and feature update.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        adj : scipy.sparse.csr.csr_matrix
+            Adjacency matrix in form of ``N * N`` sparse matrix.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        target_mask : torch.Tensor
+            Mask of attack target nodes in form of ``N * 1`` torch bool tensor.
+        adj_norm_func : func of utils.normalize
+            Function that normalizes adjacency matrix.
+
+        Returns
+        -------
+        adj_attack : scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+        features_attack : torch.FloatTensor
+            Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+
+        """
+
         model.to(self.device)
         n_total, n_feat = features.shape
         features = utils.feat_preprocess(features=features, device=self.device)
@@ -60,6 +125,7 @@ class TDGIA(InjectionAttack):
 
         n_inject = 0
         features_attack = features
+        """Sequential injection"""
         while n_inject < self.n_inject_max:
             with torch.no_grad():
                 adj_tensor = utils.adj_preprocess(adj=adj,
@@ -101,8 +167,41 @@ class TDGIA(InjectionAttack):
 
     def injection(self, adj, n_inject, n_origin, n_current,
                   origin_labels, current_labels, target_mask,
-                  self_connect_ratio=0.0, weight1=0.9, weight2=0.1, mode='uniform'):
-        """Injection mode: uniform, random, tdgia. """
+                  self_connect_ratio=0.0, weight1=0.9, weight2=0.1, mode='tdgia'):
+        r"""
+
+        Description
+        -----------
+        Randomly inject nodes to target nodes.
+
+        Parameters
+        ----------
+        adj : scipy.sparse.csr.csr_matrix
+            Adjacency matrix in form of ``N * N`` sparse matrix.
+        n_inject : int
+            Number of injection.
+        n_origin : int
+            Number of original nodes.
+        n_current : int
+            Number of current nodes (after injection).
+        target_mask : torch.Tensor
+            Mask of attack target nodes in form of ``N * 1`` torch bool tensor.
+        self_connect_ratio : float. optional
+            Ratio of self connected edges among injected nodes. Default: ``0.0``.
+        weight1 : float, optional
+            Hyper-parameter of the score function. Refer to the paper. Default: ``0.9``.
+        weight2 : float, optional
+            Hyper-parameter of the score function. Refer to the paper. Default: ``0.1``.
+        mode : str, optional
+            Mode of injection. Choose from ``["random", "uniform", "tdgia"]``. Default: ``tdgia``.
+
+        Returns
+        -------
+        adj_attack : scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+
+        """
+
         n_origin = origin_labels.shape[0]
         n_test = torch.sum(target_mask).item()
         n_classes = origin_labels.max() + 1
@@ -240,6 +339,41 @@ class TDGIA(InjectionAttack):
 
     def update_features(self, model, adj_attack, features_current, features_attack,
                         origin_labels, n_origin, target_mask, adj_norm_func, opt='sin', smooth_factor=4):
+        r"""
+        Description
+        -----------
+        Adversarial feature generation of injected nodes.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        adj_attack :  scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+        features_current : torch.FloatTensor
+            Current features in form of :math:`(N + N_{inject})` * D` torch float tensor.
+        features_attack : torch.FloatTensor
+            Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+        origin_labels : torch.LongTensor
+            Labels of target nodes originally predicted by the model.
+        n_origin : int
+            Number of original nodes.
+        target_mask : torch.Tensor
+            Mask of target nodes in form of ``N * 1`` torch bool tensor.
+        adj_norm_func : func of utils.normalize
+            Function that normalizes adjacency matrix.
+        opt : str, optional
+            Optimization option. Choose from ``["sin", "clip"]``. Default: ``sin``.
+        smooth_factor : float, optional
+            Factor for smoothing the optimization. Default: ``4``.
+
+        Returns
+        -------
+        features_attack : torch.FloatTensor
+            Updated features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+
+        """
+
         lr = self.lr
         n_epoch = self.n_epoch
         feat_lim_min, feat_lim_max = self.feat_lim_min, self.feat_lim_max
@@ -296,23 +430,3 @@ class TDGIA(InjectionAttack):
                       end='\r' if i != n_epoch - 1 else '\n')
 
         return features_concat[n_origin:].detach()
-
-
-class EarlyStop(object):
-    def __init__(self, patience=1000, epsilon=1e-4):
-        self.patience = patience
-        self.epsilon = epsilon
-        self.min_score = None
-        self.stop = False
-        self.count = 0
-
-    def __call__(self, score):
-        if self.min_score is None:
-            self.min_score = score
-        elif self.min_score - score > 0:
-            self.count = 0
-            self.min_score = score
-        elif self.min_score - score < self.epsilon:
-            self.count += 1
-            if self.count > self.patience:
-                self.stop = True

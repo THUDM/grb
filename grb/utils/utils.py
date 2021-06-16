@@ -163,7 +163,7 @@ def get_index_induc(index_a, index_b):
 
 
 def download(url, save_path):
-    print("Downloading from {}".format(url))
+    print("Downloading from {}.".format(url))
     try:
         data = request.urlopen(url)
     except Exception as e:
@@ -172,6 +172,7 @@ def download(url, save_path):
         exit(1)
     with open(save_path, "wb") as f:
         f.write(data.read())
+    print("Saved to {}.".format(save_path))
 
 
 def save_dict_to_xlsx(result_dict, file_dir, file_name="result.xlsx", index=0, verbose=True):

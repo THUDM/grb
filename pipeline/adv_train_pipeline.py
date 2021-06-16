@@ -3,9 +3,6 @@ import os
 import sys
 
 import torch
-
-sys.path.append('../')
-
 from grb.dataset import Dataset
 from grb.defense import AdvTrainer
 

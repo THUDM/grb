@@ -1,11 +1,7 @@
-scipy~=1.6.1
-matplotlib~=3.3.4
-torch~=1.8.1
-numpy~=1.19.5
+scipy==1.6.1
+numpy==1.19.2
+matplotlib==3.3.4
 networkx==2.5
 recommonmark==0.7.1
-
-pandas~=1.2.3
-cogdl~=0.3.0.post1
-scikit-learn~=0.24.1
-setuptools~=56.0.0
+pandas==1.2.3
+scikit_learn==0.24.2
