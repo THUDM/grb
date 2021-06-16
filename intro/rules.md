@@ -2,7 +2,7 @@
 
 ## Evaluation Scenario
 
-![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
+![GRB](https://github.com/THUDM/grb/raw/master/docs/source/_static/grb_scenario.png)
 
 GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GNN model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
 
