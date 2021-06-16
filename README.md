@@ -1,11 +1,13 @@
 # Graph Robustness Benchmark
 
-Graph Robustness Benchmark (GRB) is a scalable, unified, extendable benchmark for evaluating the adversarial robustness of graph neural networks.
+**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard/cora)**
+
+Graph Robustness Benchmark (GRB) provides scalable, general, unified, and reproducible evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
 
 ## Installation
 
 ```
-git clone git@github.com:Stanislas0/grb.git
+pip install grb
 ```
 
 ## Usage
