@@ -15,11 +15,11 @@
     },
     "feature_range": [-2.30, 2.40],
     "feature_range_arctan_norm": [-0.94, 0.94],
-    "description": "The Cora dataset consists of 2708 scientific publications classified into one of seven classes. The citation network consists of 5429 links. Each publication in the dataset is described by a 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
-    "link": "https://relational.fit.cvut.cz/dataset/CORA",
+    "description": "Small-scale citation networks. Each node represents a research paper, and each edge represents a citation relationship between two papers. Instead of using the popular version of Cora used in Planetoid [1], we use a refined version [2], which removes duplicated nodes and generates indirect pre-trained word embeddings as node features to solve the problem of information leakage in the original version. As a result, the features become 302-dimension continuous features rather than 1433-dimension binary features in the original version. The task is to classify papers into 7 categories.",
+    "link": "https://cloud.tsinghua.edu.cn/d/1a38fba6dcb54d7390ba/",
     "refs": [{
-        "mla": "McCallum, Andrew Kachites, et al. \"Automating the construction of internet portals with machine learning.\" Information Retrieval 3.2 (2000): 127-163.",
-        "url": "http://www-2.cs.cmu.edu/~knigam/papers/cora-jnl.pdf"
+        "mla": "Zhilin, Yang, et al. \"Revisiting semi-supervised learning with graph embeddings.\" In *International conference on machine learning* (pp. 40-48). PMLR.",
+        "url": "https://arxiv.org/abs/1603.08861"
     }, {
         "mla": "Zou, Xu, et al. \"Dimensional Reweighting Graph Convolution Networks.\" (2019).",
         "url": "https://openreview.net/pdf?id=SJeLO34KwS"
@@ -41,14 +41,17 @@
     },
     "feature_range": [-4.55, 1.67],
     "feature_range_arctan_norm": [-0.96, 0.89],
-    "description": "The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. The citation network consists of 4732 links. Each publication in the dataset is described by a 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
-    "link": "https://linqs.soe.ucsc.edu/data",
+    "description": "Small-scale citation networks. Similar to *grb-cora*, we use a refined version [2] of CiteSeer [1], which eliminates identical papers and generates text embeddings by pre-trained BERT [3] model. The resulting features are 768-dimension continuous features rather than 3703-dimension binary features in the original version. The task is to classify papers into 6 categories.",
+    "link": "https://cloud.tsinghua.edu.cn/d/ad8d05a3b168435e8611/",
     "refs": [{
         "mla": "Giles, C. Lee, Kurt D. Bollacker, and Steve Lawrence. \"CiteSeer: An automatic citation indexing system.\" Proceedings of the third ACM conference on Digital libraries. 1998.",
         "url": "https://clgiles.ist.psu.edu/pubs/DL98citeseer.pdf"
     }, {
         "mla": "Zou, Xu, et al. \"Dimensional Reweighting Graph Convolution Networks.\" (2019).",
         "url": "https://openreview.net/pdf?id=SJeLO34KwS"
+    }, {
+        "mla": "Devlin, J., et al. \"Bert: Pre-training of deep bidirectional transformers for language understanding.\" *arXiv preprint arXiv:1810.04805*. (2018)",
+        "url": "https://arxiv.org/abs/1810.04805"
     }]
 }, {
     "name": "Flickr",
@@ -67,8 +70,8 @@
     },
     "feature_range": [-0.90, 269.96],
     "feature_range_arctan_norm": [-0.47, 1.00],
-    "description": "This dataset is built by forming links between images sharing common metadata from Flickr. Edges are formed between images from the same location, submitted to the same gallery, group, or set, images sharing common tags, images taken by friends, etc. The original images are collected from PASCAL, ImageCLEF, MIR, and NUS-wide.",
-    "link": "https://snap.stanford.edu/data/web-flickr.html",
+    "description": "Medium-scale social networks. This dataset is built by forming links between images sharing common metadata from Flickr [1]. Edges are formed between images from the same location, submitted to the same gallery, group, or set, images sharing common tags, images taken by friends, etc. The original images are collected from PASCAL, ImageCLEF, MIR, and NUS-wide. We adopt the version from [2], which contains descriptions and common properties of online images. The dataset is processed with a new splitting scheme and feature normalization mentioned in~\ref{sec:exp}. The task is to classify images into 7 categories.",
+    "link": "https://cloud.tsinghua.edu.cn/d/80020fb618ff4c059911/",
     "refs": [{
         "mla": "McAuley, Julian, and Jure Leskovec. \"Image labeling on a network: using social-network metadata for image classification.\" European conference on computer vision. Springer, Berlin, Heidelberg, 2012.",
         "url": "http://i.stanford.edu/~julian/pdfs/eccv2012.pdf"
@@ -93,8 +96,8 @@
     },
     "feature_range": [-28.19, 120.96],
     "feature_range_arctan_norm": [-0.98, 0.99],
-    "description": "The Reddit dataset is a graph dataset from Reddit posts made in the month of September, 2014. The node label in this case is the community, or “subreddit”, that a post belongs to. 50 large communities have been sampled to build a post-to-post graph, connecting posts if the same user comments on both. In total this dataset contains 232,965 posts with an average degree of 492. The first 20 days are used for training and the remaining days for testing (with 30% used for validation). For features, off-the-shelf 300-dimensional GloVe CommonCrawl word vectors are used.",
-    "link": "http://snap.stanford.edu/graphsage/",
+    "description": "Large-scale social networks. The Reddit dataset [1] is a graph dataset from Reddit posts made in the month of September, 2014. The node label in this case is the community, or “subreddit”, that a post belongs to. 50 large communities have been sampled to build a post-to-post graph, connecting posts if the same user comments on both. In total this dataset contains 232,965 posts with an average degree of 492. The first 20 days are used for training and the remaining days for testing (with 30% used for validation). For features, off-the-shelf 300-dimensional GloVe CommonCrawl word vectors are used. We adopt the Reddit dataset from [2], which contains the communities of online posts based on user comments. The task is to classify communities into 41 categories.",
+    "link": "https://cloud.tsinghua.edu.cn/d/bc4b2ab70a474bd59314/",
     "refs": [{
         "mla": "Hamilton, William L., Rex Ying, and Jure Leskovec. \"Inductive representation learning on large graphs.\" arXiv preprint arXiv:1706.02216 (2017).",
         "url": "https://www-cs-faculty.stanford.edu/people/jure/pubs/graphsage-nips17.pdf"
@@ -119,10 +122,13 @@
     },
     "feature_range": [-1.74, 1.62],
     "feature_range_arctan_norm": [-0.93, 0.93],
-    "description": "The dataset is collected for the purpose of cross domain recommendation.",
-    "links": "https://www.aminer.cn/data/?nav=openData#Topic-coauthor",
+    "description": " Large-scale citation networks. The papers are collected from the academic searching engine Aminer [1], and the dataset was used in KDD-CUP 2020 Graph Adversarial Attack \& Defense competition [2]. The task is to classify papers into 18 categories.",
+    "links": "https://cloud.tsinghua.edu.cn/d/8bbc3ce6adc74144b346/",
     "refs": [{
         "mla": "Tang, Jie, et al. \"Arnetminer: extraction and mining of academic social networks.\" Proceedings of the 14th ACM SIGKDD international conference on Knowledge discovery and data mining. 2008.",
         "url": "http://keg.cs.tsinghua.edu.cn/jietang/publications/KDD08-Tang-et-al-ArnetMiner.pdf"
+    }, {
+        "mla": "[2] KDD-CUP 2020 Graph Adversarial Attack \& Defense",
+        "url": "https://www.biendata.xyz/competition/kddcup_2020_formal/"
     }]
 }]
