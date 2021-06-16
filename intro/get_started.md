@@ -1,8 +1,8 @@
 # Get Started
 
-**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
+**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field.
 
-![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png)
+![GRB](https://github.com/THUDM/grb/raw/master/docs/source/_static/grb_framework.png)
 
 ## Installation
 
@@ -24,7 +24,7 @@ pip install -e .
 
 ### Training a GNN model
 
-An example of training Graph Convolutional Network ([GCN](https://arxiv.org/abs/1609.02907)) on _grb-cora_ dataset. 
+An example of training Graph Convolutional Network ([GCN](https://arxiv.org/abs/1609.02907)) on _grb-cora_ dataset.
 
 ```python
 import torch  # pytorch backend
@@ -55,11 +55,11 @@ An example of applying Topological Defective Graph Injection Attack ([TDGIA](htt
 from grb.attack.tdgia import TDGIA
 
 # Attack configuration
-tdgia = TDGIA(lr=0.01, 
+tdgia = TDGIA(lr=0.01,
               n_epoch=10,
-              n_inject_max=20, 
+              n_inject_max=20,
               n_edge_max=20,
-              feat_lim_min=-0.9, 
+              feat_lim_min=-0.9,
               feat_lim_max=0.9,
               sequential_step=0.2)
 # Apply attack
@@ -92,7 +92,7 @@ model = GCN(in_features=dataset.num_features,
             hidden_features=[64, 64])
 # Adversarial Training
 adam = torch.optim.Adam(model.parameters(), lr=0.01)
-advtrainer = AdvTrainer(dataset=dataset, optimizer=adam, 
+advtrainer = AdvTrainer(dataset=dataset, optimizer=adam,
                         adj_norm_func=GCNAdjNorm,
                   			loss=torch.nn.functional.nll_loss)
 advtrainer.train(model=model, n_epoch=200, dropout=0.5,
