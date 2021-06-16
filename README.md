@@ -14,8 +14,14 @@
 ## Installation
 
 Install grb via _pip_:
-```
+```bash
 pip install grb
+```
+Install grb via _git_:
+```bash
+git clone git@github.com:THUDM/grb.git
+cd grb
+pip install -e .
 ```
 
 ## GRB Evaluation Scenario
@@ -79,6 +85,12 @@ rst = tdgia.attack(model=model,
 # Get modified adj and features
 adj_attack, features_attack = rst
 ```
+
+## Reproducibility
+
+GRB maintains [leaderboards](https://cogdl.ai/grb/leaderboard/cora) that permits a fair comparision across various attacks and defenses. 
+To ensure the reproducibility, we provide all necessary information including . Trained models for each dataset can be downloaded [here](https://cloud.tsinghua.edu.cn/d/2f788d1ae1414955b404/).
+Results of attacks (adjacency matrix and adversarial features) can be downloaded [here]().
 
 ## Requirements
 
