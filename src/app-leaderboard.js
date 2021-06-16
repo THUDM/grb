@@ -19,14 +19,16 @@ const { Title, Paragraph } = Typography
 export const AppLeaderboard = () => {
     const { dataset } = useParams()
     const [leaderboard, setLeaderboard] = useState({ updated_time: null, data: {}, attacks: [], models: [], difficulties: [] })
-    const [configs, setConfigs] = useState({ difficulties: [], attacks: [], models: [], AttacksData: [], ModelsData: [], compared: undefined })
+    const defaultConfigs = { difficulties: [], attacks: [], models: [], AttacksData: [], ModelsData: [], compared: undefined }
+    const [configs, setConfigs] = useState(defaultConfigs)
     const [loading, setLoading] = useState(false)
     const [drawerData, setDrawerData] = useState(undefined)
     const [fullscreen, setFullscreen] = useState(false)
     useEffect(() => {
+        setConfigs(defaultConfigs)
         setLoading(true)
         Promise.all([
-            fetch(`${configurations.GITHUB_PROXY_URL}/results/leaderboards/${dataset}.json`).then(resp => resp.json()),
+            fetch(`${configurations.GITHUB_PROXY_URL}/results/leaderboards/${dataset.split('-')[1]}.json`).then(resp => resp.json()),
             fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/attacks.json`).then(resp => resp.json()),
             fetch(`${configurations.GITHUB_PROXY_URL}/results/meta/models.json`).then(resp => resp.json()),
         ]).then(data => {
@@ -46,7 +48,7 @@ export const AppLeaderboard = () => {
     const data = recalculateData(leaderboard.data, configs, leaderboard.difficulties)
     const items = getTableItems(data, configs)
     return <div className="app-leaderboard app-container" style={{ width: '100%', paddingTop: 30, paddingBottom: 30 }}>
-        <Title style={{ textAlign: 'center' }}><i>grb-{dataset.toLowerCase()}</i> Challenge</Title>
+        <Title style={{ textAlign: 'center' }}><i>{dataset.toLowerCase()}</i> Challenge</Title>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>
             Leaderboard
             <sup><a style={{marginLeft: 5}} onClick={() => setFullscreen(true)}><FullscreenOutlined /></a></sup>

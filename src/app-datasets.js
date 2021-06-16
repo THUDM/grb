@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { BarChartOutlined, FilePdfOutlined, CloudDownloadOutlined } from '@ant-design/icons'
 import configurations from './configurations';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
 function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

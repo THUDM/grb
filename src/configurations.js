@@ -1,5 +1,8 @@
 export default {
     GITHUB_PROXY_URL: 'https://cogdl.ai/grb/github/',
+    DOCS_URL: 'https://grb.readthedocs.io/en/latest',
+    TEAM_URL: 'http://keg.cs.tsinghua.edu.cn/',
+    GITHUB_URL: 'https://github.com/thudm/grb',
     Features: [{
         title: 'Elaborated Datasets',
         description: 'GRB introduces datasets of different scales that are preprocessed (e.g. novel splitting scheme, feature normalization), which contributes to comprehensive evaluation on adversarial robustness.',

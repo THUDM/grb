@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-d
 import './App.less';
 
 import { AppDatasets } from './app-datasets';
-import { AppDocs } from './app-docs'
 import { AppHome } from './app-home';
 import { AppLeaderboard } from './app-leaderboard';
 import { AppHeader } from './app-header';
@@ -22,7 +21,6 @@ const App = () => (
         <Switch>
           <Route path="/home" render={({history}) => <AppHome history={history}/>}/>
           <Route path="/intro/:entry" render={() => <AppIntro/>}/>
-          <Route path="/docs" render={() => <AppDocs/>}/>
           <Route path="/datasets" render={({history}) => <AppDatasets history={history}/>}/>
           <Route path="/leaderboard/:dataset" render={({history}) => <AppLeaderboard history={history}/>}/>
           <Route path="*"><Redirect to="/home"/></Route>

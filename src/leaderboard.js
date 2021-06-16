@@ -1,9 +1,9 @@
 import React from 'react';
-import { Badge, Select, Typography, Tooltip } from "antd";
+import { Select, Typography, Tooltip } from "antd";
 import { SwapOutlined } from '@ant-design/icons'
 import _ from "lodash";
 import { Bar } from '@ant-design/charts';
-import { std, sum, min, max } from 'mathjs';
+import { std, sum, min } from 'mathjs';
 import { tTest } from './t-test';
 
 const { Option } = Select;

@@ -3,6 +3,7 @@ import React from 'react'
 import { Layout, Menu } from 'antd'
 import { GithubOutlined } from '@ant-design/icons'
 import _ from 'lodash'
+import configurations from './configurations'
 
 const { Header } = Layout;
 const { SubMenu } = Menu;
@@ -18,15 +19,15 @@ export const AppHeader = ({history}) => {
             <Menu.Item key="get_started" onClick={() => history.push(`/intro/get_started`)}>Get Started</Menu.Item>
             <Menu.Item key="rules" onClick={() => history.push(`/intro/rules`)}>Rules</Menu.Item>
           </SubMenu>
-          <Menu.Item key="docs" onClick={() => history.push('/docs')}>Docs</Menu.Item>
           <Menu.Item key="datasets" onClick={() => history.push('/datasets')}>Datasets</Menu.Item>
           <SubMenu key="leaderboard" title="Leaderboard" popupOffset={[-20,-2]}>
-            {['Citeseer', 'Cora', 'Flickr', 'Reddit', 'AMiner'].map(dataset_name => <Menu.Item
-              key={dataset_name.toLowerCase()} onClick={() => history.push(`/leaderboard/${dataset_name.toLowerCase()}`)}
+            {['grb-citeseer', 'grb-cora', 'grb-flickr', 'grb-reddit', 'grb-aminer'].map(dataset_name => <Menu.Item
+              key={dataset_name} onClick={() => history.push(`/leaderboard/${dataset_name}`)}
             >{dataset_name}</Menu.Item>)}
           </SubMenu>
-          <Menu.Item key="team" onClick={() => { window.location.href = 'http://keg.cs.tsinghua.edu.cn/' }}>Team</Menu.Item>
-          <Menu.Item key="github" onClick={() => { window.location.href = 'https://github.com/Stanislas0/grb' }}>Github <GithubOutlined style={{marginLeft: 5, marginRight: 0}}/></Menu.Item>
+          <Menu.Item key="team" onClick={() => { window.location.href = configurations.TEAM_URL }}>Team</Menu.Item>
+          <Menu.Item key="docs" onClick={() => { window.location.href = configurations.DOCS_URL }}>Docs</Menu.Item>
+          <Menu.Item key="github" onClick={() => { window.location.href = configurations.GITHUB_URL }}>Github <GithubOutlined style={{marginLeft: 5, marginRight: 0}}/></Menu.Item>
         </Menu>
       </div>
     </Header>
