@@ -15,7 +15,7 @@ class TDGIA(InjectionAttack):
     r"""
     Description
     -----------
-    Topological Defective Graph Injection Attack (`TDGIA <https://github.com/THUDM/GIAAD>`__).
+    Topological Defective Graph Injection Attack (`TDGIA <https://github.com/THUDM/tdgia>`__).
 
     Parameters
     ----------

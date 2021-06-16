@@ -1,18 +1,39 @@
-# Graph Robustness Benchmark
+![GRB](./docs/source/_static/grb_logo.png)
+===
 
-**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard/cora)**
+[![PyPi Latest Release](https://badge.fury.io/py/grb.svg)](https://pypi.org/project/grb/)
+[![Documentation Status](https://readthedocs.org/projects/grb/badge/?version=latest)](https://grb.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/github/license/THUDM/grb)](./LICENSE)
 
-Graph Robustness Benchmark (GRB) provides scalable, general, unified, and reproducible evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
+**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard/cora)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
+
+**Graph Robustness Benchmark (GRB)** provides scalable, general, unified, and reproducible evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
+
+![GRB](./docs/source/_static/grb_framework.png)
 
 ## Installation
 
+Install grb via ``pip``:
 ```
 pip install grb
 ```
 
+## GRB Evaluation Scenario
+
+![GRB](./docs/source/_static/grb_scenario.png)
+
+GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GNN model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
+
+* **Black-box**: Both the attacker and the defender have no knowledge about the applied methods each other uses.
+* **Evasion**: GNNs are already trained in trusted data (e.g. authenticated users), which are untouched by the attackers but might have natural noises. Thus, attacks will only happen during the inference phase. 
+* **Inductive**: GNNs are used to classify unseen data (e.g. new users), i.e. validation or test data are unseen during training, which requires GNNs to generalize to out of distribution data.
+* **Injection**: The attackers can only inject new nodes but not modify the target nodes directly. Since it is usually hard to hack into users' accounts and modify their profiles. However, it is easier to create fake accounts and connect them to existing users.
+
 ## Usage
 
 ### Training a GNN model
+
+An example of training Graph Convolutional Network ([GCN](https://arxiv.org/abs/1609.02907)) on _grb-cora_ dataset. 
 
 ```python
 import torch  # pytorch backend
@@ -36,6 +57,8 @@ trainer.train(model=model, n_epoch=200, dropout=0.5,
 ```
 
 ### Adversarial attack
+
+An example of applying Topological Defective Graph Injection Attack ([TDGIA](https://github.com/THUDM/tdgia)) on trained GCN model.
 
 ```python
 from grb.attack.tdgia import TDGIA

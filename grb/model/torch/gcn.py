@@ -9,7 +9,7 @@ class GCN(nn.Module):
 
     Description
     -----------
-    Graph Convolutional Networks (`GCN https://arxiv.org/abs/1609.02907>`__)
+    Graph Convolutional Networks (`GCN <https://arxiv.org/abs/1609.02907>`__)
 
     Parameters
     ----------
