@@ -1,5 +1,4 @@
 ![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_logo.png)
-------
 
 [![PyPi Latest Release](https://badge.fury.io/py/grb.svg)](https://pypi.org/project/grb/)
 [![Documentation Status](https://readthedocs.org/projects/grb/badge/?version=latest)](https://grb.readthedocs.io/en/latest/?badge=latest)
@@ -9,10 +8,9 @@
 
 **Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has **elaborated datasets**, **unified evaluation pipeline**, **reproducible leaderboards**, and **modular coding framework**, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
 
-<div align=center><img width="800" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png/></div>
+<div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png/></div>
 
 ## Get Started
-------
 
 ### Installation
 
@@ -45,7 +43,6 @@ sh download_saved_models.sh
 ```
 
 ## Usage of GRB Modules
-------
 
 ### Training a GNN model
 
@@ -97,7 +94,6 @@ adj_attack, features_attack = rst
 ```
 
 ## GRB Evaluation
-------
 
 ### Evaluation scenario
 
