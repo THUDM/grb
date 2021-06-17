@@ -1,9 +1,6 @@
 grb.attack
 ==========
 
-Submodules
-----------
-
 grb.attack.base
 ---------------
 
@@ -48,14 +45,6 @@ grb.attack.tdgia
 ----------------
 
 .. automodule:: grb.attack.tdgia
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: grb.attack
    :members:
    :undoc-members:
    :show-inheritance:

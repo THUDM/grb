@@ -1,9 +1,6 @@
 grb
 ===
 
-Subpackages
------------
-
 .. toctree::
    :maxdepth: 4
 
@@ -13,11 +10,3 @@ Subpackages
    grb.evaluator
    grb.model
    grb.utils
-
-Module contents
----------------
-
-.. automodule:: grb
-   :members:
-   :undoc-members:
-   :show-inheritance:

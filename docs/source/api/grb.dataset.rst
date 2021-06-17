@@ -1,9 +1,6 @@
 grb.dataset
 ===========
 
-Submodules
-----------
-
 grb.dataset.dataset
 -------------------
 
@@ -12,10 +9,3 @@ grb.dataset.dataset
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: grb.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,9 +1,6 @@
 grb.model.dgl
 =============
 
-Submodules
-----------
-
 grb.model.dgl.gat
 -----------------
 
@@ -36,10 +33,3 @@ grb.model.dgl.grand
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: grb.model.dgl
-   :members:
-   :undoc-members:
-   :show-inheritance:

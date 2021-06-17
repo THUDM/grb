@@ -1,9 +1,6 @@
 grb.utils
 =========
 
-Submodules
-----------
-
 grb.utils.normalize
 -------------------
 
@@ -32,14 +29,6 @@ grb.utils.visualize
 -------------------
 
 .. automodule:: grb.utils.visualize
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: grb.utils
    :members:
    :undoc-members:
    :show-inheritance:

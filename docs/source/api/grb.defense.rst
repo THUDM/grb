@@ -1,9 +1,6 @@
 grb.defense
 ===========
 
-Submodules
-----------
-
 grb.defense.adv\_trainer
 ------------------------
 
@@ -32,14 +29,6 @@ grb.defense.gnnguard
 --------------------
 
 .. automodule:: grb.defense.gnnguard
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: grb.defense
    :members:
    :undoc-members:
    :show-inheritance:

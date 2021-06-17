@@ -1,9 +1,6 @@
 grb.model.torch
 ===============
 
-Submodules
-----------
-
 grb.model.torch.appnp
 ---------------------
 
@@ -60,10 +57,3 @@ grb.model.torch.tagcn
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: grb.model.torch
-   :members:
-   :undoc-members:
-   :show-inheritance:
