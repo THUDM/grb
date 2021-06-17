@@ -5,13 +5,16 @@
 [![Documentation Status](https://readthedocs.org/projects/grb/badge/?version=latest)](https://grb.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/github/license/THUDM/grb)](./LICENSE)
 
-**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard/cora)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
+**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
 
-**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
+**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has **elaborated datasets**, **unified evaluation pipeline**, **reproducible leaderboards**, and **modular coding framework**, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
 
 ![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png)
 
-## Installation
+## Get Started
+===
+
+### Installation
 
 Install grb via _pip_:
 ```bash
@@ -24,18 +27,25 @@ cd grb
 pip install -e .
 ```
 
-## GRB Evaluation Scenario
+### Preparation
 
-![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
+GRB provides all necessary components to ensure the reproducibility of evaluation results.
+Get datasets from [link](https://cloud.tsinghua.edu.cn/d/c77db90e05e74a5c9b8b/) or download them by running the following script:
+```bash
+cd ./scripts
+sh download_dataset.sh
+```
+Get attack results (adversarial adjacency matrix and features) from [link](https://cloud.tsinghua.edu.cn/d/94b2ea104c2e457d9667/) or download them by running the following script:
+```bash
+sh download_attack_results.sh
+```
+Get saved models (model weights) from [link](https://cloud.tsinghua.edu.cn/d/8b51a6b428464340b368/) or download them by running the following script:
+```bash
+sh download_saved_models.sh
+```
 
-GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GNN model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
-
-* **Black-box**: Both the attacker and the defender have no knowledge about the applied methods each other uses.
-* **Evasion**: GNNs are already trained in trusted data (e.g. authenticated users), which are untouched by the attackers but might have natural noises. Thus, attacks will only happen during the inference phase. 
-* **Inductive**: GNNs are used to classify unseen data (e.g. new users), i.e. validation or test data are unseen during training, which requires GNNs to generalize to out of distribution data.
-* **Injection**: The attackers can only inject new nodes but not modify the target nodes directly. Since it is usually hard to hack into users' accounts and modify their profiles. However, it is easier to create fake accounts and connect them to existing users.
-
-## Usage
+## Usage of GRB Modules
+===
 
 ### Training a GNN model
 
@@ -86,11 +96,33 @@ rst = tdgia.attack(model=model,
 adj_attack, features_attack = rst
 ```
 
-## Reproducibility
+## GRB Evaluation
+===
 
-GRB maintains [leaderboards](https://cogdl.ai/grb/leaderboard/cora) that permits a fair comparision across various attacks and defenses. 
-To ensure the reproducibility, we provide all necessary information including . Trained models for each dataset can be downloaded [here](https://cloud.tsinghua.edu.cn/d/2f788d1ae1414955b404/).
-Results of attacks (adjacency matrix and adversarial features) can be downloaded [here]().
+### Evaluation scenario
+
+![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
+
+GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GNN model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
+
+* **Black-box**: Both the attacker and the defender have no knowledge about the applied methods each other uses.
+* **Evasion**: GNNs are already trained in trusted data (e.g. authenticated users), which are untouched by the attackers but might have natural noises. Thus, attacks will only happen during the inference phase. 
+* **Inductive**: GNNs are used to classify unseen data (e.g. new users), i.e. validation or test data are unseen during training, which requires GNNs to generalize to out of distribution data.
+* **Injection**: The attackers can only inject new nodes but not modify the target nodes directly. Since it is usually hard to hack into users' accounts and modify their profiles. However, it is easier to create fake accounts and connect them to existing users.
+
+### GRB Leaderboard
+
+GRB maintains [leaderboards](https://cogdl.ai/grb/leaderboard/) that permits a fair comparision across various attacks and defenses. To ensure the reproducibility, we provide all necessary information including datasets, attack results, saved models, etc. Besides, all results on the leaderboards can be easily reproduced by running the following scripts (e.g. [leaderboard for _grb-cora_ dataset](https://cogdl.ai/grb/leaderboard/cora)):
+```bash
+sh run_leaderboard_pipeline.sh -d grb-cora -g 0 -s ./leaderboard -n 0
+Usage: run_leaderboard_pipeline.sh [-d <string>] [-g <int>] [-s <string>] [-n <int>]
+Pipeline for reproducing leaderboard on the chosen dataset.
+    -h      Display help message.
+    -d      Choose a dataset.
+    -s      Set a directory to save leaderboard files.
+    -n      Choose the number of an attack from 0 to 9.
+    -g      Choose a GPU device. -1 for CPU.
+```
 
 ## Requirements
 
