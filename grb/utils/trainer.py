@@ -4,22 +4,49 @@ import time
 import torch
 import torch.nn.functional as F
 
-import grb.utils as utils
-from grb.evaluator import metric
+from ..utils import utils
+from ..evaluator import metric
 
 
 class Trainer(object):
+    r"""
+
+    Description
+    -----------
+    Trainer for GNNs.
+
+    Parameters
+    ----------
+    dataset : grb.dataset.Dataset or grb.dataset.CustomDataset
+        GRB supported dataset.
+    optimizer : torch.optim
+        Optimizer for training.
+    loss : func of torch.nn.functional
+        Loss function.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``None``.
+    feat_norm : str, optional
+        Type of feature normalization, ['arctan', 'tanh']. Default: ``None``.
+    lr_scheduler : bool, optional
+        Whether to use learning rate scheduler.
+    early_stop : bool, optional
+        Whether to use early stop.
+    eval_metric : func of grb.metric, optional
+        Evaluation metric, like accuracy or F1 score. Default: ``grb.metric.eval_acc``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+
+    """
     def __init__(self,
                  dataset,
                  optimizer,
                  loss,
                  adj_norm_func=None,
                  feat_norm=None,
-                 lr_scheduler=None,
-                 early_stop=None,
+                 lr_scheduler=False,
+                 early_stop=False,
                  eval_metric=metric.eval_acc,
                  device='cpu'):
-
         # Load dataset
         self.adj = dataset.adj
         self.features = dataset.features
@@ -68,8 +95,36 @@ class Trainer(object):
               eval_every=10,
               save_after=0,
               train_mode="trasductive",
-              dropout=0,
+              dropout=0.0,
               verbose=True):
+        r"""
+
+        Description
+        -----------
+        Train a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        n_epoch : int
+            Number of epoch.
+        save_dir : str, optional
+            Directory for saving model. Default: ``None``.
+        save_name : str, optional
+            Name for saved model. Default: ``None``.
+        eval_every : int, optional
+            Evaluation step. Default: ``10``.
+        save_after : int, optional
+            Save after certain number of epoch. Default: ``0``.
+        train_mode : str, optional
+            Training mode, ['inductive', 'transductive']. Default: ``transductive``.
+        dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
+        verbose : bool, optional
+            Whether to display logs. Default: ``False``.
+
+        """
         model.to(self.device)
         model.train()
 
@@ -231,6 +286,25 @@ class Trainer(object):
         utils.save_model(model, save_dir, "checkpoint_final.pt")
 
     def inference(self, model):
+        r"""
+
+        Description
+        -----------
+        Inference of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+
+        Returns
+        -------
+        logits : torch.Tensor
+            Output logits of model.
+        test_score : float
+            Score on test set.
+
+        """
         model.to(self.device)
         model.eval()
         adj = utils.adj_preprocess(self.adj,
@@ -250,7 +324,24 @@ class Trainer(object):
 
 
 class EarlyStop(object):
+    r"""
+
+    Description
+    -----------
+    Strategy to early stop training process.
+
+    """
     def __init__(self, patience=1000, epsilon=1e-5):
+        r"""
+
+        Parameters
+        ----------
+        patience : int, optional
+            Number of epoch to wait if no further improvement. Default: ``1000``.
+        epsilon : float, optional
+            Tolerance range of improvement. Default: ``1e-4``.
+
+        """
         self.patience = patience
         self.epsilon = epsilon
         self.min_loss = None
@@ -258,6 +349,14 @@ class EarlyStop(object):
         self.count = 0
 
     def __call__(self, loss):
+        r"""
+
+        Parameters
+        ----------
+        loss : float
+            Value of loss function.
+
+        """
         if self.min_loss is None:
             self.min_loss = loss
         elif self.min_loss - loss > self.epsilon:

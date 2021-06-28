@@ -16,8 +16,8 @@ class AttackEvaluator(object):
 
     Parameters
     ----------
-    dataset : grb.dataset.Dataset
-        grb supported dataset.
+    dataset : grb.dataset.Dataset or grb.dataset.CustomDataset
+        GRB supported dataset.
     build_model : func
         Function that builds a model with specific configuration.
     device : str, optional
@@ -96,8 +96,8 @@ class AttackEvaluator(object):
             Adjacency matrix in form of ``N * N`` sparse matrix.
         features : torch.FloatTensor
             Features in form of ``N * D`` torch float tensor.
-        adj_norm_func : func of utils.normalize
-            Function that normalizes adjacency matrix.
+        adj_norm_func : func of utils.normalize, optional
+            Function that normalizes adjacency matrix. Default: ``None``.
 
         Returns
         -------
