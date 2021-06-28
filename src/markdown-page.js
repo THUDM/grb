@@ -3,12 +3,18 @@ import { Spin } from 'antd'
 import React, { useState, useEffect } from 'react'
 
 import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
 import gfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import rehypeRaw from 'rehype-raw'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 
 export const MarkdownComponent = ({data}) => {
-    return <ReactMarkdown remarkPlugins={[gfm]} rehypePlugins={[rehypeRaw]} components={{
+    return <ReactMarkdown
+        remarkPlugins={[gfm, remarkMath]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
+        components={{
         code({node, inline, className, children, ...props}) {
         const match = /language-(\w+)/.exec(className || '')
         const lang = match ? match[1] : 'bash'

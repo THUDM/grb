@@ -2058,6 +2058,11 @@
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.6.tgz#f4c7ec43e81b319a9815115031709f26987891f0"
   integrity sha512-3c+yGKvVP5Y9TYBEibGNR+kLtijnj7mYrXRg+WpFb2X9xm04g/DXYkfg4hmzJQosc9snFNUPkbYIhu+KAm6jJw==
 
+"@types/katex@^0.11.0":
+  version "0.11.0"
+  resolved "https://registry.nlark.com/@types/katex/download/@types/katex-0.11.0.tgz#b16c54ee670925ffef0616beae9e90c557e17334"
+  integrity sha1-sWxU7mcJJf/vBha+rp6QxVfhczQ=
+
 "@types/mdast@^3.0.0":
   version "3.0.3"
   resolved "https://registry.nlark.com/@types/mdast/download/@types/mdast-3.0.3.tgz#2d7d671b1cd1ea3deb306ea75036c2a0407d2deb"
@@ -3659,7 +3664,7 @@ comma-separated-tokens@^1.0.0:
   resolved "https://registry.nlark.com/comma-separated-tokens/download/comma-separated-tokens-1.0.8.tgz#632b80b6117867a158f1080ad498b2fbe7e3f5ea"
   integrity sha1-YyuAthF4Z6FY8QgK1Jiy++fj9eo=
 
-commander@^2.11.0, commander@^2.20.0:
+commander@^2.11.0, commander@^2.19.0, commander@^2.20.0:
   version "2.20.3"
   resolved "https://registry.npmjs.org/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -3668,6 +3673,11 @@ commander@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmjs.org/commander/-/commander-4.1.1.tgz#9fd602bd936294e9e9ef46a3f4d6964044b18068"
   integrity sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==
+
+commander@^6.0.0:
+  version "6.2.1"
+  resolved "https://registry.nlark.com/commander/download/commander-6.2.1.tgz?cache=0&sync_timestamp=1624609618679&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fcommander%2Fdownload%2Fcommander-6.2.1.tgz#0792eb682dfbc325999bb2b84fddddba110ac73c"
+  integrity sha1-B5LraC37wyWZm7K4T93duhEKxzw=
 
 common-tags@^1.8.0:
   version "1.8.0"
@@ -7406,6 +7416,20 @@ jsx-ast-utils@^2.2.1, jsx-ast-utils@^2.2.3:
     array-includes "^3.1.1"
     object.assign "^4.1.0"
 
+katex@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.nlark.com/katex/download/katex-0.12.0.tgz#2fb1c665dbd2b043edcf8a1f5c555f46beaa0cb9"
+  integrity sha1-L7HGZdvSsEPtz4ofXFVfRr6qDLk=
+  dependencies:
+    commander "^2.19.0"
+
+katex@^0.13.0:
+  version "0.13.11"
+  resolved "https://registry.nlark.com/katex/download/katex-0.13.11.tgz#66138ebf173f25ef130cd3a3ea3ea1d12a3f1362"
+  integrity sha1-ZhOOvxc/Je8TDNOj6j6h0So/E2I=
+  dependencies:
+    commander "^6.0.0"
+
 killable@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/killable/-/killable-1.0.1.tgz#4c8ce441187a061c7474fb87ca08e2a638194892"
@@ -7826,6 +7850,15 @@ mdast-util-gfm@^0.1.0:
     mdast-util-gfm-task-list-item "^0.1.0"
     mdast-util-to-markdown "^0.6.1"
 
+mdast-util-math@^0.1.0:
+  version "0.1.2"
+  resolved "https://registry.nlark.com/mdast-util-math/download/mdast-util-math-0.1.2.tgz#629a0793bd8822432917e5ddda5279492390cc2b"
+  integrity sha1-YpoHk72IIkMpF+Xd2lJ5SSOQzCs=
+  dependencies:
+    longest-streak "^2.0.0"
+    mdast-util-to-markdown "^0.6.0"
+    repeat-string "^1.0.0"
+
 mdast-util-to-hast@^10.2.0:
   version "10.2.0"
   resolved "https://registry.nlark.com/mdast-util-to-hast/download/mdast-util-to-hast-10.2.0.tgz#61875526a017d8857b71abc9333942700b2d3604"
@@ -7971,6 +8004,14 @@ micromark-extension-gfm@^0.3.0:
     micromark-extension-gfm-table "~0.4.0"
     micromark-extension-gfm-tagfilter "~0.3.0"
     micromark-extension-gfm-task-list-item "~0.3.0"
+
+micromark-extension-math@^0.1.0:
+  version "0.1.2"
+  resolved "https://registry.nlark.com/micromark-extension-math/download/micromark-extension-math-0.1.2.tgz#5d7bb2b86018da4a758c05f3991664430ee4d711"
+  integrity sha1-XXuyuGAY2kp1jAXzmRZkQw7k1xE=
+  dependencies:
+    katex "^0.12.0"
+    micromark "~2.11.0"
 
 micromark@^2.11.3, micromark@~2.11.0, micromark@~2.11.3:
   version "2.11.4"
@@ -10703,6 +10744,26 @@ rehype-highlight@^4.1.0:
     lowlight "^1.10.0"
     unist-util-visit "^2.0.0"
 
+rehype-katex@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.nlark.com/rehype-katex/download/rehype-katex-5.0.0.tgz#b556f24fde918f28ba1cb642ea71c7e82f3373d7"
+  integrity sha1-tVbyT96Rjyi6HLZC6nHH6C8zc9c=
+  dependencies:
+    "@types/katex" "^0.11.0"
+    hast-util-to-text "^2.0.0"
+    katex "^0.13.0"
+    rehype-parse "^7.0.0"
+    unified "^9.0.0"
+    unist-util-visit "^2.0.0"
+
+rehype-parse@^7.0.0:
+  version "7.0.1"
+  resolved "https://registry.nlark.com/rehype-parse/download/rehype-parse-7.0.1.tgz#58900f6702b56767814afc2a9efa2d42b1c90c57"
+  integrity sha1-WJAPZwK1Z2eBSvwqnvotQrHJDFc=
+  dependencies:
+    hast-util-from-parse5 "^6.0.0"
+    parse5 "^6.0.0"
+
 rehype-raw@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npm.taobao.org/rehype-raw/download/rehype-raw-5.1.0.tgz#66d5e8d7188ada2d31bc137bc19a1000cf2c6b7e"
@@ -10722,6 +10783,14 @@ remark-gfm@^1.0.0:
   dependencies:
     mdast-util-gfm "^0.1.0"
     micromark-extension-gfm "^0.3.0"
+
+remark-math@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.nlark.com/remark-math/download/remark-math-4.0.0.tgz#494ddd50766555ad2332e3afca7796a76452256f"
+  integrity sha1-SU3dUHZlVa0jMuOvyneWp2RSJW8=
+  dependencies:
+    mdast-util-math "^0.1.0"
+    micromark-extension-math "^0.1.0"
 
 remark-parse@^9.0.0:
   version "9.0.0"
