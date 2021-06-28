@@ -76,7 +76,7 @@ With the above designs, GRB leaderboard is able to track the progress on impovin
 
 GRB respects high reproducibility for all results on the leaderboards. To this end, GRB provides all necessary information to reproduce the results including datasets, implementations, attack results, saved models, etc. GRB also has a modular coding framework containing Implementations of all methods, which can be found in the Github repo: [https://github.com/THUDM/grb](https://github.com/THUDM/grb). There are also scripts to reproduce the leaderboards. Here are some instructions:
 
-1.  Install ``grb`` package:
+1.  Install grb package:
 
    ```bash
    git clone git@github.com:THUDM/grb.git
@@ -111,4 +111,4 @@ GRB respects high reproducibility for all results on the leaderboards. To this e
        -g      Choose a GPU device. -1 for CPU.
    ```
 
-Users are allowed to add new methods or current methods with different hyperparameters by modifying configurations in ``./pipeline/grb-xxx/config.py``. For future submissions, users should follow the [GRB Evaluation Rules](https://cogdl.ai/grb/intro/rules) to ensure the reproducibility. The submission platform will be ready soon. 
+Users are allowed to add new methods or current methods with different hyperparameters by modifying configurations in ./pipeline/grb-xxx/config.py. For future submissions, users should follow the [GRB Evaluation Rules](https://cogdl.ai/grb/intro/rules) to ensure the reproducibility. The submission platform will be ready soon. 
