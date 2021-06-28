@@ -1,8 +1,8 @@
 # Get Started
 
-**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, reproducible leaderboards, and modular coding framework, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field.
+**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the *adversarial robustness* of graph machine learning models, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, modular coding framework, and reproducible leaderboards, which facilitates a fair comparison among various attacks & defenses on GNNs and will promote future research in this field.
 
-![GRB](https://github.com/THUDM/grb/raw/master/docs/source/_static/grb_framework.png)
+<div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png/></div>
 
 ## Installation
 
