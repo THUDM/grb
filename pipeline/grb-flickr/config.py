@@ -63,7 +63,7 @@ def build_model(model_name, num_features, num_classes):
                            activation=F.relu)
             adj_norm_func = utils.normalize.GCNAdjNorm
     elif "robustgcn" in model_name:
-        from grb.model.torch.robustgcn import RobustGCN
+        from grb.defense.robustgcn import RobustGCN
 
         model = RobustGCN(in_features=num_features,
                           out_features=num_classes,
