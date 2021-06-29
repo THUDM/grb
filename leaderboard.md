@@ -63,8 +63,8 @@ In GRB leaderboard, the attacks are shown vertically and the defenses horizontal
 
 * Users are allowed to customize the configuration to compare various **Attacks** or **Models** under different **Difficulty**.
 * There are also four preset configurations:
-  * **Brief**: The best 3 attacks and the best 5 defenses under the **Full** difficulty.
-  * **Main**: The best 5 attacks and the best 10 defenses under the **Full** difficulty. Default configuration.
+  * **Brief**: The best 5 attacks and the best 5 defenses under the **Full** difficulty.
+  * **Main**: The best 5 attacks and the best 10 defenses under all four difficulties. Default configuration.
   * **Completed**: All attacks and all defenses under all four difficulties. 
   * **No Defense**: All attacks and all vanilla GNNs (without any defense mechanism).
 
