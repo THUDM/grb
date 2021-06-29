@@ -70,7 +70,7 @@
     },
     "feature_range": [-0.90, 269.96],
     "feature_range_arctan_norm": [-0.47, 1.00],
-    "description": "Medium-scale social networks. This dataset is built by forming links between images sharing common metadata from Flickr [1]. Edges are formed between images from the same location, submitted to the same gallery, group, or set, images sharing common tags, images taken by friends, etc. The original images are collected from PASCAL, ImageCLEF, MIR, and NUS-wide. We adopt the version from [2], which contains descriptions and common properties of online images. The dataset is processed with a new splitting scheme and feature normalization mentioned in~\ref{sec:exp}. The task is to classify images into 7 categories.",
+    "description": "Medium-scale social networks. This dataset is built by forming links between images sharing common metadata from Flickr [1]. Edges are formed between images from the same location, submitted to the same gallery, group, or set, images sharing common tags, images taken by friends, etc. The original images are collected from PASCAL, ImageCLEF, MIR, and NUS-wide. We adopt the version from [2], which contains descriptions and common properties of online images. The dataset is processed with a new splitting scheme and feature normalization. The task is to classify images into 7 categories.",
     "link": "https://cloud.tsinghua.edu.cn/d/80020fb618ff4c059911/",
     "refs": [{
         "mla": "McAuley, Julian, and Jure Leskovec. \"Image labeling on a network: using social-network metadata for image classification.\" European conference on computer vision. Springer, Berlin, Heidelberg, 2012.",
