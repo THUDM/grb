@@ -9,9 +9,11 @@ GRB includes five datasets of different scales, *grb-cora*, *grb-citeseer*, *grb
         width="1000"
         src=https://github.com/THUDM/grb/raw/master/docs/source/_static/data_splitting.png>    
   <br>    
-  <div style="color:black; 1px solid #d9d9d9;    
+  <div style="color:black; 1px solid #d9d9d9;
+              font-size: 20px;    
               display: inline-block;
               padding: 2px;">Novel splitting scheme for GRB datasets. </div> 
+  <br>
 </center>
 
 

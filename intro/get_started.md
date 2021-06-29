@@ -5,9 +5,11 @@
         width="800"
         src=https://github.com/THUDM/grb/raw/master/docs/source/_static/grb_framework.png>    
   <br>    
-  <div style="color:black; 1px solid #d9d9d9;    
+  <div style="color:black; 1px solid #d9d9d9;
+              font-size: 20px;    
               display: inline-block;
               padding: 2px;">GRB framework. </div> 
+  <br>
 </center>
 
 GRB is mainly built on [PyTorch](https://pytorch.org/), and also supports popular graph learning libraries like [CogDL](https://github.com/THUDM/cogdl) and [DGL](https://github.com/dmlc/dgl). It provides a modular coding framework, which allows users to conveniently use the implemented methods, and to add new ones. It contains several modules that support the process illustrated in the above figure: (1) *Dataset*: loads GRB datasets and applies necessary preprocessing including splitting scheme and features normalization; it also allows users to customize their own datasets and make them compatible with GRB evaluation framework. (2) *Model*: implements GNN models, which supports models built on pure Pytorch, CogDL or DGL by automatically transforming the inputs to the required formats. (3) *Attack*: builds adversarial attacks on GNNs, the process of attack is abstracted to different components. (4) *Defense*: engages defense mechanism to GNN models, including *preprocess-based* and *model-based* defenses. (5) *Evaluator*: evaluates one/multiple methods under unified evaluation settings, i.e. same datasets, constraints and evaluation metrics. (6) *Pipeline*: unifies the entire process of evaluation: load datasets, train/load models, apply attacks/defenses, and finally get the robustness evaluation results; it also helps to easily reproduce the exact results on GRB leaderboards. Apart from these modules, there are also some others like *Trainer* for model training, *Visualise* for visualizing the attack process. 
