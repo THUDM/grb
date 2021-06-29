@@ -340,7 +340,7 @@ export function getAttackChart(data, difficulties, summary, configs) {
 export function getDefenceChart(data, difficulties, summary, configs) {
     const {models} = configs
     let barData = _.flatMap(models, model => difficulties.map(difficulty => {
-        return { label: model, type: _.capitalize(difficulty), value: parseFloat(data[summary][difficulty][model].mean.toFixed(2)) }
+        return { label: model.toUpperCase(), type: _.capitalize(difficulty), value: parseFloat(data[summary][difficulty][model].mean.toFixed(2)) }
     }))
     return <Bar data={barData} isGroup xField="value" yField="label" seriesField="type" marginRatio={0.1}
         label={{

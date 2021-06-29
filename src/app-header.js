@@ -21,12 +21,12 @@ export const AppHeader = ({history}) => {
           </SubMenu>
           <Menu.Item key="datasets" onClick={() => history.push('/datasets')}>Datasets</Menu.Item>
           <SubMenu key="leaderboard" title={<span onClick={() => history.push('/leaderboard/')}>Leaderboard</span>} popupOffset={[-20,-2]}>
-            {['grb-citeseer', 'grb-cora', 'grb-flickr', 'grb-reddit', 'grb-aminer'].map(dataset_name => <Menu.Item
+            {['grb-cora', 'grb-citeseer', 'grb-flickr', 'grb-reddit', 'grb-aminer'].map(dataset_name => <Menu.Item
               key={dataset_name} onClick={() => history.push(`/leaderboard/${dataset_name}`)}
             >{dataset_name}</Menu.Item>)}
           </SubMenu>
           <Menu.Item key="team" onClick={() => { window.location.href = configurations.TEAM_URL }}>Team</Menu.Item>
-          <Menu.Item key="docs" onClick={() => { window.location.href = configurations.DOCS_URL }}>Docs</Menu.Item>
+          <Menu.Item key="docs" onClick={() => { window.location.href = configurations.DOCS_URL }}>Docs <ReadOutlined style={{marginLeft: 5, marginRight: 0}}/></Menu.Item>
           <Menu.Item key="github" onClick={() => { window.location.href = configurations.GITHUB_URL }}>Github <GithubOutlined style={{marginLeft: 5, marginRight: 0}}/></Menu.Item>
         </Menu>
       </div>

@@ -16,7 +16,7 @@ function getDatasetTableColumns() {
         title: 'Name',
         fixed: 'left',
         align: 'center',
-        width: 80,
+        width: 90,
         render: (value, row, index) => {
             return {children: <a href={`#${row.name}`}><b><i>grb-{row.name.toLowerCase()}</i></b></a>}
         }
@@ -63,14 +63,14 @@ function getDatasetTableColumns() {
             return {children: numberWithCommas(row.classes)}
         }
     }, {
-        title: 'Avg. Degree',
+        title: '#Avg. Degree',
         align: 'right',
         width: 100,
         render: (value, row, index) => {
             return {children: row.avg_degree.toFixed(2)}
         }
     }, {
-        title: <Tooltip title="Average degree under different difficulties of attacks (Easy/Medium/Hard/Full)">Avg. Degree (E/M/H/F)</Tooltip>,
+        title: <Tooltip title="Average degree under different difficulties of attacks (Easy/Medium/Hard/Full)">#Avg. Degree (E/M/H/F)</Tooltip>,
         align: 'right',
         width: 180,
         render: (value, row, index) => {
@@ -84,7 +84,7 @@ function getDatasetTableColumns() {
             return {children: <span>{row.feature_range[0].toFixed(2)}~{row.feature_range[1].toFixed(2)}</span>}
         }
     }, {
-        title: <Tooltip title="normalized by arctan">Feature Range (Norm)</Tooltip>,
+        title: <Tooltip title="Normalized by standardization then arctan">Feature Range (Norm)</Tooltip>,
         align: 'right',
         width: 150,
         render: (value, row, index) => {

@@ -5,15 +5,15 @@ export default {
     GITHUB_URL: 'https://github.com/thudm/grb',
     Features: [{
         title: 'Elaborated Datasets',
-        description: 'GRB introduces datasets of different scales that are preprocessed (e.g. novel splitting scheme, feature normalization), which contributes to comprehensive evaluation on adversarial robustness.',
+        description: 'GRB introduces datasets of different scales that are preprocessed by a novel splitting scheme and feature normalization, which permits comprehensive evaluation on adversarial robustness.',
         icon: 'data'
     }, {
-        title: 'Unified Threat Model',
-        description: 'GRB defines a realistic threat model where attackers and defenders can compete with each other  under unified settings, which facilitates fair comparisons of various methods.',
+        title: 'Unified Evaluation',
+        description: 'GRB defines a realistic threat model where attackers and defenders can compete with each other under unified settings, which facilitates fair comparisons of various methods.',
         icon: 'attack'
     }, {
         title: 'Modular Framework',
-        description: 'GRB provides a coding framework with modular design, which facilitates the implementation of GNNs, attacks, defenses, and related evaluation processes.',
+        description: 'GRB provides a coding framework with a modular design, which facilitates the implementation of all GNNs, attacks, defenses, and related evaluation processes.',
         icon: 'Module'
     }, {
         title: 'High Reproducibility',
