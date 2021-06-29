@@ -1,8 +1,15 @@
 # Get Started
 
-**Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the *adversarial robustness* of graph machine learning models, especially Graph Neural Networks (GNNs). GRB has elaborated datasets, unified evaluation pipeline, modular coding framework, and reproducible leaderboards, which facilitates a fair comparison among various attacks & defenses on GNNs and will promote future research in this field.
-
 <div align=center><img width="700" src=https://github.com/THUDM/grb/raw/master/docs/source/_static/grb_framework.png/></div>
+
+GRB is mainly built on [PyTorch](https://pytorch.org/), and also supports popular graph learning libraries like [CogDL](https://github.com/THUDM/cogdl) and [DGL](https://github.com/dmlc/dgl). It provides a modular coding framework, which allows users to conveniently use the implemented methods, and to add new ones. It contains several modules that support the process illustrated in the above figure: (1) *Dataset*: loads GRB datasets and applies necessary preprocessing including splitting scheme and features normalization; it also allows users to customize their own datasets and make them compatible with GRB evaluation framework. (2) *Model*: implements GNN models, which supports models built on pure Pytorch, CogDL or DGL by automatically transforming the inputs to the required formats. (3) *Attack*: builds adversarial attacks on GNNs, the process of attack is abstracted to different components. (4) *Defense*: engages defense mechanism to GNN models, including *preprocess-based* and *model-based* defenses. (5) *Evaluator*: evaluates one/multiple methods under unified evaluation settings, i.e. same datasets, constraints and evaluation metrics. (6) *Pipeline*: unifies the entire process of evaluation: load datasets, train/load models, apply attacks/defenses, and finally get the robustness evaluation results; it also helps to easily reproduce the exact results on GRB leaderboards. Apart from these modules, there are also some others like *Trainer* for model training, *Visualise* for visualizing the attack process. 
+
+This implementation framework allows GRB to have the following features: 
+
+* *Easy-to-use*: GNN models or attacks can be easily built by only a few lines of codes. 
+* *Fair-to-compare*: All methods can be fairly compared under unified settings. 
+* *Up-to-date*: GRB maintains leaderboards for each dataset and continuously track the progress of this domain. 
+* *Guarantee-to-reproduce*: Unlike other benchmarks that just display the results, GRB attaches great importance to reproducibility. For reproducing results on leaderboards, all necessary components are available, including model weights, attack parameters, generated adversarial results, etc. Besides, GRB provides scripts that allow users to reproduce results by a single command line. GRB also provides full [documentation](https://grb.readthedocs.io/en/latest/) for each module and function.
 
 ## Installation
 
