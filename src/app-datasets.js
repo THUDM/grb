@@ -4,6 +4,7 @@ import _ from 'lodash';
 import React, { useEffect, useState } from 'react'
 import { BarChartOutlined, FilePdfOutlined, CloudDownloadOutlined } from '@ant-design/icons'
 import configurations from './configurations';
+import {MarkdownLoader} from "./markdown-page";
 
 const { Title, Paragraph } = Typography;
 
@@ -70,7 +71,7 @@ function getDatasetTableColumns() {
             return {children: row.avg_degree.toFixed(2)}
         }
     }, {
-        title: <Tooltip title="Average degree under different difficulties of attacks (Easy/Medium/Hard/Full)">#Avg. Degree (E/M/H/F)</Tooltip>,
+        title: <Tooltip title="Average degree under different difficulties (Easy/Medium/Hard/Full).">#Avg. Degree (E/M/H/F)</Tooltip>,
         align: 'right',
         width: 180,
         render: (value, row, index) => {
@@ -84,7 +85,7 @@ function getDatasetTableColumns() {
             return {children: <span>{row.feature_range[0].toFixed(2)}~{row.feature_range[1].toFixed(2)}</span>}
         }
     }, {
-        title: <Tooltip title="Normalized by standardization then arctan">Feature Range (Norm)</Tooltip>,
+        title: <Tooltip title="Normalized by feature standardization then arctan normalization.">Feature Range (Norm)</Tooltip>,
         align: 'right',
         width: 150,
         render: (value, row, index) => {
@@ -109,20 +110,24 @@ export const AppDatasets = ({history}) => {
         <Title style={{ textAlign: 'center' }}>Datasets</Title>
         <Divider style={{ marginTop: 50, fontSize: 24 }}>Statistics</Divider>
         <Table loading={loading} columns={columns} dataSource={datasets} bordered pagination={false} scroll={{ x: 1600, y: '80vh' }}/>
-        <Divider style={{ marginTop: 50, fontSize: 24 }}>Details</Divider>
+        <Divider style={{ marginTop: 50, fontSize: 24 }}>Descriptions</Divider>
+        <div className="notes">
+            <MarkdownLoader url={`${configurations.GITHUB_PROXY_URL}/docs/dataset.md`}/>
+        </div>
+        <Divider style={{ marginTop: 50, fontSize: 24 }}>Dataset Details</Divider>
         {datasets.map(dataset => {
             return <div className="dataset-card" key={dataset.name}>
                 <Title level={4} id={dataset.name}>
                     <i>grb-{dataset.name.toLowerCase()}</i>
                     <Tooltip title="Go to leaderboard">
-                        <sup><a onClick={() => history.push(`/leaderboard/${dataset.name.toLowerCase()}`)}><BarChartOutlined /></a></sup>
+                        <sup><a onClick={() => history.push(`/leaderboard/grb-${dataset.name.toLowerCase()}`)}><BarChartOutlined /></a></sup>
                     </Tooltip>
                     {dataset.link && <Tooltip title="Download data">
                         <sup><a href={dataset.link}><CloudDownloadOutlined /></a></sup>
                     </Tooltip>}
                 </Title>
                 {dataset.description && <Title level={5}>Description</Title>}
-                {dataset.description && <Paragraph>{dataset.description}</Paragraph>}
+                {dataset.description && <Paragraph className="para"> {dataset.description}</Paragraph>}
                 {dataset.refs && <Title level={5}>References</Title>}
                 {dataset.refs && dataset.refs.map((ref, idx) => <Paragraph key={idx}>[{idx+1}] {ref.mla}
                     {ref.url && <Tooltip title="View paper">
