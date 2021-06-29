@@ -14,6 +14,7 @@ Unlike other popular leaderboards (e.g. [OGB](https://ogb.stanford.edu/), [Bench
   <div style="color:black; 1px solid #d9d9d9;    
               display: inline-block;
               padding: 2px;">Example of GRB leaderboard on grb-aminer dataset. (3 attacks vs. 7 vanilla GNNs)</div> 
+  <br>    
 </center>
 
 
@@ -41,6 +42,7 @@ In GRB leaderboard, the attacks are shown vertically and the defenses horizontal
   <div style="color:black; 1px solid #d9d9d9;    
               display: inline-block;
               padding: 2px;">Example of comparison mode (with GCN chosen) on grb-aminer dataset. </div> 
+  <br>
 </center>
 
 * Click on the *compare* button right close to each method to enter the comparison mode.
@@ -56,6 +58,7 @@ In GRB leaderboard, the attacks are shown vertically and the defenses horizontal
   <div style="color:black; 1px solid #d9d9d9;    
               display: inline-block;
               padding: 2px;">Customizable configurantion of GRB leaderboard. </div> 
+  <br>
 </center>
 
 * Users are allowed to customize the configuration to compare various **Attacks** or **Models** under different **Difficulty**.
