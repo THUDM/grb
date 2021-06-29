@@ -41,7 +41,7 @@ export const AppLeaderboard = () => {
             lb.attacks = _.filter(lb.attacks, x => x !== 'no_attack')
             setLeaderboard(lb)
             setConfigs({
-                difficulties: ['full'],
+                difficulties: _.clone(leaderboard.difficulties),
                 attacks: _.clone(lb.attacks.slice(0, 5)),
                 models: _.clone(lb.models.slice(0, 10)),
                 AttacksData, ModelsData
@@ -72,10 +72,10 @@ export const AppLeaderboard = () => {
         {getTableSelection('models', leaderboard, configs, setConfigs)}
         {getTableSelection('difficulties', leaderboard, configs, setConfigs)}
         <div style={{ marginTop: 10, marginBottom: 10, display: "flex", justifyContent: "center" }}>
-            <Tooltip title="The best 3 attacks and best 5 defense models">
-                <Button style={{ width: 150, margin: 10 }} onClick={() => setConfigs({ ...configs, difficulties: ['full'], models: leaderboard.models.slice(0, 5), attacks: leaderboard.attacks.slice(0, 3) })}>Brief</Button>
+            <Tooltip title="The best 5 attacks and best 5 defense models under Full difficulty.">
+                <Button style={{ width: 150, margin: 10 }} onClick={() => setConfigs({ ...configs, difficulties: ['full'], models: leaderboard.models.slice(0, 5), attacks: leaderboard.attacks.slice(0, 5) })}>Brief</Button>
             </Tooltip>
-            <Tooltip title="The best 5 attacks and best 10 defense models">
+            <Tooltip title="The best 5 attacks and best 10 defense models under all difficulties.">
                 <Button style={{ width: 150, margin: 10 }} onClick={() => setConfigs({ ...configs, difficulties: _.clone(leaderboard.difficulties), models: leaderboard.models.slice(0, 10), attacks: leaderboard.attacks.slice(0, 5) })}>Main</Button>
             </Tooltip>
             <Tooltip title="All attacks, all defense models under all difficulties.">
