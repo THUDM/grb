@@ -6,6 +6,7 @@ GRB includes five datasets of different scales, *grb-cora*, *grb-citeseer*, *grb
 
 <center>
    <img style="border-radius: 0.3125em;"
+        width="1000"
         src=https://github.com/THUDM/grb/raw/master/docs/source/_static/data_splitting.png>    
   <br>    
   <div style="color:black; 1px solid #d9d9d9;    
