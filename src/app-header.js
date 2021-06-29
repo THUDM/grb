@@ -1,7 +1,7 @@
 import './app-header.less'
 import React from 'react'
 import { Layout, Menu } from 'antd'
-import { GithubOutlined } from '@ant-design/icons'
+import { ReadOutlined, GithubOutlined } from '@ant-design/icons'
 import _ from 'lodash'
 import configurations from './configurations'
 
