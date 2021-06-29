@@ -41,7 +41,7 @@ export const AppLeaderboard = () => {
             lb.attacks = _.filter(lb.attacks, x => x !== 'no_attack')
             setLeaderboard(lb)
             setConfigs({
-                difficulties: _.clone(leaderboard.difficulties),
+                difficulties: ['easy', 'medium', 'hard', 'full'],
                 attacks: _.clone(lb.attacks.slice(0, 5)),
                 models: _.clone(lb.models.slice(0, 10)),
                 AttacksData, ModelsData
