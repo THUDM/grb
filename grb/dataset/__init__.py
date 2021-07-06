@@ -28,4 +28,4 @@ URLs = {
                      "index.npz"   : "https://cloud.tsinghua.edu.cn/f/8239dc6a729e489da44f/?dl=1"},
 }
 
-from .dataset import Dataset, CustomDataset, CogDLDataset
+from .dataset import Dataset, CustomDataset, CogDLDataset, OGBDataset

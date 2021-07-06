@@ -4,7 +4,6 @@ import networkx as nx
 import numpy as np
 import scipy.sparse as sp
 import torch
-from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
 from ..dataset import URLs, SUPPORTED_DATASETS
 from ..utils import download
@@ -191,10 +190,12 @@ class CogDLDataset(object):
             Directory for dataset. If not provided, default is ``"./data/"``.
         mode: str, optional
             Choose from ``["original", "lcc"]``. ``lcc`` is to extract the largest connected components.
-            Default: ``original``.
+            Default: ``origin``.
         verbose: bool, optional
             Whether to display logs. Default: ``True``.
         """
+
+        from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
         try:
             if data_dir:
@@ -260,12 +261,74 @@ class CogDLDataset(object):
             attr = attr.numpy()
         if type(edge_index) == torch.Tensor:
             edge_index = edge_index.numpy()
+        if type(edge_index) == tuple:
+            edge_index = [edge_index[0].numpy(), edge_index[1].numpy()]
         if adj_type == 'csr':
             adj = sp.csr_matrix((attr, edge_index))
         elif adj_type == 'coo':
             adj = sp.coo_matrix((attr, edge_index))
 
         return adj
+
+
+class OGBDataset(object):
+    def __init__(self, name, data_dir=None, verbose=True):
+        r"""
+
+        Description
+        -----------
+        Class that loads `OGB datasets <https://ogb.stanford.edu/docs/dataset_overview/>`__
+        for GRB evaluation.
+
+        Parameters
+        ----------
+        name: str
+            Name of dataset.
+        data_dir: str, optional
+            Directory for dataset. If not provided, default is ``"./data/"``.
+        verbose: bool, optional
+            Whether to display logs. Default: ``True``.
+        """
+
+        from ogb.nodeproppred import DglNodePropPredDataset
+
+        dataset = DglNodePropPredDataset(name=name, root=data_dir)
+
+        split_idx = dataset.get_idx_split()
+        train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+        graph, labels = dataset[0]
+        self.adj = graph.adj(scipy_fmt="csr")
+        self.features = graph.ndata['feat']
+        self.labels = labels.squeeze()
+        self.num_nodes = graph.num_nodes()
+        self.num_edges = graph.num_edges() // 2
+        self.num_features = self.features.shape[1]
+        self.num_classes = dataset.num_classes
+
+        train_mask = torch.zeros(self.num_nodes, dtype=bool)
+        train_mask[train_idx] = True
+        self.train_mask = train_mask
+        val_mask = torch.zeros(self.num_nodes, dtype=bool)
+        val_mask[val_idx] = True
+        self.val_mask = val_mask
+        test_mask = torch.zeros(self.num_nodes, dtype=bool)
+        test_mask[test_idx] = True
+        self.test_mask = test_mask
+
+        self.num_train = int(torch.sum(self.train_mask))
+        self.num_val = int(torch.sum(self.val_mask))
+        self.num_test = int(torch.sum(self.test_mask))
+
+        if verbose:
+            print("Dataset \'{}\' loaded.".format(name))
+            print("    Number of nodes: {}".format(self.num_nodes))
+            print("    Number of edges: {}".format(self.num_edges))
+            print("    Number of features: {}".format(self.num_features))
+            print("    Number of classes: {}".format(self.num_classes))
+            print("    Number of train samples: {}".format(self.num_train))
+            print("    Number of val samples: {}".format(self.num_val))
+            print("    Number of test samples: {}".format(self.num_test))
+            print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
 
 
 class CustomDataset(object):
@@ -475,7 +538,7 @@ def feat_normalize(features, norm=None, lim_min=-1.0, lim_max=1.0):
     lim_min : float
         Minimum limit of feature value. Default: ``-1.0``.
     lim_max : float
-        Minimum limit of feature value. Default: ``1.0``.
+        Maximum limit of feature value. Default: ``1.0``.
 
     Returns
     -------
