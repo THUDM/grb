@@ -102,15 +102,4 @@ if __name__ == '__main__':
                     utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
                     utils.save_features(features_attack, save_dir)
 
-                    # if utils.check_symmetry(adj_attack.tocsr()):
-                    #     utils.save_adj(adj_attack.tocsr()[-args.n_inject:, :], save_dir)
-                    # else:
-                    #     print("The generated adjacency matrix is not symmetric!")
-                    # if utils.check_feat_range(features_attack,
-                    #                           feat_lim_min=args.feat_lim_min,
-                    #                           feat_lim_max=args.feat_lim_max):
-                    #     utils.save_features(features_attack, save_dir)
-                    # else:
-                    #     print("The generated features exceed the feature limit!")
-
         print("Attack finished.")

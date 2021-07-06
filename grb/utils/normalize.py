@@ -3,10 +3,27 @@ import scipy.sparse as sp
 
 
 def GCNAdjNorm(adj, order=-0.5):
+    r"""
+
+    Description
+    -----------
+    Normalization of adjacency matrix proposed in `GCN <https://arxiv.org/abs/1609.02907>`__.
+
+    Parameters
+    ----------
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    order : float, optional
+        Order of degree matrix. Default: ``-0.5``.
+
+
+    Returns
+    -------
+    adj : scipy.sparse.csr.csr_matrix
+        Normalized adjacency matrix in form of ``N * N`` sparse matrix.
+
+    """
     adj = sp.eye(adj.shape[0]) + adj
-    # for i in range(len(adj.data)):
-    #     if adj.data[i] > 0 and adj.data[i] != 1:
-    #         adj.data[i] = 1
     adj.data[np.where((adj.data > 0) * (adj.data == 1))[0]] = 1
     adj = sp.coo_matrix(adj)
     rowsum = np.array(adj.sum(1))
@@ -19,6 +36,27 @@ def GCNAdjNorm(adj, order=-0.5):
 
 
 def SAGEAdjNorm(adj, order=-1):
+    r"""
+
+    Description
+    -----------
+    Normalization of adjacency matrix proposed in `GraphSAGE <https://arxiv.org/abs/1706.02216>`__.
+
+    Parameters
+    ----------
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    order : float, optional
+        Order of degree matrix. Default: ``-0.5``.
+
+
+    Returns
+    -------
+    adj : scipy.sparse.csr.csr_matrix
+        Normalized adjacency matrix in form of ``N * N`` sparse matrix.
+
+    """
+
     adj = sp.eye(adj.shape[0]) + adj
     for i in range(len(adj.data)):
         if adj.data[i] > 0 and adj.data[i] != 1:
@@ -39,6 +77,25 @@ def SAGEAdjNorm(adj, order=-1):
 
 
 def RobustGCNAdjNorm(adj):
+    r"""
+
+    Description
+    -----------
+    Normalization of adjacency matrix proposed in `RobustGCN <http://pengcui.thumedialab.com/papers/RGCN.pdf>`__.
+
+    Parameters
+    ----------
+    adj : tuple of scipy.sparse.csr.csr_matrix
+        Tuple of adjacency matrix in form of ``N * N`` sparse matrix.
+
+    Returns
+    -------
+    adj0 : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    adj1 : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+
+    """
     adj0 = GCNAdjNorm(adj, order=-0.5)
     adj1 = GCNAdjNorm(adj, order=-1)
 

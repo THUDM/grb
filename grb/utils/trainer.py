@@ -49,7 +49,7 @@ class Trainer(object):
                  device='cpu'):
         # Load dataset
         self.adj = dataset.adj
-        self.features = dataset.features
+        self.raw_features = dataset.features
         self.labels = dataset.labels
         self.train_mask = dataset.train_mask
         self.val_mask = dataset.val_mask
@@ -58,7 +58,7 @@ class Trainer(object):
         self.adj_norm_func = adj_norm_func
 
         self.device = device
-        self.features = utils.feat_preprocess(features=self.features,
+        self.features = utils.feat_preprocess(features=self.raw_features,
                                               feat_norm=feat_norm,
                                               device=self.device)
         self.labels = utils.label_preprocess(labels=self.labels,
@@ -209,8 +209,9 @@ class Trainer(object):
                 if self.early_stop:
                     self.early_stop(val_loss)
                     if self.early_stop.stop:
-                        print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_final.pt")
+                        if verbose:
+                            print("Training early stopped.")
+                        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
                         return
 
                 if epoch % eval_every == 0:
@@ -221,8 +222,9 @@ class Trainer(object):
                     if val_score > best_val_score:
                         best_val_score = val_score
                         if epoch > save_after:
-                            print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name)
+                            if verbose:
+                                print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
+                            utils.save_model(model, save_dir, save_name, verbose=verbose)
                     if verbose:
                         print(
                             'Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
@@ -263,8 +265,9 @@ class Trainer(object):
                 if self.early_stop:
                     self.early_stop(val_loss)
                     if self.early_stop.stop:
-                        print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_final.pt")
+                        if verbose:
+                            print("Training early stopped.")
+                        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
                         return
 
                 if epoch % eval_every == 0:
@@ -275,15 +278,16 @@ class Trainer(object):
                     if val_score > best_val_score:
                         best_val_score = val_score
                         if epoch > save_after:
-                            print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name)
+                            if verbose:
+                                print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
+                            utils.save_model(model, save_dir, save_name, verbose=verbose)
                     if verbose:
                         print(
                             'Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
                             '| Val loss {:.4f} | Val score {:.4f}'.format(
                                 epoch, train_loss, train_score, val_loss, val_score))
 
-        utils.save_model(model, save_dir, "checkpoint_final.pt")
+        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
 
     def inference(self, model):
         r"""

@@ -155,11 +155,13 @@ class GINConv(nn.Module):
         y = torch.spmm(adj, x)
         x = y + (1 + self.eps) * x
         x = self.linear1(x)
-        x = self.activation(x)
+        if self.activation is not None:
+            x = self.activation(x)
         x = self.linear2(x)
         if self.batchnorm:
             x = self.norm(x)
-        x = self.activation(x)
+        if self.activation is not None:
+            x = self.activation(x)
         if self.dropout:
             x = F.dropout(x, dropout)
 

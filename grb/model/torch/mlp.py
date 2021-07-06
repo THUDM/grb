@@ -1,15 +1,15 @@
-"""Torch module for GCN."""
+"""Torch module for MLP."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class GCN(nn.Module):
+class MLP(nn.Module):
     r"""
 
     Description
     -----------
-    Graph Convolutional Networks (`GCN <https://arxiv.org/abs/1609.02907>`__)
+    Multi-Layer Perceptron (without considering the graph structure).
 
     Parameters
     ----------
@@ -23,22 +23,13 @@ class GCN(nn.Module):
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.nn.functional.relu``.
-    residual : bool, optional
-        Whether to use residual connection. Default: ``False``.
     dropout : bool, optional
         Whether to dropout during training. Default: ``True``.
 
     """
 
-    def __init__(self,
-                 in_features,
-                 out_features,
-                 hidden_features,
-                 activation=F.relu,
-                 layer_norm=False,
-                 residual=False,
-                 dropout=True):
-        super(GCN, self).__init__()
+    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
+        super(MLP, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         if type(hidden_features) is int:
@@ -47,13 +38,13 @@ class GCN(nn.Module):
         self.layers = nn.ModuleList()
         if layer_norm:
             self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(GCNConv(in_features, hidden_features[0], activation=activation, residual=residual, dropout=dropout))
+        self.layers.append(MLPLayer(in_features, hidden_features[0], activation=activation, dropout=dropout))
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(
-                GCNConv(hidden_features[i], hidden_features[i + 1], activation=activation, residual=residual, dropout=dropout))
-        self.layers.append(GCNConv(hidden_features[-1], out_features))
+                MLPLayer(hidden_features[i], hidden_features[i + 1], activation=activation, dropout=dropout))
+        self.layers.append(MLPLayer(hidden_features[-1], out_features))
         self.reset_parameters()
 
     @property
@@ -94,12 +85,12 @@ class GCN(nn.Module):
         return x
 
 
-class GCNConv(nn.Module):
+class MLPLayer(nn.Module):
     r"""
 
     Description
     -----------
-    GCN convolutional layer.
+    MLP layer.
 
     Parameters
     ----------
@@ -109,22 +100,16 @@ class GCNConv(nn.Module):
         Dimension of output features.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``None``.
-    residual : bool, optional
-        Whether to use residual connection. Default: ``False``.
     dropout : bool, optional
         Whether to dropout during training. Default: ``False``.
 
     """
 
-    def __init__(self, in_features, out_features, activation=None, residual=False, dropout=False):
-        super(GCNConv, self).__init__()
+    def __init__(self, in_features, out_features, activation=None, dropout=False):
+        super(MLPLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features, out_features)
-        if residual:
-            self.residual = nn.Linear(in_features, out_features)
-        else:
-            self.residual = None
         self.activation = activation
         self.dropout = dropout
         self.reset_parameters()
@@ -156,13 +141,10 @@ class GCNConv(nn.Module):
 
         """
 
-        h = self.linear(x)
-        h = torch.spmm(adj, h)
+        x = self.linear(x)
         if self.activation is not None:
-            h = self.activation(h)
-        if self.residual is not None:
-            h = h + self.residual(x)
+            x = self.activation(x)
         if self.dropout:
-            h = F.dropout(h, dropout)
+            x = F.dropout(x, dropout)
 
-        return h
+        return x

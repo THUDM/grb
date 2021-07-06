@@ -75,13 +75,13 @@ def build_model(model_name, num_features, num_classes):
         if 'ln' in model_name:
             model = SGCN(in_features=num_features,
                          out_features=num_classes,
-                         hidden_features=[128, 128, 128],
+                         hidden_features=[256, 256, 256],
                          layer_norm=True,
                          activation=F.relu)
         else:
             model = SGCN(in_features=num_features,
                          out_features=num_classes,
-                         hidden_features=[128, 128, 128],
+                         hidden_features=[256, 256, 256],
                          activation=F.relu)
     elif "tagcn" in model_name:
         from grb.model.torch.tagcn import TAGCN
