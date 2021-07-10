@@ -1,8 +1,11 @@
+- [GRB Leaderboard](#grb-leaderboard)
+  * [How GRB leaderboard is designed?](#how-grb-leaderboard-is-designed-)
+  * [How to reproduce results on GRB leaderboard?](#how-to-reproduce-results-on-grb-leaderboard-)
+  * [How to submit new methods to GRB leaderboard?](#how-to-submit-new-methods-to-grb-leaderboard-)
+
 # GRB Leaderboard
 
 To better evaluate the *adversarial robustness* of Graph Neural Networks (GNNs), GRB provides *up-to-date* and *reproducible* leaderboards for all involved datasets: [*grb-cora*](https://cogdl.ai/grb/leaderboard/grb-cora), [*grb-citeseer*](https://cogdl.ai/grb/leaderboard/grb-citeseer), [*grb-flickr*](https://cogdl.ai/grb/leaderboard/grb-flickr), [*grb-reddit*](https://cogdl.ai/grb/leaderboard/grb-reddit), [*grb-aminer*](https://cogdl.ai/grb/leaderboard/grb-aminer). All GNNs, adversarial attacks, and defenses can be fairly compared under a unified evaluation scenario, which facilitates researchers to evaluate the effectiveness of newly proposed methods and promote future research in this area. To help you understand and reproduce the leaderboard, here are some introductions and instructions.
-
-[toc]
 
 ## How GRB leaderboard is designed?
 
@@ -75,7 +78,7 @@ In GRB leaderboard, the attacks are shown vertically and the defenses horizontal
 * Bar charts are provided to visualize the ranking. 
 * The ranking is determined by the weighted accuracy for both attacks and defenses (under **Full** difficulty).
 
-With the above designs, GRB leaderboard is able to track the progress on impoving the *adversarial robustness* of GNNs, by identifying the most robust models and the most effective adversarial attacks/defenses. 
+With the above designs, GRB leaderboard is able to track the progress on improving the *adversarial robustness* of GNNs, by identifying the most robust models and the most effective adversarial attacks/defenses. 
 
 ## How to reproduce results on GRB leaderboard?
 
@@ -116,10 +119,11 @@ GRB respects high reproducibility for all results on the leaderboards. To this e
 
 Users are allowed to add new methods or current methods with different hyperparameters by modifying configurations in ./pipeline/grb-xxx/config.py. 
 
-## How to submit new methods to GRN leaderboard?
+## How to submit new methods to GRB leaderboard?
 
 We welcome researchers to submit new methods including attacks, defenses, or new GNNS to enrich the GRB leaderboard. For future submissions, one should follow the [GRB Evaluation Rules](https://cogdl.ai/grb/intro/rules) and respect the reproducibility. 
 
 Please submit your methods via the google form [GRB submission](https://docs.google.com/forms/d/e/1FAIpQLSfJaUK-SXYFnlSqTEEwTOwsqzA5JnpXyvZe8E24hlLE7scRcA/viewform). Our team will verify the result within a week.
 
 In case of any problem, please contact us via email: cogdl.grbteam@gmail.com. We also welcome researchers to join our google group (https://groups.google.com/g/graph-robustness-benchmark) for further discussion on the adversarial robustness of graph machine learning.
+s
