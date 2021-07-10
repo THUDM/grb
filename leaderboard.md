@@ -1,12 +1,11 @@
-- [GRB Leaderboard](#grb-leaderboard)
-  * [How GRB leaderboard is designed?](#how-grb-leaderboard-is-designed-)
-  * [How to reproduce results on GRB leaderboard?](#how-to-reproduce-results-on-grb-leaderboard-)
-  * [How to submit new methods to GRB leaderboard?](#how-to-submit-new-methods-to-grb-leaderboard-)
-
 # GRB Leaderboard
 
 To better evaluate the *adversarial robustness* of Graph Neural Networks (GNNs), GRB provides *up-to-date* and *reproducible* leaderboards for all involved datasets: [*grb-cora*](https://cogdl.ai/grb/leaderboard/grb-cora), [*grb-citeseer*](https://cogdl.ai/grb/leaderboard/grb-citeseer), [*grb-flickr*](https://cogdl.ai/grb/leaderboard/grb-flickr), [*grb-reddit*](https://cogdl.ai/grb/leaderboard/grb-reddit), [*grb-aminer*](https://cogdl.ai/grb/leaderboard/grb-aminer). All GNNs, adversarial attacks, and defenses can be fairly compared under a unified evaluation scenario, which facilitates researchers to evaluate the effectiveness of newly proposed methods and promote future research in this area. To help you understand and reproduce the leaderboard, here are some introductions and instructions.
 
+  * [How GRB leaderboard is designed?](#how-grb-leaderboard-is-designed-)
+  * [How to reproduce results on GRB leaderboard?](#how-to-reproduce-results-on-grb-leaderboard-)
+  * [How to submit new methods to GRB leaderboard?](#how-to-submit-new-methods-to-grb-leaderboard-)
+  
 ## How GRB leaderboard is designed?
 
 Unlike other popular leaderboards (e.g. [OGB](https://ogb.stanford.edu/), [Benchmarking GNN](https://github.com/graphdeeplearning/benchmarking-gnns)) that focus on the performance of GNNs, GRB leaderboard aims to tackle the problem of *adversarial robustness*, i.e., the robustness under potential adversarial attacks. Thus, GRB leaderboards consider both adversarial attacks and defenses (GNNs with or without defense mechanisms) and put them under a unified evaluation scenario (introduced in [GRB evaluation rules](https://cogdl.ai/grb/intro/rules)) for all datasets (Statistics and descriptions can be found in [datasets](https://cogdl.ai/grb/datasets)). 
