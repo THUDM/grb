@@ -298,12 +298,20 @@ class OGBDataset(object):
         train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
         graph, labels = dataset[0]
         self.adj = graph.adj(scipy_fmt="csr")
-        self.features = graph.ndata['feat']
-        self.labels = labels.squeeze()
-        self.num_nodes = graph.num_nodes()
-        self.num_edges = graph.num_edges() // 2
-        self.num_features = self.features.shape[1]
-        self.num_classes = dataset.num_classes
+        if name in ["ogbn-arxiv", "ogbn-products"]:
+            self.features = graph.ndata['feat']
+            self.labels = labels.squeeze()
+            self.num_nodes = graph.num_nodes()
+            self.num_edges = graph.num_edges() // 2
+            self.num_features = self.features.shape[1]
+            self.num_classes = dataset.num_classes
+        elif name in ["ogbn-proteins"]:
+            self.features = graph.edata['feat']
+            self.labels = labels.squeeze()
+            self.num_nodes = graph.num_nodes()
+            self.num_edges = graph.num_edges() // 2
+            self.num_features = self.features.shape[1]
+            self.num_classes = dataset.num_classes
 
         train_mask = torch.zeros(self.num_nodes, dtype=bool)
         train_mask[train_idx] = True
