@@ -192,6 +192,7 @@ class PGD(InjectionAttack):
         n_total = features.shape[0]
         adj_attacked_tensor = utils.adj_preprocess(adj=adj_attack,
                                                    adj_norm_func=adj_norm_func,
+                                                   model_type=model.model_type,
                                                    device=self.device)
         features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         model.eval()
@@ -201,8 +202,8 @@ class PGD(InjectionAttack):
             features_attack.retain_grad()
             features_concat = torch.cat((features, features_attack), dim=0)
             pred = model(features_concat, adj_attacked_tensor)
-            pred_loss = -self.loss(pred[:n_total][target_mask],
-                                   origin_labels[target_mask]).to(self.device)
+            pred_loss = self.loss(pred[:n_total][target_mask],
+                                  origin_labels[target_mask]).to(self.device)
 
             model.zero_grad()
             pred_loss.backward()

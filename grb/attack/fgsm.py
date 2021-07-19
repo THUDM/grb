@@ -227,8 +227,8 @@ class FGSM(InjectionAttack):
             features_attack.retain_grad()
             features_concat = torch.cat((features, features_attack), dim=0)
             pred = model(features_concat, adj_attacked_tensor)
-            pred_loss = -self.loss(pred[:n_total][target_mask],
-                                   origin_labels[target_mask]).to(self.device)
+            pred_loss = self.loss(pred[:n_total][target_mask],
+                                  origin_labels[target_mask]).to(self.device)
 
             model.zero_grad()
             pred_loss.backward()
