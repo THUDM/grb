@@ -110,6 +110,7 @@ class Dataset(object):
                      save_path=os.path.join(data_dir, labels_name))
         labels = np.load(os.path.join(data_dir, labels_name)).get("data")
 
+        self.name = name
         self.adj = adj
         self.features = torch.FloatTensor(features)
         self.labels = torch.LongTensor(labels)
@@ -206,6 +207,7 @@ class CogDLDataset(object):
             print("Dataset '{}' is not supported.".format(name))
             exit(1)
 
+        self.name = name
         graph = dataset.data
         edge_index = graph.edge_index
         attr = graph.edge_attr if graph.edge_attr is not None else torch.ones(edge_index[0].shape[0])
@@ -290,10 +292,9 @@ class OGBDataset(object):
             Whether to display logs. Default: ``True``.
         """
 
+        self.name = name
         from ogb.nodeproppred import DglNodePropPredDataset
-
         dataset = DglNodePropPredDataset(name=name, root=data_dir)
-
         split_idx = dataset.get_idx_split()
         train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
         graph, labels = dataset[0]
@@ -433,6 +434,7 @@ class CustomDataset(object):
     """
     def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
                  name=None, data_dir=None, mode='full', feat_norm=None, save=False, verbose=True):
+        self.name = name
         self.adj = adj
         self.num_nodes = features.shape[0]
         self.num_edges = adj.getnnz() // 2

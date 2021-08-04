@@ -8,7 +8,7 @@
 
 **Graph Robustness Benchmark (GRB)** provides _scalable_, _general_, _unified_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning, especially Graph Neural Networks (GNNs). GRB has **elaborated datasets**, **unified evaluation pipeline**, **reproducible leaderboards**, and **modular coding framework**, which facilitates a fair comparison among various attacks & defenses on GNNs and promotes future research in this field. 
 
-<div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_framework.png/></div>
+<div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_key_features.png/></div>
 
 ## Get Started
 
@@ -120,6 +120,12 @@ Pipeline for reproducing leaderboard on the chosen dataset.
     -g      Choose a GPU device. -1 for CPU.
 ```
 
+## Submission
+
+We welcome researchers to submit new methods including attacks, defenses, or new GNNS to enrich the GRB leaderboard. For future submissions, one should follow the [GRB Evaluation Rules](https://cogdl.ai/grb/intro/rules) and respect the reproducibility. 
+
+Please submit your methods via the google form [GRB submission](https://docs.google.com/forms/d/e/1FAIpQLSfJaUK-SXYFnlSqTEEwTOwsqzA5JnpXyvZe8E24hlLE7scRcA/viewform). Our team will verify the result within a week.
+
 ## Requirements
 
 * scipy==1.5.2
@@ -132,4 +138,5 @@ Pipeline for reproducing leaderboard on the chosen dataset.
 
 ## Contact
 
-If you have any question, please raise an issue or contact qinkai.zheng1028@gmail.com.
+In case of any problem, please contact us via email: cogdl.grbteam@gmail.com or qinkai.zheng1028@gmail.com. We also welcome researchers to join our [Google Group](https://groups.google.com/g/graph-robustness-benchmark) for further discussion on the adversarial robustness of graph machine learning.
+
