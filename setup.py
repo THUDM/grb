@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='grb',
-    version='0.0.2',
+    version='0.1.0',
     description='Graph Robustness Benchmark',
     long_description=readme,
     long_description_content_type="text/markdown",
