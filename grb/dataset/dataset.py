@@ -84,6 +84,8 @@ class Dataset(object):
             exit(1)
         if data_dir is None:
             data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", name)
+        if name not in data_dir:
+            data_dir = os.path.join(data_dir, name)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
@@ -303,6 +305,9 @@ class OGBDataset(object):
             self.features = graph.ndata['feat']
             self.labels = labels.squeeze()
             self.num_nodes = graph.num_nodes()
+            if name == "ogbn-arxiv":
+                srcs, dsts = graph.all_edges()
+                graph.add_edges(dsts, srcs)
             self.num_edges = graph.num_edges() // 2
             self.num_features = self.features.shape[1]
             self.num_classes = dataset.num_classes
@@ -313,6 +318,7 @@ class OGBDataset(object):
             self.num_edges = graph.num_edges() // 2
             self.num_features = self.features.shape[1]
             self.num_classes = dataset.num_classes
+            self.num_tasks = dataset.num_tasks
 
         train_mask = torch.zeros(self.num_nodes, dtype=bool)
         train_mask[train_idx] = True
@@ -334,6 +340,8 @@ class OGBDataset(object):
             print("    Number of edges: {}".format(self.num_edges))
             print("    Number of features: {}".format(self.num_features))
             print("    Number of classes: {}".format(self.num_classes))
+            if name in ["ogbn-proteins"]:
+                print("    Number of tasks: {}".format(self.num_tasks))
             print("    Number of train samples: {}".format(self.num_train))
             print("    Number of val samples: {}".format(self.num_val))
             print("    Number of test samples: {}".format(self.num_test))
