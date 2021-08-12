@@ -236,12 +236,12 @@ class TDGIA(InjectionAttack):
 
         if 'random' in mode:
             for i in range(n_inject):
-                is_linked = np.zeros(n_test)
+                islinked = np.zeros(n_test)
                 for j in range(n_connect):
                     x = i + n_current
 
                     yy = random.randint(0, n_test - 1)
-                    while is_linked[yy] > 0:
+                    while islinked[yy] > 0:
                         yy = random.randint(0, n_test - 1)
 
                     y = test_index[yy]
