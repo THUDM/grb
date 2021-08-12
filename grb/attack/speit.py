@@ -277,6 +277,7 @@ class SPEIT(InjectionAttack):
                         yy = random.randint(0, n_test - 1)
 
                     y = test_index[yy]
+                    islinked[yy] = 1
                     new_edges_x.extend([x, y])
                     new_edges_y.extend([y, x])
                     new_data.extend([1, 1])
