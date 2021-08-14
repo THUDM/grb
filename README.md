@@ -10,6 +10,11 @@
 
 <div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_key_features.png/></div>
 
+## Updates
+* [14/08/2021] Add tutorials based on jupyter notebook in ``examples/``
+    * [Load Datasets](https://github.com/THUDM/grb/blob/master/examples/load_datasets.ipynb)
+    * [Training GNNs](https://github.com/THUDM/grb/blob/master/examples/training_gnns.ipynb)
+    * [Injection Attack](https://github.com/THUDM/grb/blob/master/examples/injection_attack.ipynb)
 ## Get Started
 
 ### Installation
