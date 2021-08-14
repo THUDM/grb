@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from grb.utils.normalize import GCNAdjNorm
+
 
 class GCN(nn.Module):
     r"""
@@ -25,8 +27,8 @@ class GCN(nn.Module):
         Activation function. Default: ``torch.nn.functional.relu``.
     residual : bool, optional
         Whether to use residual connection. Default: ``False``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``True``.
+    dropout : float, optional
+        Dropout rate during training. Default: ``0.0``.
 
     """
 
@@ -37,23 +39,38 @@ class GCN(nn.Module):
                  activation=F.relu,
                  layer_norm=False,
                  residual=False,
-                 dropout=True):
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
+                 dropout=0.0):
         super(GCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
 
         self.layers = nn.ModuleList()
         if layer_norm:
             self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(GCNConv(in_features, hidden_features[0], activation=activation, residual=residual, dropout=dropout))
+        self.layers.append(GCNConv(in_features=in_features,
+                                   out_features=hidden_features[0],
+                                   activation=activation,
+                                   residual=residual,
+                                   dropout=dropout))
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(
-                GCNConv(hidden_features[i], hidden_features[i + 1], activation=activation, residual=residual, dropout=dropout))
-        self.layers.append(GCNConv(hidden_features[-1], out_features))
+            self.layers.append(GCNConv(in_features=hidden_features[i],
+                                       out_features=hidden_features[i + 1],
+                                       activation=activation,
+                                       residual=residual,
+                                       dropout=dropout))
+        self.layers.append(GCNConv(in_features=hidden_features[-1],
+                                   out_features=out_features,
+                                   activation=None,
+                                   residual=False,
+                                   dropout=0.0))
         self.reset_parameters()
 
     @property
@@ -66,7 +83,7 @@ class GCN(nn.Module):
         for layer in self.layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -89,7 +106,7 @@ class GCN(nn.Module):
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
-                x = layer(x, adj, dropout=dropout)
+                x = layer(x, adj)
 
         return x
 
@@ -111,22 +128,28 @@ class GCNConv(nn.Module):
         Activation function. Default: ``None``.
     residual : bool, optional
         Whether to use residual connection. Default: ``False``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``False``.
+    dropout : float, optional
+        Dropout rate during training. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, activation=None, residual=False, dropout=False):
+    def __init__(self, in_features, out_features, activation=None, residual=False, dropout=0.0):
         super(GCNConv, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features, out_features)
+
         if residual:
             self.residual = nn.Linear(in_features, out_features)
         else:
             self.residual = None
         self.activation = activation
-        self.dropout = dropout
+
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -137,7 +160,7 @@ class GCNConv(nn.Module):
             gain = nn.init.calculate_gain('relu')
         nn.init.xavier_normal_(self.linear.weight, gain=gain)
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -146,8 +169,6 @@ class GCNConv(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -156,13 +177,13 @@ class GCNConv(nn.Module):
 
         """
 
-        h = self.linear(x)
-        h = torch.spmm(adj, h)
+        x = self.linear(x)
+        x = torch.spmm(adj, x)
         if self.activation is not None:
-            h = self.activation(h)
+            x = self.activation(x)
         if self.residual is not None:
-            h = h + self.residual(x)
-        if self.dropout:
-            h = F.dropout(h, dropout)
+            x = x + self.residual(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
 
-        return h
+        return x

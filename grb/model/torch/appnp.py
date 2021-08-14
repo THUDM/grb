@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from grb.utils.normalize import GCNAdjNorm
+
 
 class APPNP(nn.Module):
     r"""
@@ -29,30 +31,62 @@ class APPNP(nn.Module):
         Hyper-parameter, refer to original paper. Default: ``0.01``.
     k : int, optional
         Hyper-parameter, refer to original paper. Default: ``10``.
+    dropout : float, optional
+        Dropout rate during training. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, layer_norm=False,
-                 activation=F.relu, edge_drop=0.0, alpha=0.01, k=10):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 layer_norm=False,
+                 activation=F.relu,
+                 edge_drop=0.0,
+                 alpha=0.01,
+                 k=10,
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
+                 dropout=0.0):
         super(APPNP, self).__init__()
-        self.linear1 = nn.Linear(in_features, hidden_features)
-        self.linear2 = nn.Linear(hidden_features, out_features)
-        self.layer_norm = layer_norm
-        if self.layer_norm:
-            self.layer_norm1 = nn.LayerNorm(in_features)
-            self.layer_norm2 = nn.LayerNorm(hidden_features)
+        self.in_features = in_features
+        self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
+        if type(hidden_features) is int:
+            hidden_features = [hidden_features]
+        self.layers = nn.ModuleList()
+        if layer_norm:
+            self.layers.append(nn.LayerNorm(in_features))
+        self.layers.append(nn.Linear(in_features, hidden_features[0]))
+        for i in range(len(hidden_features) - 1):
+            if layer_norm:
+                self.layers.append(nn.LayerNorm(hidden_features[i]))
+            self.layers.append(nn.Linear(hidden_features[i], hidden_features[i+1]))
+        self.layers.append(nn.Linear(hidden_features[-1], out_features))
         self.alpha = alpha
         self.k = k
-        self.edge_drop = edge_drop
-        self.dropout = SparseEdgeDrop(edge_drop)
         self.activation = activation
+        if edge_drop > 0.0:
+            self.edge_dropout = SparseEdgeDrop(edge_drop)
+        else:
+            self.edge_dropout = None
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
 
     @property
     def model_type(self):
         """Indicate type of implementation."""
         return "torch"
 
-    def forward(self, x, adj, dropout=0.0):
+    def reset_parameters(self):
+        """Reset parameters."""
+        for layer in self.layers:
+            layer.reset_parameters()
+
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -61,8 +95,6 @@ class APPNP(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -71,18 +103,17 @@ class APPNP(nn.Module):
 
         """
 
-        if self.layer_norm:
-            x = self.layer_norm1(x)
-        x = self.linear1(x)
-        x = self.activation(x)
-        x = F.dropout(x, dropout)
-        if self.layer_norm:
-            x = self.layer_norm2(x)
-        x = self.linear2(x)
-        x = F.dropout(x, dropout)
+        for layer in self.layers:
+            if isinstance(layer, nn.LayerNorm):
+                x = layer(x)
+            else:
+                x = layer(x)
+                x = self.activation(x)
+                if self.dropout is not None:
+                    x = self.dropout(x)
         for i in range(self.k):
-            if self.edge_drop != 0:
-                adj = self.dropout(adj, dropout_prob=self.edge_drop)
+            if self.edge_dropout is not None and self.training:
+                adj = self.edge_dropout(adj)
             x = (1 - self.alpha) * torch.spmm(adj, x) + self.alpha * x
 
         return x
@@ -106,10 +137,11 @@ class SparseEdgeDrop(nn.Module):
         super(SparseEdgeDrop, self).__init__()
         self.edge_drop = edge_drop
 
-    def forward(self, x):
+    def forward(self, adj):
         """Sparse edge drop"""
-        mask = ((torch.rand(x._values().size()) + (1 - self.edge_drop)).floor()).type(torch.bool)
-        rc = x._indices()[:, mask]
-        val = x._values()[mask] * (1.0 / (1.0 - self.edge_drop + 1e-5))
+        mask = ((torch.rand(adj._values().size()) + self.edge_drop) > 1.0)
+        rc = adj._indices()
+        val = adj._values().clone()
+        val[mask] = 0.0
 
         return torch.sparse.FloatTensor(rc, val)
