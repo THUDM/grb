@@ -10,6 +10,8 @@ import pandas as pd
 import scipy
 import torch
 
+from ..evaluator import metric
+
 pd.set_option('display.width', 1000)
 
 
@@ -172,6 +174,98 @@ def label_preprocess(labels, device='cpu'):
     return labels
 
 
+def inference(model, features, adj, feat_norm=None, adj_norm_func=None, device="cpu"):
+    """
+
+    Description
+    -----------
+    Inference of model.
+
+    Parameters
+    ----------
+    model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+    features : torch.Tensor or numpy.array
+        Features in form of torch tensor or numpy array.
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``None``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+
+    Returns
+    -------
+    logits : torch.Tensor
+            Output logits of model.
+
+    """
+
+    model.to(device)
+    model.eval()
+    adj = adj_preprocess(adj,
+                         adj_norm_func=model.adj_norm_func if adj_norm_func is None else adj_norm_func,
+                         model_type=model.model_type,
+                         device=device)
+    features = feat_preprocess(features,
+                               feat_norm=model.feat_norm if feat_norm is None else feat_norm,
+                               device=device)
+    logits = model(features, adj)
+
+    return logits
+
+
+def evaluate(model, features, adj, labels, feat_norm=None, adj_norm_func=None, eval_metric=metric.eval_acc,
+             mask=None, device="cpu"):
+    """
+
+    Parameters
+    ----------
+    model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+    features : torch.Tensor or numpy.array
+        Features in form of torch tensor or numpy array.
+    adj : scipy.sparse.csr.csr_matrix
+        Adjacency matrix in form of ``N * N`` sparse matrix.
+    labels : torch.Tensor or numpy.array
+        Labels in form of torch tensor or numpy array.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``None``.
+    eval_metric : func of grb.metric, optional
+        Evaluation metric, like accuracy or F1 score. Default: ``grb.metric.eval_acc``.
+    mask : torch.tensor, optional
+            Mask of target nodes.  Default: ``None``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+
+    Returns
+    -------
+    score : float
+        Score on masked nodes.
+
+    """
+    model.to(device)
+    model.eval()
+    adj = adj_preprocess(adj,
+                         adj_norm_func=model.adj_norm_func if adj_norm_func is None else adj_norm_func,
+                         model_type=model.model_type,
+                         device=device)
+    features = feat_preprocess(features,
+                               feat_norm=model.feat_norm if feat_norm is None else feat_norm,
+                               device=device)
+    labels = label_preprocess(labels=labels, device=device)
+    logits = model(features, adj)
+    if logits.shape[0] > labels.shape[0]:
+        logits = logits[:labels.shape[0]]
+    score = eval_metric(logits, labels, mask)
+
+    return score
+
+
 def fix_seed(seed=0):
     r"""
 
@@ -287,7 +381,7 @@ def save_model(model, save_dir, name, verbose=True):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    torch.save(model.state_dict(), os.path.join(save_dir, name))
+    torch.save(model, os.path.join(save_dir, name))
 
     if verbose:
         print("Model saved in '{}'.".format(os.path.join(save_dir, name)))

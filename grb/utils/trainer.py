@@ -3,9 +3,10 @@ import time
 
 import torch
 import torch.nn.functional as F
+from tqdm import tqdm
 
-from ..utils import utils
 from ..evaluator import metric
+from ..utils import utils
 
 
 class Trainer(object):
@@ -23,28 +24,41 @@ class Trainer(object):
         Optimizer for training.
     loss : func of torch.nn.functional
         Loss function.
-    adj_norm_func : func of utils.normalize, optional
-        Function that normalizes adjacency matrix. Default: ``None``.
     feat_norm : str, optional
         Type of feature normalization, ['arctan', 'tanh']. Default: ``None``.
-    lr_scheduler : bool, optional
-        Whether to use learning rate scheduler.
+    lr_scheduler : bool or instance of torch.optim.lr_scheduler, optional
+        Whether to use learning rate scheduler. Default: ``None``.
+    lr_patience : int, optional
+        Patience of lr_scheduler. Only enabled when ``lr_scheduler is not None``. Default: ``100``.
+    lr_factor : float, optional
+        Decay factor of lr_scheduler. Only enabled when ``lr_scheduler is not None``. Default: ``0.75``.
+    lr_min : float, optional
+        Minimum value of learning rate. Only enabled when ``lr_scheduler is not None``. Default: ``0.0``.
     early_stop : bool, optional
         Whether to use early stop.
+    early_stop_patience : int, optional
+        Patience of early_stop. Only enabled when ``early_stop is not None``. Default: ``100``.
+    early_stop_epsilon : float, optional
+        Tolerance of early_stop. Only enabled when ``early_stop is not None``. Default: ``1e-5``.
     eval_metric : func of grb.metric, optional
         Evaluation metric, like accuracy or F1 score. Default: ``grb.metric.eval_acc``.
     device : str, optional
         Device used to host data. Default: ``cpu``.
 
     """
+
     def __init__(self,
                  dataset,
                  optimizer,
                  loss,
-                 adj_norm_func=None,
                  feat_norm=None,
-                 lr_scheduler=False,
-                 early_stop=False,
+                 lr_scheduler=None,
+                 lr_patience=100,
+                 lr_factor=0.75,
+                 lr_min=1e-5,
+                 early_stop=None,
+                 early_stop_patience=100,
+                 early_stop_epsilon=1e-5,
                  eval_metric=metric.eval_acc,
                  device='cpu'):
         # Load dataset
@@ -55,7 +69,6 @@ class Trainer(object):
         self.val_mask = dataset.val_mask
         self.test_mask = dataset.test_mask
         self.num_classes = dataset.num_classes
-        self.adj_norm_func = adj_norm_func
 
         self.device = device
         self.features = utils.feat_preprocess(features=self.raw_features,
@@ -65,27 +78,36 @@ class Trainer(object):
                                              device=self.device)
 
         # Settings
+        assert isinstance(optimizer, torch.optim.Optimizer), "Optimizer should be instance of torch.optim.Optimizer."
         self.optimizer = optimizer
         self.loss = loss
         self.eval_metric = eval_metric
 
         # Learning rate scheduling
         if lr_scheduler:
-            self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer,
-                mode='min',
-                patience=100,
-                factor=0.75,
-                min_lr=0.0,
-                verbose=True)
+            if isinstance(lr_scheduler, (torch.optim.lr_scheduler._LRScheduler,
+                                         torch.optim.lr_scheduler.ReduceLROnPlateau)):
+                self.lr_scheduler = lr_scheduler
+            else:
+                self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer,
+                    mode='min',
+                    patience=lr_patience,
+                    factor=lr_factor,
+                    min_lr=lr_min,
+                    verbose=True)
         else:
-            self.lr_scheduler = lr_scheduler
+            self.lr_scheduler = None
 
         # Early stop
         if early_stop:
-            self.early_stop = EarlyStop()
+            if isinstance(early_stop, EarlyStop):
+                self.early_stop = early_stop
+            else:
+                self.early_stop = EarlyStop(patience=early_stop_patience,
+                                            epsilon=early_stop_epsilon)
         else:
-            self.early_stop = early_stop
+            self.early_stop = None
 
     def train(self,
               model,
@@ -94,8 +116,8 @@ class Trainer(object):
               save_name=None,
               eval_every=10,
               save_after=0,
-              train_mode="trasductive",
-              dropout=0.0,
+              train_mode="transductive",
+              return_scores=False,
               verbose=True):
         r"""
 
@@ -119,8 +141,8 @@ class Trainer(object):
             Save after certain number of epoch. Default: ``0``.
         train_mode : str, optional
             Training mode, ['inductive', 'transductive']. Default: ``transductive``.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
+        return_scores : bool, optional
+            Whether to return list of scores during training. Default: ``False``.
         verbose : bool, optional
             Whether to display logs. Default: ``False``.
 
@@ -136,13 +158,14 @@ class Trainer(object):
                 os.makedirs(save_dir)
 
         if save_name is None:
-            save_name = "checkpoint.pt"
+            save_name = "model.pt"
         else:
             if save_name.split(".")[-1] != "pt":
                 save_name = save_name + ".pt"
 
         train_score_list = []
         val_score_list = []
+        epoch_bar = tqdm(range(n_epoch))
         best_val_score = 0.0
         features = self.features
         train_mask = self.train_mask
@@ -163,61 +186,23 @@ class Trainer(object):
             features_train = features[train_mask]
             features_val = features[train_val_mask]
             adj_train = utils.adj_preprocess(self.adj,
-                                             adj_norm_func=self.adj_norm_func,
+                                             adj_norm_func=model.adj_norm_func,
                                              mask=self.train_mask,
                                              model_type=model.model_type,
                                              device=self.device)
             adj_val = utils.adj_preprocess(self.adj,
-                                           adj_norm_func=self.adj_norm_func,
+                                           adj_norm_func=model.adj_norm_func,
                                            mask=train_val_mask,
                                            model_type=model.model_type,
                                            device=self.device)
 
-            for epoch in range(n_epoch):
-                logits = model(features_train, adj_train, dropout)
-                if self.loss == F.nll_loss:
-                    out = F.log_softmax(logits, 1)
-                    train_loss = self.loss(out, labels[train_mask])
-                    logits_val = model(features_val, adj_val, dropout)
-                    out_val = F.log_softmax(logits_val, 1)
-                    val_loss = self.loss(out_val[val_mask_induc], labels[val_mask])
-                elif self.loss == F.cross_entropy:
-                    out = logits
-                    train_loss = self.loss(out, labels[train_mask])
-                    logits_val = model(features_val, adj_val, dropout)
-                    out_val = logits_val
-                    val_loss = self.loss(out_val[val_mask_induc], labels[val_mask])
-                elif self.loss == F.binary_cross_entropy:
-                    out = F.sigmoid(logits)
-                    train_loss = self.loss(out, labels[train_mask].float())
-                    logits_val = model(features_val, adj_val, dropout)
-                    out_val = F.sigmoid(logits_val)
-                    val_loss = self.loss(out_val[val_mask_induc], labels[val_mask].float())
-                elif self.loss == F.binary_cross_entropy_with_logits:
-                    out = logits
-                    train_loss = self.loss(out, labels[train_mask].float())
-                    logits_val = model(features_val, adj_val, dropout)
-                    out_val = F.sigmoid(logits_val)
-                    val_loss = self.loss(out_val[val_mask_induc], labels[val_mask].float())
-
-                self.optimizer.zero_grad()
-                train_loss.backward()
-                self.optimizer.step()
-
-                if self.lr_scheduler:
-                    self.lr_scheduler.step(val_loss)
-                if self.early_stop:
-                    self.early_stop(val_loss)
-                    if self.early_stop.stop:
-                        if verbose:
-                            print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
-                        return
-
+            for epoch in epoch_bar:
+                train_loss, train_score = self.train_step(model, features_train, adj_train, labels,
+                                                          pred_mask=None, labels_mask=train_mask)
+                train_score_list.append(train_score)
                 if epoch % eval_every == 0:
-                    train_score = self.eval_metric(out, labels[train_mask], mask=None)
-                    val_score = self.eval_metric(out_val, labels[train_val_mask], mask=val_mask_induc)
-                    train_score_list.append(train_score)
+                    val_loss, val_score = self.eval_step(model, features_val, adj_val, labels,
+                                                         pred_mask=val_mask_induc, labels_mask=val_mask)
                     val_score_list.append(val_score)
                     if val_score > best_val_score:
                         best_val_score = val_score
@@ -225,55 +210,37 @@ class Trainer(object):
                             if verbose:
                                 print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
                             utils.save_model(model, save_dir, save_name, verbose=verbose)
+                    if self.lr_scheduler is not None:
+                        self.lr_scheduler.step(val_loss)
+                    if self.early_stop is not None:
+                        self.early_stop(val_loss)
+                        if self.early_stop.stop:
+                            if verbose:
+                                print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
+                            utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            if return_scores:
+                                return train_score_list, val_score_list
+                            else:
+                                return
+
                     if verbose:
-                        print(
-                            'Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                            '| Val loss {:.4f} | Val score {:.4f}'.format(
-                                epoch, train_loss, train_score, val_loss, val_score))
+                        epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                                                  '| Val loss {:.4f} | Val score {:.4f}'.format(
+                            epoch, train_loss, train_score, val_loss, val_score))
         else:
             # Transductive setting
             adj = utils.adj_preprocess(self.adj,
-                                       adj_norm_func=self.adj_norm_func,
+                                       adj_norm_func=model.adj_norm_func,
                                        mask=None,
                                        model_type=model.model_type,
                                        device=self.device)
-            for epoch in range(n_epoch):
-                logits = model(features, adj, dropout)
-                if self.loss == F.nll_loss:
-                    out = F.log_softmax(logits, 1)
-                    train_loss = self.loss(out[train_mask], labels[train_mask])
-                    val_loss = self.loss(out[val_mask], labels[val_mask])
-                elif self.loss == F.cross_entropy:
-                    out = logits
-                    train_loss = self.loss(out[train_mask], labels[train_mask])
-                    val_loss = self.loss(out[val_mask], labels[val_mask])
-                elif self.loss == F.binary_cross_entropy:
-                    out = F.sigmoid(logits)
-                    train_loss = self.loss(out[train_mask], labels[train_mask].float())
-                    val_loss = self.loss(out[val_mask], labels[val_mask].float())
-                elif self.loss == F.binary_cross_entropy_with_logits:
-                    out = logits
-                    train_loss = self.loss(out[train_mask], labels[train_mask].float())
-                    val_loss = self.loss(out[val_mask], labels[val_mask].float())
-
-                self.optimizer.zero_grad()
-                train_loss.backward()
-                self.optimizer.step()
-
-                if self.lr_scheduler:
-                    self.lr_scheduler.step(val_loss)
-                if self.early_stop:
-                    self.early_stop(val_loss)
-                    if self.early_stop.stop:
-                        if verbose:
-                            print("Training early stopped.")
-                        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
-                        return
-
+            for epoch in epoch_bar:
+                train_loss, train_score = self.train_step(model, features, adj, labels,
+                                                          pred_mask=train_mask, labels_mask=train_mask)
+                train_score_list.append(train_score)
                 if epoch % eval_every == 0:
-                    train_score = self.eval_metric(out, labels, train_mask)
-                    val_score = self.eval_metric(out, labels, val_mask)
-                    train_score_list.append(train_score)
+                    val_loss, val_score = self.eval_step(model, features, adj, labels,
+                                                         pred_mask=val_mask, labels_mask=val_mask)
                     val_score_list.append(val_score)
                     if val_score > best_val_score:
                         best_val_score = val_score
@@ -281,13 +248,78 @@ class Trainer(object):
                             if verbose:
                                 print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
                             utils.save_model(model, save_dir, save_name, verbose=verbose)
+                    if self.lr_scheduler is not None:
+                        self.lr_scheduler.step(val_loss)
+                    if self.early_stop is not None:
+                        self.early_stop(val_loss)
+                        if self.early_stop.stop:
+                            if verbose:
+                                print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
+                            utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            if return_scores:
+                                return train_score_list, val_score_list
+                            else:
+                                return
                     if verbose:
-                        print(
-                            'Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                            '| Val loss {:.4f} | Val score {:.4f}'.format(
-                                epoch, train_loss, train_score, val_loss, val_score))
+                        epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                              '| Val loss {:.4f} | Val score {:.4f}'.format(
+                            epoch, train_loss, train_score, val_loss, val_score))
 
-        utils.save_model(model, save_dir, "checkpoint_final.pt", verbose=verbose)
+        utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
+        print("Training finished. Best validation score: {:.4f}".format(best_val_score))
+        if return_scores:
+            return train_score_list, val_score_list
+        else:
+            return
+
+    def train_step(self, model, features, adj, labels, pred_mask=None, labels_mask=None):
+        model.train()
+        logits = model(features, adj)
+        if self.loss == F.nll_loss:
+            pred = F.log_softmax(logits, 1)
+        elif self.loss == F.binary_cross_entropy:
+            pred = F.sigmoid(logits)
+        elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+            pred = logits
+        else:
+            pred = logits
+        if pred_mask is not None:
+            pred = pred[pred_mask]
+        if labels_mask is not None:
+            labels = labels[labels_mask]
+        if self.loss == F.binary_cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+            labels = labels.float()
+        train_loss = self.loss(pred, labels)
+        self.optimizer.zero_grad()
+        train_loss.backward()
+        self.optimizer.step()
+        train_score = self.eval_metric(pred, labels)
+
+        return train_loss, train_score
+
+    def eval_step(self, model, features, adj, labels, pred_mask=None, labels_mask=None):
+        model.eval()
+        logits = model(features, adj)
+        if self.loss == F.nll_loss:
+            pred = F.log_softmax(logits, 1)
+        elif self.loss == F.binary_cross_entropy:
+            pred = F.sigmoid(logits)
+        elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+            pred = logits
+        else:
+            pred = logits
+        if pred_mask is not None:
+            pred = pred[pred_mask]
+        if labels_mask is not None:
+            labels = labels[labels_mask]
+        if self.loss == F.binary_cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+            labels = labels.float()
+        eval_loss = self.loss(pred, labels)
+        eval_score = self.eval_metric(pred, labels)
+
+        return eval_loss, eval_score
+
+        pass
 
     def inference(self, model):
         r"""
@@ -305,26 +337,48 @@ class Trainer(object):
         -------
         logits : torch.Tensor
             Output logits of model.
-        test_score : float
-            Score on test set.
 
         """
         model.to(self.device)
         model.eval()
         adj = utils.adj_preprocess(self.adj,
-                                   adj_norm_func=self.adj_norm_func,
+                                   adj_norm_func=model.adj_norm_func,
                                    model_type=model.model_type,
                                    device=self.device)
-        logits = model(self.features, adj, dropout=0)
-        if self.loss == F.nll_loss:
-            out = F.log_softmax(logits, 1)
-        elif self.loss == F.binary_cross_entropy:
-            out = F.sigmoid(logits)
-        else:
-            out = logits
-        test_score = self.eval_metric(out, self.labels, self.test_mask)
+        logits = model(self.features, adj)
 
-        return logits, test_score
+        return logits
+
+    def evaluate(self, model, mask=None):
+        r"""
+
+        Description
+        -----------
+        Evaluation of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        mask : torch.tensor, optional
+            Mask of target nodes.  Default: ``None``.
+
+        Returns
+        -------
+        score : float
+            Score on masked nodes.
+
+        """
+        model.to(self.device)
+        model.eval()
+        adj = utils.adj_preprocess(self.adj,
+                                   adj_norm_func=model.adj_norm_func,
+                                   model_type=model.model_type,
+                                   device=self.device)
+        logits = model(self.features, adj)
+        score = self.eval_metric(logits, self.labels, mask)
+
+        return score
 
 
 class EarlyStop(object):
@@ -335,6 +389,7 @@ class EarlyStop(object):
     Strategy to early stop training process.
 
     """
+
     def __init__(self, patience=1000, epsilon=1e-5):
         r"""
 
