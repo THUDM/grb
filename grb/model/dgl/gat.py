@@ -82,7 +82,7 @@ class GAT(nn.Module):
                                        activation=activation))
         self.layers.append(GATConv(in_feats=hidden_features[-1] * num_heads,
                                    out_feats=out_features,
-                                   num_heads=num_heads,
+                                   num_heads=1,
                                    feat_drop=0.0,
                                    attn_drop=0.0,
                                    residual=False,
