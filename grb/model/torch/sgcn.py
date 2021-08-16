@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from grb.utils.normalize import GCNAdjNorm
+
 
 class SGCN(nn.Module):
     r"""
@@ -23,14 +25,35 @@ class SGCN(nn.Module):
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.tanh``.
+    k : int, optional
+        Hyper-parameter, refer to original paper. Default: ``4``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``GCNAdjNorm``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, activation=torch.tanh, layer_norm=False):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 activation=F.tanh,
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
+                 layer_norm=False,
+                 k=4,
+                 dropout=0.0):
         super(SGCN, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
-        self.batchnorm = nn.BatchNorm1d(in_features)
+        self.batch_norm = nn.BatchNorm1d(in_features)
         self.in_conv = nn.Linear(in_features, hidden_features[0])
         self.out_conv = nn.Linear(hidden_features[-1], out_features)
         self.activation = activation
@@ -39,14 +62,21 @@ class SGCN(nn.Module):
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(SGConv(hidden_features[i], hidden_features[i + 1]))
+            self.layers.append(SGConv(in_features=hidden_features[i],
+                                      out_features=hidden_features[i + 1],
+                                      k=k))
+
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
 
     @property
     def model_type(self):
         """Indicate type of implementation."""
         return "torch"
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -55,8 +85,6 @@ class SGCN(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -65,18 +93,22 @@ class SGCN(nn.Module):
 
         """
 
-        x = self.batchnorm(x)
+        x = self.batch_norm(x)
         x = self.in_conv(x)
-        x = self.activation(x)
-        x = F.dropout(x, dropout)
+        if self.activation is not None:
+            x = self.activation(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
 
         for layer in self.layers:
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
                 x = layer(x, adj)
-                x = self.activation(x)
-        x = F.dropout(x, dropout)
+                if self.activation is not None:
+                    x = self.activation(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
         x = self.out_conv(x)
 
         return x
@@ -95,6 +127,8 @@ class SGConv(nn.Module):
         Dimension of input features.
     out_features : int
         Dimension of output features.
+    k : int, optional
+        Hyper-parameter, refer to original paper. Default: ``4``.
 
     Returns
     -------
@@ -103,11 +137,12 @@ class SGConv(nn.Module):
 
     """
 
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, k):
         super(SGConv, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
+        self.k = k
 
-    def forward(self, x, adj, k=4):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -116,8 +151,6 @@ class SGConv(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        k : int, optional
-            Hyper-parameter, refer to original paper. Default: ``4``.
 
         Returns
         -------
@@ -126,7 +159,7 @@ class SGConv(nn.Module):
 
         """
 
-        for i in range(k):
+        for i in range(self.k):
             x = torch.spmm(adj, x)
         x = self.linear(x)
 

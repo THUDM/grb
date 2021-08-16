@@ -23,28 +23,44 @@ class MLP(nn.Module):
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.nn.functional.relu``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``True``.
+    dropout : float, optional
+        Dropout rate during training. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 activation=F.relu,
+                 layer_norm=False,
+                 dropout=0.0):
         super(MLP, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = None
+        self.adj_norm_func = None
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
 
         self.layers = nn.ModuleList()
         if layer_norm:
             self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(MLPLayer(in_features, hidden_features[0], activation=activation, dropout=dropout))
+        self.layers.append(MLPLayer(in_features=in_features,
+                                    out_features=hidden_features[0],
+                                    activation=activation,
+                                    dropout=dropout))
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(
-                MLPLayer(hidden_features[i], hidden_features[i + 1], activation=activation, dropout=dropout))
-        self.layers.append(MLPLayer(hidden_features[-1], out_features))
+            self.layers.append(MLPLayer(in_features=hidden_features[i],
+                                        out_features=hidden_features[i + 1],
+                                        activation=activation,
+                                        dropout=dropout))
+        self.layers.append(MLPLayer(in_features=hidden_features[-1],
+                                    out_features=out_features,
+                                    activation=None,
+                                    dropout=0.0))
         self.reset_parameters()
 
     @property
@@ -57,7 +73,7 @@ class MLP(nn.Module):
         for layer in self.layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj=None):
         r"""
 
         Parameters
@@ -66,8 +82,6 @@ class MLP(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -80,7 +94,7 @@ class MLP(nn.Module):
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
-                x = layer(x, adj, dropout=dropout)
+                x = layer(x, adj)
 
         return x
 
@@ -100,18 +114,21 @@ class MLPLayer(nn.Module):
         Dimension of output features.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``None``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``False``.
+    dropout : float, optional
+        Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, activation=None, dropout=False):
+    def __init__(self, in_features, out_features, activation=None, dropout=0.0):
         super(MLPLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features, out_features)
         self.activation = activation
-        self.dropout = dropout
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -122,7 +139,7 @@ class MLPLayer(nn.Module):
             gain = nn.init.calculate_gain('relu')
         nn.init.xavier_normal_(self.linear.weight, gain=gain)
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj=None):
         r"""
 
         Parameters
@@ -131,8 +148,6 @@ class MLPLayer(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -144,7 +159,7 @@ class MLPLayer(nn.Module):
         x = self.linear(x)
         if self.activation is not None:
             x = self.activation(x)
-        if self.dropout:
-            x = F.dropout(x, dropout)
+        if self.dropout is not None:
+            x = self.dropout(x)
 
         return x

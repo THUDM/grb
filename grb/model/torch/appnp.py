@@ -25,6 +25,10 @@ class APPNP(nn.Module):
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.nn.functional.relu``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``GCNAdjNorm``.
     edge_drop : float, optional
         Rate of edge drop.
     alpha : float, optional

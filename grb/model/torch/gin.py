@@ -21,17 +21,37 @@ class GIN(nn.Module):
         Dimension of hidden features. List if multi-layer.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
+    batch_norm : bool, optional
+        Whether to apply batch normalization. Default: ``True``.
+    eps : float, optional
+        Hyper-parameter, refer to original paper. Default: ``0.0``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.nn.functional.relu``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``True``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``None``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu, layer_norm=False, dropout=True):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 activation=F.relu,
+                 layer_norm=False,
+                 batch_norm=True,
+                 eps=0.0,
+                 feat_norm=None,
+                 adj_norm_func=None,
+                 dropout=0.0):
         super(GIN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
         self.layers = nn.ModuleList()
@@ -39,14 +59,28 @@ class GIN(nn.Module):
         if layer_norm:
             self.layers.append(nn.LayerNorm(in_features))
 
-        self.layers.append(GINConv(in_features, hidden_features[0], activation=activation, dropout=dropout))
+        self.layers.append(GINConv(in_features=in_features,
+                                   out_features=hidden_features[0],
+                                   batch_norm=batch_norm,
+                                   eps=eps,
+                                   activation=activation,
+                                   dropout=dropout))
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(
-                GINConv(hidden_features[i], hidden_features[i + 1], activation=activation))
+            self.layers.append(GINConv(in_features=hidden_features[i],
+                                       out_features=hidden_features[i + 1],
+                                       batch_norm=batch_norm,
+                                       eps=eps,
+                                       activation=activation,
+                                       dropout=dropout))
         self.linear1 = nn.Linear(hidden_features[-2], hidden_features[-1])
         self.linear2 = nn.Linear(hidden_features[-1], out_features)
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
+        self.reset_parameters()
 
     @property
     def model_type(self):
@@ -57,8 +91,10 @@ class GIN(nn.Module):
         """Reset parameters."""
         for layer in self.layers:
             layer.reset_parameters()
+        self.linear1.reset_parameters()
+        self.linear2.reset_parameters()
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -67,8 +103,6 @@ class GIN(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -81,10 +115,11 @@ class GIN(nn.Module):
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
-                x = layer(x, adj, dropout=dropout)
+                x = layer(x, adj)
 
         x = F.relu(self.linear1(x))
-        x = F.dropout(x, dropout)
+        if self.dropout is not None:
+            x = self.dropout(x)
         x = self.linear2(x)
 
         return x
@@ -107,23 +142,33 @@ class GINConv(nn.Module):
         Activation function. Default: ``None``.
     eps : float, optional
         Hyper-parameter, refer to original paper. Default: ``0.0``.
-    batchnorm : bool, optional
+    batch_norm : bool, optional
         Whether to apply batch normalization. Default: ``True``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``False``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, activation=F.relu, eps=0.0, batchnorm=True, dropout=False):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 activation=F.relu,
+                 eps=0.0,
+                 batch_norm=True,
+                 dropout=0.0):
         super(GINConv, self).__init__()
         self.linear1 = nn.Linear(in_features, out_features)
         self.linear2 = nn.Linear(out_features, out_features)
         self.activation = activation
         self.eps = torch.nn.Parameter(torch.Tensor([eps]))
-        self.batchnorm = batchnorm
-        if batchnorm:
+        self.batch_norm = batch_norm
+        if batch_norm:
             self.norm = nn.BatchNorm1d(out_features)
-        self.dropout = dropout
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
+        self.reset_parameters()
 
     def reset_parameters(self):
         """Reset parameters."""
@@ -131,9 +176,10 @@ class GINConv(nn.Module):
             gain = nn.init.calculate_gain('leaky_relu')
         else:
             gain = nn.init.calculate_gain('relu')
-        nn.init.xavier_normal_(self.linear.weights, gain=gain)
+        nn.init.xavier_normal_(self.linear1.weight, gain=gain)
+        nn.init.xavier_normal_(self.linear2.weight, gain=gain)
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -142,8 +188,6 @@ class GINConv(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -158,11 +202,11 @@ class GINConv(nn.Module):
         if self.activation is not None:
             x = self.activation(x)
         x = self.linear2(x)
-        if self.batchnorm:
+        if self.batch_norm:
             x = self.norm(x)
         if self.activation is not None:
             x = self.activation(x)
-        if self.dropout:
-            x = F.dropout(x, dropout)
+        if self.dropout is not None:
+            x = self.dropout(x)
 
         return x

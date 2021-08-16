@@ -27,6 +27,10 @@ class GCN(nn.Module):
         Activation function. Default: ``torch.nn.functional.relu``.
     residual : bool, optional
         Whether to use residual connection. Default: ``False``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``GCNAdjNorm``.
     dropout : float, optional
         Dropout rate during training. Default: ``0.0``.
 
@@ -92,8 +96,6 @@ class GCN(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -133,7 +135,12 @@ class GCNConv(nn.Module):
 
     """
 
-    def __init__(self, in_features, out_features, activation=None, residual=False, dropout=0.0):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 activation=None,
+                 residual=False,
+                 dropout=0.0):
         super(GCNConv, self).__init__()
         self.in_features = in_features
         self.out_features = out_features

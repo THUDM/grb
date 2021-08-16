@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from grb.utils.normalize import GCNAdjNorm
+
 
 class TAGCN(nn.Module):
     r"""
@@ -20,21 +22,38 @@ class TAGCN(nn.Module):
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
     k : int
-        Hyper-parameter, refer to original paper.
+        Hyper-parameter, k-hop adjacency matrix, refer to original paper.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
+    batch_norm : bool, optional
+        Whether to apply batch normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``torch.nn.functional.leaky_relu``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``True``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``GCNAdjNorm``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, k, activation=F.leaky_relu,
-                 layer_norm=False, dropout=True):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 k,
+                 activation=F.leaky_relu,
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
+                 layer_norm=False,
+                 batch_norm=False,
+                 dropout=0.0):
         super(TAGCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
             hidden_features = [hidden_features]
 
@@ -42,13 +61,27 @@ class TAGCN(nn.Module):
         if layer_norm:
             self.layers.append(nn.LayerNorm(in_features))
 
-        self.layers.append(TAGConv(in_features, hidden_features[0], k, activation=activation, dropout=dropout))
+        self.layers.append(TAGConv(in_features=in_features,
+                                   out_features=hidden_features[0],
+                                   k=k,
+                                   batch_norm=batch_norm,
+                                   activation=activation,
+                                   dropout=dropout))
         for i in range(len(hidden_features) - 1):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(
-                TAGConv(hidden_features[i], hidden_features[i + 1], k, activation=activation, dropout=dropout))
-        self.layers.append(TAGConv(hidden_features[-1], out_features, k))
+            self.layers.append(TAGConv(in_features=hidden_features[i],
+                                       out_features=hidden_features[i + 1],
+                                       k=k,
+                                       batch_norm=batch_norm,
+                                       activation=activation,
+                                       dropout=dropout))
+        self.layers.append(TAGConv(in_features=hidden_features[-1],
+                                   out_features=out_features,
+                                   k=k,
+                                   batch_norm=None,
+                                   activation=None,
+                                   dropout=0.0))
         self.reset_parameters()
 
     @property
@@ -61,17 +94,15 @@ class TAGCN(nn.Module):
         for layer in self.layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
         ----------
         x : torch.Tensor
             Tensor of input features.
-        adj : list of torch.SparseTensor
-            List of sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
+        adj : torch.SparseTensor
+            Sparse tensor of adjacency matrix.
 
         Returns
         -------
@@ -84,7 +115,7 @@ class TAGCN(nn.Module):
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
-                x = layer(x, adj, dropout=dropout)
+                x = layer(x, adj)
 
         return x
 
@@ -106,23 +137,33 @@ class TAGConv(nn.Module):
         Hyper-parameter, refer to original paper. Default: ``2``.
     activation : func of torch.nn.functional, optional
         Activation function. Default: ``None``.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``False``.
-    batchnorm : bool, optional
+
+    batch_norm : bool, optional
         Whether to apply batch normalization. Default: ``False``.
+    dropout : float, optional
+        Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, k=2, activation=None, dropout=False, batchnorm=False):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 k=2,
+                 activation=None,
+                 batch_norm=False,
+                 dropout=0.0):
         super(TAGConv, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.linear = nn.Linear(in_features * (k + 1), out_features)
-        self.batchnorm = batchnorm
-        if batchnorm:
+        self.batch_norm = batch_norm
+        if batch_norm:
             self.norm_func = nn.BatchNorm1d(out_features, affine=False)
         self.activation = activation
-        self.dropout = dropout
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
         self.k = k
         self.reset_parameters()
 
@@ -134,7 +175,7 @@ class TAGConv(nn.Module):
             gain = nn.init.calculate_gain('relu')
         nn.init.xavier_normal_(self.linear.weight, gain=gain)
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -143,8 +184,6 @@ class TAGConv(nn.Module):
             Tensor of input features.
         adj : torch.SparseTensor
             Sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -159,11 +198,11 @@ class TAGConv(nn.Module):
             fstack.append(y)
         x = torch.cat(fstack, dim=-1)
         x = self.linear(x)
-        if self.batchnorm:
+        if self.batch_norm:
             x = self.norm_func(x)
         if not (self.activation is None):
             x = self.activation(x)
-        if self.dropout:
-            x = F.dropout(x, dropout)
+        if self.dropout is not None:
+            x = self.dropout(x)
 
         return x
