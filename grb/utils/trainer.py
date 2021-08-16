@@ -223,10 +223,9 @@ class Trainer(object):
                             else:
                                 return
 
-                    if verbose:
-                        epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                                                  '| Val loss {:.4f} | Val score {:.4f}'.format(
-                            epoch, train_loss, train_score, val_loss, val_score))
+                    epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                                              '| Val loss {:.4f} | Val score {:.4f}'.format(
+                        epoch, train_loss, train_score, val_loss, val_score))
         else:
             # Transductive setting
             adj = utils.adj_preprocess(self.adj,
@@ -260,10 +259,9 @@ class Trainer(object):
                                 return train_score_list, val_score_list
                             else:
                                 return
-                    if verbose:
-                        epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                                                  '| Val loss {:.4f} | Val score {:.4f}'.format(
-                            epoch, train_loss, train_score, val_loss, val_score))
+                    epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                                              '| Val loss {:.4f} | Val score {:.4f}'.format(
+                        epoch, train_loss, train_score, val_loss, val_score))
 
         utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
         print("Training finished. Best validation score: {:.4f}".format(best_val_score))
@@ -273,6 +271,36 @@ class Trainer(object):
             return
 
     def train_step(self, model, features, adj, labels, pred_mask=None, labels_mask=None):
+        r"""
+
+        Description
+        -----------
+        Training step.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        adj : torch.SparseTensor
+            Sparse tensor of adjacency matrix.
+        labels : torch.LongTensor
+            Labels in form of ``N * L``. L=1 for multi-class classification, otherwise for multi-label classification.
+        pred_mask : torch.Tensor, optional
+            Mask of prediction in form of ``N * 1`` torch bool tensor. Default: ``None``.
+        labels_mask : torch.Tensor, optional
+            Mask of labels in form of ``N * 1`` torch bool tensor. Default: ``None``.
+
+        Returns
+        -------
+        train_loss : torch.Tensor
+            Training loss for the step.
+        train_score : torch.Tensor
+            Training score for the step.
+
+        """
+
         model.train()
         logits = model(features, adj)
         if self.loss == F.nll_loss:
@@ -298,6 +326,36 @@ class Trainer(object):
         return train_loss, train_score
 
     def eval_step(self, model, features, adj, labels, pred_mask=None, labels_mask=None):
+        r"""
+
+        Description
+        -----------
+        Evaluation step.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        adj : torch.SparseTensor
+            Sparse tensor of adjacency matrix.
+        labels : torch.LongTensor
+            Labels in form of ``N * L``. L=1 for multi-class classification, otherwise for multi-label classification.
+        pred_mask : torch.Tensor, optional
+            Mask of prediction in form of ``N * 1`` torch bool tensor. Default: ``None``.
+        labels_mask : torch.Tensor, optional
+            Mask of labels in form of ``N * 1`` torch bool tensor. Default: ``None``.
+
+        Returns
+        -------
+        eval_loss : torch.Tensor
+            Evaluation loss for the step.
+        eval_score : torch.Tensor
+            Evaluation score for the step.
+
+        """
+
         model.eval()
         logits = model(features, adj)
         if self.loss == F.nll_loss:
