@@ -262,7 +262,7 @@ class Trainer(object):
                                 return
                     if verbose:
                         epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                              '| Val loss {:.4f} | Val score {:.4f}'.format(
+                                                  '| Val loss {:.4f} | Val score {:.4f}'.format(
                             epoch, train_loss, train_score, val_loss, val_score))
 
         utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)

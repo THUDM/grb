@@ -5,3 +5,4 @@ from .gin import GIN
 from .graphsage import GraphSAGE
 from .sgcn import SGCN
 from .tagcn import TAGCN
+from .mlp import MLP
