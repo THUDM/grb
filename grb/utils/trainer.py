@@ -1,9 +1,9 @@
 import os
 import time
-
+import optuna
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ..evaluator import metric
 from ..utils import utils
@@ -215,11 +215,10 @@ class Trainer(object):
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
-                            if verbose:
-                                print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
+                            print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
                             utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
-                                return train_score_list, val_score_list
+                                return train_score_list, val_score_list, best_val_score
                             else:
                                 return
 
@@ -252,11 +251,10 @@ class Trainer(object):
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
-                            if verbose:
-                                print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
+                            print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
                             utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
-                                return train_score_list, val_score_list
+                                return train_score_list, val_score_list, best_val_score
                             else:
                                 return
                     epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
@@ -266,7 +264,7 @@ class Trainer(object):
         utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
         print("Training finished. Best validation score: {:.4f}".format(best_val_score))
         if return_scores:
-            return train_score_list, val_score_list
+            return train_score_list, val_score_list, best_val_score
         else:
             return
 
@@ -437,6 +435,89 @@ class Trainer(object):
         score = self.eval_metric(logits, self.labels, mask)
 
         return score
+
+
+class AutoTrainer(object):
+    def __init__(self,
+                 dataset,
+                 model_class,
+                 eval_metric,
+                 params_search,
+                 n_trials=10,
+                 n_jobs=1,
+                 seed=42,
+                 device="cpu",
+                 **kwargs):
+        self.dataset = dataset
+        self.model_class = model_class
+        self.seed = seed
+        self.eval_metric = eval_metric
+        self.n_trials = n_trials
+        self.n_jobs = n_jobs
+        self.best_score = None
+        self.best_params = None
+        self.kargs_params = kwargs
+        self.params_search = params_search
+        self.device = device
+
+    def objective(self, trial):
+        model_params, other_params = self.params_search(trial)
+        other_params.update(self.kargs_params)
+        model = self.model_class(in_features=self.dataset.num_features,
+                                 out_features=self.dataset.num_classes,
+                                 **model_params)
+
+        if "optimizer" in other_params:
+            optimizer = other_params["optimizer"]
+        else:
+            print("Use default optimizer Adam.")
+            if "lr" in other_params:
+                lr = other_params["lr"]
+            else:
+                print("Use default learning rate 0.01.")
+                lr = 0.01
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+        if "loss" in other_params:
+            loss = other_params["loss"]
+        else:
+            print("Use default cross-entropy loss.")
+            loss = torch.nn.functional.cross_entropy
+
+        trainer = Trainer(dataset=self.dataset,
+                          optimizer=optimizer,
+                          loss=loss,
+                          lr_scheduler=other_params["lr_scheduler"] if "lr_scheduler" in other_params else False,
+                          early_stop=other_params["early_stop"] if "early_stop" in other_params else False,
+                          early_stop_patience=other_params["early_stop_patience"] if "early_stop_patience" in other_params else 0,
+                          feat_norm=other_params["feat_norm"] if "feat_norm" in other_params else model.feat_norm,
+                          eval_metric=self.eval_metric,
+                          device=self.device)
+
+        utils.fix_seed(self.seed)
+        _, val_score_list, best_val = trainer.train(model=model,
+                                                    n_epoch=other_params["n_epoch"],
+                                                    eval_every=other_params["eval_every"] if "eval_every" in other_params else 1,
+                                                    save_after=other_params["save_after"] if "save_after" in other_params else 0,
+                                                    save_dir=other_params["save_dir"] if "save_dir" in other_params else None,
+                                                    save_name=other_params["save_name"] if "save_name" in other_params else None,
+                                                    train_mode=other_params["train_mode"],
+                                                    return_scores=True,
+                                                    verbose=False)
+
+        if self.best_score is None or best_val > self.best_score:
+            self.best_score = best_val
+            self.best_params = {'model_params': model_params, 'other_params': other_params}
+            self.best_score_list = val_score_list
+
+        return best_val
+
+    def run(self):
+        study = optuna.create_study(direction="maximize")
+        study.optimize(self.objective, n_trials=self.n_trials, n_jobs=self.n_jobs)
+        print(study.best_params)
+
+        return self.best_score, self.best_params, self.best_score_list
 
 
 class EarlyStop(object):
