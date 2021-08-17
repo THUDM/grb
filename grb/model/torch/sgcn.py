@@ -21,6 +21,8 @@ class SGCN(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
+    n_layers : int
+        Number of layers.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
@@ -40,6 +42,7 @@ class SGCN(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
                  activation=F.tanh,
                  feat_norm=None,
                  adj_norm_func=GCNAdjNorm,
@@ -52,14 +55,17 @@ class SGCN(nn.Module):
         self.feat_norm = feat_norm
         self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+
         self.batch_norm = nn.BatchNorm1d(in_features)
         self.in_conv = nn.Linear(in_features, hidden_features[0])
         self.out_conv = nn.Linear(hidden_features[-1], out_features)
         self.activation = activation
         self.layers = nn.ModuleList()
 
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers - 2):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(hidden_features[i]))
             self.layers.append(SGConv(in_features=hidden_features[i],
@@ -139,6 +145,8 @@ class SGConv(nn.Module):
 
     def __init__(self, in_features, out_features, k):
         super(SGConv, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
         self.linear = nn.Linear(in_features, out_features)
         self.k = k
 

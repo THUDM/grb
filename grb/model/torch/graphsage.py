@@ -19,6 +19,8 @@ class GraphSAGE(nn.Module):
         Dimension of input features.
     out_features : int
         Dimension of output features.
+    n_layers : int
+        Number of layers.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
     layer_norm : bool, optional
@@ -40,6 +42,7 @@ class GraphSAGE(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
                  activation=F.relu,
                  layer_norm=False,
                  feat_norm=None,
@@ -51,39 +54,33 @@ class GraphSAGE(nn.Module):
         self.out_features = out_features
         self.feat_norm = feat_norm
         self.adj_norm_func = adj_norm_func
-
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
 
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(SAGEConv(in_features=in_features,
-                                    pool_features=in_features,
-                                    out_features=hidden_features[0],
-                                    activation=activation,
-                                    mu=mu,
-                                    dropout=dropout))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(SAGEConv(in_features=hidden_features[i],
-                                        pool_features=hidden_features[i],
-                                        out_features=hidden_features[i + 1],
-                                        activation=activation,
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(SAGEConv(in_features=n_features[i],
+                                        pool_features=n_features[i],
+                                        out_features=n_features[i + 1],
+                                        activation=activation if i != n_layers - 1 else None,
                                         mu=mu,
-                                        dropout=dropout))
-        self.layers.append(SAGEConv(in_features=hidden_features[-1],
-                                    pool_features=hidden_features[-1],
-                                    out_features=out_features,
-                                    activation=None,
-                                    mu=mu,
-                                    dropout=0.0))
+                                        dropout=dropout if i != n_layers - 1 else 0.0))
+        self.reset_parameters()
 
     @property
     def model_type(self):
         """Indicate type of implementation."""
         return "torch"
+
+    def reset_parameters(self):
+        """Reset parameters."""
+        for layer in self.layers:
+            layer.reset_parameters()
 
     def forward(self, x, adj):
         r"""

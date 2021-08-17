@@ -21,6 +21,8 @@ class APPNP(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
+    n_layers : int
+        Number of layers.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
@@ -44,6 +46,7 @@ class APPNP(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
                  layer_norm=False,
                  activation=F.relu,
                  edge_drop=0.0,
@@ -58,16 +61,16 @@ class APPNP(nn.Module):
         self.feat_norm = feat_norm
         self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
+
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(nn.Linear(in_features, hidden_features[0]))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(nn.Linear(hidden_features[i], hidden_features[i+1]))
-        self.layers.append(nn.Linear(hidden_features[-1], out_features))
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(nn.Linear(n_features[i], n_features[i + 1]))
         self.alpha = alpha
         self.k = k
         self.activation = activation

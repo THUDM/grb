@@ -21,6 +21,8 @@ class GAT(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
+    n_layers : int
+        Number of layers.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
@@ -43,6 +45,7 @@ class GAT(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
                  num_heads,
                  activation=F.leaky_relu,
                  layer_norm=False,
@@ -58,35 +61,22 @@ class GAT(nn.Module):
         self.feat_norm = feat_norm
         self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
 
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(GATConv(in_feats=in_features,
-                                   out_feats=hidden_features[0],
-                                   num_heads=num_heads,
-                                   feat_drop=feat_dropout,
-                                   attn_drop=attn_dropout,
-                                   residual=residual,
-                                   activation=activation))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i] * num_heads))
-            self.layers.append(GATConv(in_feats=hidden_features[i] * num_heads,
-                                       out_feats=hidden_features[i + 1],
-                                       num_heads=num_heads,
-                                       feat_drop=feat_dropout,
-                                       attn_drop=attn_dropout,
-                                       residual=residual,
-                                       activation=activation))
-        self.layers.append(GATConv(in_feats=hidden_features[-1] * num_heads,
-                                   out_feats=out_features,
-                                   num_heads=1,
-                                   feat_drop=0.0,
-                                   attn_drop=0.0,
-                                   residual=False,
-                                   activation=None))
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(GATConv(in_feats=n_features[i] * num_heads if i != 0 else n_features[i],
+                                       out_feats=n_features[i + 1],
+                                       num_heads=num_heads if i != n_layers - 1 else 1,
+                                       feat_drop=feat_dropout if i != n_layers - 1 else 0.0,
+                                       attn_drop=attn_dropout if i != n_layers - 1 else 0.0,
+                                       residual=residual if i != n_layers - 1 else False,
+                                       activation=activation if i != n_layers - 1 else None))
         if dropout > 0.0:
             self.dropout = nn.Dropout(dropout)
         else:

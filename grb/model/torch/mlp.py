@@ -19,6 +19,8 @@ class MLP(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
+    n_layers : int
+        Number of layers.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
     activation : func of torch.nn.functional, optional
@@ -32,35 +34,31 @@ class MLP(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
                  activation=F.relu,
+                 feat_norm=None,
+                 adj_norm_func=None,
                  layer_norm=False,
                  dropout=0.0):
         super(MLP, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.feat_norm = None
-        self.adj_norm_func = None
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
 
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(MLPLayer(in_features=in_features,
-                                    out_features=hidden_features[0],
-                                    activation=activation,
-                                    dropout=dropout))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(MLPLayer(in_features=hidden_features[i],
-                                        out_features=hidden_features[i + 1],
-                                        activation=activation,
-                                        dropout=dropout))
-        self.layers.append(MLPLayer(in_features=hidden_features[-1],
-                                    out_features=out_features,
-                                    activation=None,
-                                    dropout=0.0))
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(MLPLayer(in_features=n_features[i],
+                                        out_features=n_features[i + 1],
+                                        activation=activation if i != n_layers - 1 else None,
+                                        dropout=dropout if i != n_layers - 1 else 0.0))
         self.reset_parameters()
 
     @property

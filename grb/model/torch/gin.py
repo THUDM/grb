@@ -19,6 +19,10 @@ class GIN(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
+    n_layers : int
+        Number of layers.
+    n_mlp_layers : int
+        Number of layers.
     layer_norm : bool, optional
         Whether to use layer normalization. Default: ``False``.
     batch_norm : bool, optional
@@ -40,6 +44,8 @@ class GIN(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
+                 n_layers,
+                 n_mlp_layers=2,
                  activation=F.relu,
                  layer_norm=False,
                  batch_norm=True,
@@ -52,30 +58,29 @@ class GIN(nn.Module):
         self.out_features = out_features
         self.feat_norm = feat_norm
         self.adj_norm_func = adj_norm_func
+        self.activation = activation
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
+
         self.layers = nn.ModuleList()
-
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-
-        self.layers.append(GINConv(in_features=in_features,
-                                   out_features=hidden_features[0],
-                                   batch_norm=batch_norm,
-                                   eps=eps,
-                                   activation=activation,
-                                   dropout=dropout))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers - 1):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(GINConv(in_features=hidden_features[i],
-                                       out_features=hidden_features[i + 1],
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(GINConv(in_features=n_features[i],
+                                       out_features=n_features[i + 1],
                                        batch_norm=batch_norm,
                                        eps=eps,
                                        activation=activation,
                                        dropout=dropout))
-        self.linear1 = nn.Linear(hidden_features[-2], hidden_features[-1])
-        self.linear2 = nn.Linear(hidden_features[-1], out_features)
+        self.mlp_layers = nn.ModuleList()
+        for i in range(n_mlp_layers):
+            if i == n_mlp_layers - 1:
+                self.mlp_layers.append(nn.Linear(hidden_features[-1], out_features))
+            else:
+                self.mlp_layers.append(nn.Linear(hidden_features[-1], hidden_features[-1]))
         if dropout > 0.0:
             self.dropout = nn.Dropout(dropout)
         else:
@@ -91,8 +96,8 @@ class GIN(nn.Module):
         """Reset parameters."""
         for layer in self.layers:
             layer.reset_parameters()
-        self.linear1.reset_parameters()
-        self.linear2.reset_parameters()
+        for layer in self.mlp_layers:
+            layer.reset_parameters()
 
     def forward(self, x, adj):
         r"""
@@ -117,10 +122,12 @@ class GIN(nn.Module):
             else:
                 x = layer(x, adj)
 
-        x = F.relu(self.linear1(x))
-        if self.dropout is not None:
-            x = self.dropout(x)
-        x = self.linear2(x)
+        for i, layer in enumerate(self.mlp_layers):
+            x = layer(x)
+            if i != len(self.mlp_layers) - 1:
+                x = self.activation(x)
+                if self.dropout is not None:
+                    x = self.dropout(x)
 
         return x
 
