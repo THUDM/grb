@@ -1,10 +1,10 @@
 """Dataset Module for loading or customizing datasets."""
 
-SUPPORTED_DATASETS = {"grb-cora",
-                      "grb-citeseer",
-                      "grb-aminer",
-                      "grb-reddit",
-                      "grb-flickr"}
+GRB_SUPPORTED_DATASETS = {"grb-cora",
+                          "grb-citeseer",
+                          "grb-aminer",
+                          "grb-reddit",
+                          "grb-flickr"}
 URLs = {
     "grb-cora"    : {"adj.npz"     : "https://cloud.tsinghua.edu.cn/f/2e522f282e884907a39f/?dl=1",
                      "features.npz": "https://cloud.tsinghua.edu.cn/f/46fd09a8c1d04f11afbb/?dl=1",

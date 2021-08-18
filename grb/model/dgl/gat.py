@@ -46,7 +46,7 @@ class GAT(nn.Module):
                  out_features,
                  hidden_features,
                  n_layers,
-                 num_heads,
+                 n_heads,
                  activation=F.leaky_relu,
                  layer_norm=False,
                  feat_norm=None,
@@ -70,9 +70,9 @@ class GAT(nn.Module):
         for i in range(n_layers):
             if layer_norm:
                 self.layers.append(nn.LayerNorm(n_features[i]))
-            self.layers.append(GATConv(in_feats=n_features[i] * num_heads if i != 0 else n_features[i],
+            self.layers.append(GATConv(in_feats=n_features[i] * n_heads if i != 0 else n_features[i],
                                        out_feats=n_features[i + 1],
-                                       num_heads=num_heads if i != n_layers - 1 else 1,
+                                       num_heads=n_heads if i != n_layers - 1 else 1,
                                        feat_drop=feat_dropout if i != n_layers - 1 else 0.0,
                                        attn_drop=attn_dropout if i != n_layers - 1 else 0.0,
                                        residual=residual if i != n_layers - 1 else False,

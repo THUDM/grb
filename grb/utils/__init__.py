@@ -1,3 +1,4 @@
-from .trainer import Trainer
+from .trainer import Trainer, AutoTrainer
+from .logger import Logger
 from . import normalize
 from .utils import *

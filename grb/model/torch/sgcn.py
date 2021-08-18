@@ -1,7 +1,6 @@
 """Torch module for SGCN."""
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from grb.utils.normalize import GCNAdjNorm
 
@@ -43,7 +42,7 @@ class SGCN(nn.Module):
                  out_features,
                  hidden_features,
                  n_layers,
-                 activation=F.tanh,
+                 activation=torch.tanh,
                  feat_norm=None,
                  adj_norm_func=GCNAdjNorm,
                  layer_norm=False,

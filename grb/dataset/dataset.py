@@ -5,7 +5,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from ..dataset import URLs, SUPPORTED_DATASETS
+from ..dataset import URLs, GRB_SUPPORTED_DATASETS
 from ..utils import download
 
 
@@ -79,7 +79,7 @@ class Dataset(object):
 
     def __init__(self, name, data_dir=None, mode="easy", feat_norm=None, verbose=True):
         # Create data dir
-        if name not in SUPPORTED_DATASETS:
+        if name not in GRB_SUPPORTED_DATASETS:
             print("{} dataset not supported.".format(name))
             exit(1)
         if data_dir is None:
