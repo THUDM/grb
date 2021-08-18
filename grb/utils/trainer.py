@@ -1,5 +1,6 @@
 import os
 import time
+
 import optuna
 import torch
 import torch.nn.functional as F
@@ -114,7 +115,8 @@ class Trainer(object):
               n_epoch,
               save_dir=None,
               save_name=None,
-              eval_every=10,
+              eval_every=1,
+              if_save=True,
               save_after=0,
               train_mode="transductive",
               return_scores=False,
@@ -209,14 +211,16 @@ class Trainer(object):
                         if epoch > save_after:
                             if verbose:
                                 print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name, verbose=verbose)
+                            if if_save:
+                                utils.save_model(model, save_dir, save_name, verbose=verbose)
                     if self.lr_scheduler is not None:
                         self.lr_scheduler.step(val_loss)
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            if if_save:
+                                utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -245,14 +249,16 @@ class Trainer(object):
                         if epoch > save_after:
                             if verbose:
                                 print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name, verbose=verbose)
+                            if if_save:
+                                utils.save_model(model, save_dir, save_name, verbose=verbose)
                     if self.lr_scheduler is not None:
                         self.lr_scheduler.step(val_loss)
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            if if_save:
+                                utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -260,8 +266,8 @@ class Trainer(object):
                     epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
                                               '| Val loss {:.4f} | Val score {:.4f}'.format(
                         epoch, train_loss, train_score, val_loss, val_score))
-
-        utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
+        if if_save:
+            utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
         print("Training finished. Best validation score: {:.4f}".format(best_val_score))
         if return_scores:
             return train_score_list, val_score_list, best_val_score
@@ -446,6 +452,7 @@ class AutoTrainer(object):
                  n_trials=10,
                  n_jobs=1,
                  seed=42,
+                 if_save=False,
                  device="cpu",
                  **kwargs):
         self.dataset = dataset
@@ -454,6 +461,7 @@ class AutoTrainer(object):
         self.eval_metric = eval_metric
         self.n_trials = n_trials
         self.n_jobs = n_jobs
+        self.if_save = if_save
         self.best_score = None
         self.best_params = None
         self.kargs_params = kwargs
@@ -489,7 +497,8 @@ class AutoTrainer(object):
                           loss=loss,
                           lr_scheduler=other_params["lr_scheduler"] if "lr_scheduler" in other_params else False,
                           early_stop=other_params["early_stop"] if "early_stop" in other_params else False,
-                          early_stop_patience=other_params["early_stop_patience"] if "early_stop_patience" in other_params else 0,
+                          early_stop_patience=other_params[
+                              "early_stop_patience"] if "early_stop_patience" in other_params else 0,
                           feat_norm=other_params["feat_norm"] if "feat_norm" in other_params else model.feat_norm,
                           eval_metric=self.eval_metric,
                           device=self.device)
@@ -497,11 +506,16 @@ class AutoTrainer(object):
         utils.fix_seed(self.seed)
         _, val_score_list, best_val = trainer.train(model=model,
                                                     n_epoch=other_params["n_epoch"],
-                                                    eval_every=other_params["eval_every"] if "eval_every" in other_params else 1,
-                                                    save_after=other_params["save_after"] if "save_after" in other_params else 0,
-                                                    save_dir=other_params["save_dir"] if "save_dir" in other_params else None,
-                                                    save_name=other_params["save_name"] if "save_name" in other_params else None,
+                                                    eval_every=other_params[
+                                                        "eval_every"] if "eval_every" in other_params else 1,
+                                                    save_after=other_params[
+                                                        "save_after"] if "save_after" in other_params else 0,
+                                                    save_dir=other_params[
+                                                        "save_dir"] if "save_dir" in other_params else None,
+                                                    save_name=other_params[
+                                                        "save_name"] if "save_name" in other_params else None,
                                                     train_mode=other_params["train_mode"],
+                                                    if_save=self.if_save,
                                                     return_scores=True,
                                                     verbose=False)
 
