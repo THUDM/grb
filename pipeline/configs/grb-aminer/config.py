@@ -2,32 +2,31 @@
 import torch
 import torch.nn.functional as F
 
-import grb.utils as utils
 from grb.evaluator import metric
 
-model_list = ["gcn",
-              "gcn_ln",
-              "gcn_at",
-              "graphsage",
-              "graphsage_ln",
-              "graphsage_at",
-              "sgcn",
-              "sgcn_at",
-              "sgcn_ln",
-              "robustgcn",
-              "robustgcn_at",
-              "tagcn",
-              "tagcn_ln",
-              "tagcn_at",
-              "appnp",
-              "appnp_ln",
-              "appnp_at",
-              "gin",
-              "gin_ln",
-              "gin_at",
-              "gat",
-              "gat_ln",
-              "gat_at"]
+model_list_all = ["gcn",
+                  "gcn_ln",
+                  "gcn_at",
+                  "graphsage",
+                  "graphsage_ln",
+                  "graphsage_at",
+                  "sgcn",
+                  "sgcn_at",
+                  "sgcn_ln",
+                  "robustgcn",
+                  "robustgcn_at",
+                  "tagcn",
+                  "tagcn_ln",
+                  "tagcn_at",
+                  "appnp",
+                  "appnp_ln",
+                  "appnp_at",
+                  "gin",
+                  "gin_ln",
+                  "gin_at",
+                  "gat",
+                  "gat_ln",
+                  "gat_at"]
 
 model_list_basic = ["gcn",
                     "graphsage",
@@ -41,6 +40,125 @@ attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
 
 model_sur_list = ["gcn"]
 
+
+def build_model(model_name, num_features, num_classes):
+    """Hyper-parameters are determined by auto training, refer to grb.utils.trainer.AutoTrainer."""
+    if model_name in ["gcn", "gcn_ln", "gcn_at", "gcn_ln_at"]:
+        from grb.model.torch import GCN
+        model = GCN(in_features=num_features,
+                    out_features=num_classes,
+                    hidden_features=128,
+                    n_layers=4,
+                    layer_norm=True if "ln" in model_name else False,
+                    dropout=0.5)
+        train_params = {
+            "lr"                 : 0.01,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["graphsage", "graphsage_ln", "graphsage_at", "graphsage_ln_at"]:
+        from grb.model.torch import GraphSAGE
+        model = GraphSAGE(in_features=num_features,
+                          out_features=num_classes,
+                          hidden_features=128,
+                          n_layers=3,
+                          layer_norm=True if "ln" in model_name else False,
+                          dropout=0.6)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["sgcn", "sgcn_ln", "sgcn_at", "sgcn_ln_at"]:
+        from grb.model.torch import SGCN
+        model = SGCN(in_features=num_features,
+                     out_features=num_classes,
+                     hidden_features=128,
+                     n_layers=4,
+                     k=4,
+                     layer_norm=True if "ln" in model_name else False,
+                     dropout=0.5)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["tagcn", "tagcn_ln", "tagcn_at", "tagcn_ln_at"]:
+        from grb.model.torch import TAGCN
+        model = TAGCN(in_features=num_features,
+                      out_features=num_classes,
+                      hidden_features=128,
+                      n_layers=3,
+                      k=4,
+                      layer_norm=True if "ln" in model_name else False,
+                      dropout=0.5)
+        train_params = {
+            "lr"                 : 0.01,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["appnp", "appnp_ln", "appnp_at", "appnp_ln_at"]:
+        from grb.model.torch import APPNP
+        model = APPNP(in_features=num_features,
+                      out_features=num_classes,
+                      hidden_features=128,
+                      n_layers=5,
+                      k=4,
+                      layer_norm=True if "ln" in model_name else False,
+                      dropout=0.5)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["gin", "gin_ln", "gin_at", "gin_ln_at"]:
+        from grb.model.torch import GIN
+        model = GIN(in_features=num_features,
+                    out_features=num_classes,
+                    hidden_features=256,
+                    n_layers=4,
+                    layer_norm=True if "ln" in model_name else False,
+                    dropout=0.6)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["gat", "gat_ln", "gat_at", "gat_ln_at"]:
+        from grb.model.dgl import GAT
+        model = GAT(in_features=num_features,
+                    out_features=num_classes,
+                    hidden_features=128,
+                    n_layers=3,
+                    n_heads=4,
+                    layer_norm=True if "ln" in model_name else False,
+                    dropout=0.6)
+        train_params = {
+            "lr"                 : 0.01,
+            "n_epoch"            : 8000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
 
 # def build_model(model_name, num_features, num_classes):
 #     if "guard" in model_name:
@@ -378,7 +496,7 @@ def build_model_autotrain(model_name):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [64, 128, 256]),
                 "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "n_heads"        : trial.suggest_categorical("n_heads", [2, 4, 6, 8]),
+                "n_heads"        : trial.suggest_categorical("n_heads", [2, 4, 6]),
                 "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             other_params = {

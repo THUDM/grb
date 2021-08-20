@@ -219,8 +219,8 @@ class Trainer(object):
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            if if_save:
-                                utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            # if if_save:
+                            #     utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -257,8 +257,8 @@ class Trainer(object):
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            if if_save:
-                                utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            # if if_save:
+                            #     utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -469,25 +469,25 @@ class AutoTrainer(object):
         self.device = device
 
     def objective(self, trial):
-        model_params, other_params = self.params_search(trial)
-        other_params.update(self.kargs_params)
+        model_params, train_params = self.params_search(trial)
+        train_params.update(self.kargs_params)
         model = self.model_class(in_features=self.dataset.num_features,
                                  out_features=self.dataset.num_classes,
                                  **model_params)
 
-        if "optimizer" in other_params:
-            optimizer = other_params["optimizer"]
+        if "optimizer" in train_params:
+            optimizer = train_params["optimizer"]
         else:
             print("Use default optimizer Adam.")
-            if "lr" in other_params:
-                lr = other_params["lr"]
+            if "lr" in train_params:
+                lr = train_params["lr"]
             else:
                 print("Use default learning rate 0.01.")
                 lr = 0.01
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-        if "loss" in other_params:
-            loss = other_params["loss"]
+        if "loss" in train_params:
+            loss = train_params["loss"]
         else:
             print("Use default cross-entropy loss.")
             loss = torch.nn.functional.cross_entropy
@@ -495,34 +495,37 @@ class AutoTrainer(object):
         trainer = Trainer(dataset=self.dataset,
                           optimizer=optimizer,
                           loss=loss,
-                          lr_scheduler=other_params["lr_scheduler"] if "lr_scheduler" in other_params else False,
-                          early_stop=other_params["early_stop"] if "early_stop" in other_params else False,
-                          early_stop_patience=other_params[
-                              "early_stop_patience"] if "early_stop_patience" in other_params else 0,
-                          feat_norm=other_params["feat_norm"] if "feat_norm" in other_params else model.feat_norm,
+                          lr_scheduler=train_params["lr_scheduler"] if "lr_scheduler" in train_params else False,
+                          early_stop=train_params["early_stop"] if "early_stop" in train_params else False,
+                          early_stop_patience=train_params[
+                              "early_stop_patience"] if "early_stop_patience" in train_params else 0,
+                          feat_norm=train_params["feat_norm"] if "feat_norm" in train_params else model.feat_norm,
                           eval_metric=self.eval_metric,
                           device=self.device)
 
         utils.fix_seed(self.seed)
         _, val_score_list, best_val = trainer.train(model=model,
-                                                    n_epoch=other_params["n_epoch"],
-                                                    eval_every=other_params[
-                                                        "eval_every"] if "eval_every" in other_params else 1,
-                                                    save_after=other_params[
-                                                        "save_after"] if "save_after" in other_params else 0,
-                                                    save_dir=other_params[
-                                                        "save_dir"] if "save_dir" in other_params else None,
-                                                    save_name=other_params[
-                                                        "save_name"] if "save_name" in other_params else None,
-                                                    train_mode=other_params["train_mode"],
+                                                    n_epoch=train_params["n_epoch"],
+                                                    eval_every=train_params[
+                                                        "eval_every"] if "eval_every" in train_params else 1,
+                                                    save_after=train_params[
+                                                        "save_after"] if "save_after" in train_params else 0,
+                                                    save_dir=train_params[
+                                                        "save_dir"] if "save_dir" in train_params else None,
+                                                    save_name=train_params[
+                                                        "save_name"] if "save_name" in train_params else None,
+                                                    train_mode=train_params["train_mode"],
                                                     if_save=self.if_save,
                                                     return_scores=True,
                                                     verbose=False)
 
         if self.best_score is None or best_val > self.best_score:
             self.best_score = best_val
-            self.best_params = {'model_params': model_params, 'other_params': other_params}
+            self.best_params = {'model_params': model_params, 'other_params': train_params}
             self.best_score_list = val_score_list
+
+        del model, trainer
+        torch.cuda.empty_cache()
 
         return best_val
 

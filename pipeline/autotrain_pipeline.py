@@ -4,20 +4,20 @@ import sys
 
 import grb.utils as utils
 from grb.dataset import Dataset
-from grb.utils import AutoTrainer, Logger
 from grb.dataset import GRB_SUPPORTED_DATASETS
 from grb.evaluator import metric
+from grb.utils import AutoTrainer, Logger
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Training GNN models in pipeline.')
+    parser = argparse.ArgumentParser(description='Auto training GNN models in pipeline.')
     # Dataset settings
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--data_dir", type=str, default="../data/")
     parser.add_argument("--feat_norm", type=str, default="arctan")
     # Model settings
     parser.add_argument("--model", nargs='+', default=None)
-    parser.add_argument("--model_dir", type=str, default="../saved_models/")
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
+    parser.add_argument("--log_dir", type=str, default="../pipeline/logs/")
     parser.add_argument("--save_name", type=str, default="model.pt")
     # Training settings
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
@@ -42,12 +42,10 @@ if __name__ == '__main__':
 
     if args.dataset not in args.data_dir:
         args.data_dir = os.path.join(args.data_dir, args.dataset)
-    if args.dataset not in args.model_dir:
-        args.model_dir = os.path.join(args.model_dir, args.dataset)
-    if not os.path.exists(args.model_dir):
-        os.makedirs(args.model_dir)
     if args.dataset not in args.config_dir:
         args.config_dir = os.path.join(args.config_dir, args.dataset)
+    if args.dataset not in args.log_dir:
+        args.log_dir = os.path.join(args.log_dir, args.dataset)
 
     print(args)
     sys.path.append(args.config_dir)
@@ -85,28 +83,31 @@ if __name__ == '__main__':
     other_params = {"train_mode": args.train_mode,
                     "eval_every": args.eval_every,
                     "save_after": args.save_after}
+    terminal_out = sys.stdout
     for model_name in model_list:
-        sys.stdout = Logger(file_dir="./logs/{}".format(args.dataset),
-                            file_name="{}.out".format(model_name),
-                            stream=sys.stdout)
+        logger = Logger(file_dir=args.log_dir,
+                        file_name="{}.out".format(model_name),
+                        stream=terminal_out)
+        sys.stdout = logger
         print("*" * 80)
         print("Auto training {} model...........".format(model_name))
         model_class, params_search = config.build_model_autotrain(model_name=model_name)
-        autotrainer = AutoTrainer(dataset=dataset,
-                                  model_class=model_class,
-                                  eval_metric=args.eval_metric,
-                                  params_search=params_search,
-                                  n_trials=args.n_trials,
-                                  n_jobs=args.n_jobs,
-                                  if_save=args.if_save,
-                                  seed=args.seed,
-                                  device=args.device,
-                                  **other_params)
+        auto_trainer = AutoTrainer(dataset=dataset,
+                                   model_class=model_class,
+                                   eval_metric=args.eval_metric,
+                                   params_search=params_search,
+                                   n_trials=args.n_trials,
+                                   n_jobs=args.n_jobs,
+                                   if_save=args.if_save,
+                                   seed=args.seed,
+                                   device=args.device,
+                                   **other_params)
 
-        best_score, best_params, best_score_list = autotrainer.run()
+        best_score, best_params, best_score_list = auto_trainer.run()
         print("Best validation score: {:.4f}".format(best_score))
         print("Best parameters: ", best_params)
 
-        del autotrainer
+        del auto_trainer
+        logger.flush()
 
     print("Auto training completed.")

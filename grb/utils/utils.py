@@ -74,16 +74,26 @@ def adj_preprocess(adj, adj_norm_func=None, mask=None, model_type="torch", devic
     if adj_norm_func is not None:
         adj = adj_norm_func(adj)
     if model_type == "torch":
-        if type(adj) is tuple:
+        if type(adj) is tuple or type(adj) is list:
             if mask is not None:
-                adj = [adj_to_tensor(adj_[mask][:, mask]).to(device) for adj_ in adj]
+                adj = [adj_to_tensor(adj_[mask][:, mask]).to(device)
+                       if type(adj_) != torch.Tensor else adj_[mask][:, mask].to(device)
+                       for adj_ in adj]
             else:
-                adj = [adj_to_tensor(adj_).to(device) for adj_ in adj]
+                adj = [adj_to_tensor(adj_).to(device)
+                       if type(adj_) != torch.Tensor else adj_.to(device)
+                       for adj_ in adj]
         else:
-            if mask is not None:
-                adj = adj_to_tensor(adj[mask][:, mask]).to(device)
+            if type(adj) != torch.Tensor:
+                if mask is not None:
+                    adj = adj_to_tensor(adj[mask][:, mask]).to(device)
+                else:
+                    adj = adj_to_tensor(adj).to(device)
             else:
-                adj = adj_to_tensor(adj).to(device)
+                if mask is not None:
+                    adj = adj[mask][:, mask].to(device)
+                else:
+                    adj = adj.to(device)
     elif model_type == "dgl":
         if type(adj) is tuple:
             if mask is not None:
