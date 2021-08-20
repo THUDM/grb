@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import scipy.sparse as sp
 
@@ -11,8 +12,8 @@ def GCNAdjNorm(adj, order=-0.5):
 
     Parameters
     ----------
-    adj : scipy.sparse.csr.csr_matrix
-        Adjacency matrix in form of ``N * N`` sparse matrix.
+    adj : scipy.sparse.csr.csr_matrix or torch.FloatTensor
+        Adjacency matrix in form of ``N * N`` sparse matrix (or in form of ``N * N`` dense tensor).
     order : float, optional
         Order of degree matrix. Default: ``-0.5``.
 
@@ -23,14 +24,22 @@ def GCNAdjNorm(adj, order=-0.5):
         Normalized adjacency matrix in form of ``N * N`` sparse matrix.
 
     """
-    adj = sp.eye(adj.shape[0]) + adj
-    adj.data[np.where((adj.data > 0) * (adj.data == 1))[0]] = 1
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, order).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    adj = d_mat_inv_sqrt @ adj @ d_mat_inv_sqrt
+    if sp.issparse(adj):
+        adj = sp.eye(adj.shape[0]) + adj
+        adj.data[np.where((adj.data > 0) * (adj.data == 1))[0]] = 1
+        adj = sp.coo_matrix(adj)
+        rowsum = np.array(adj.sum(1))
+        d_inv = np.power(rowsum, order).flatten()
+        d_inv[np.isinf(d_inv)] = 0.
+        d_mat_inv = sp.diags(d_inv)
+        adj = d_mat_inv @ adj @ d_mat_inv
+    else:
+        adj = torch.eye(adj.shape[0]).to(adj.device) + adj
+        rowsum = adj.sum(1)
+        d_inv = torch.pow(rowsum, order).flatten()
+        d_inv[torch.isinf(d_inv)] = 0.
+        d_mat_inv = torch.diag(d_inv)
+        adj = d_mat_inv @ adj @ d_mat_inv
 
     return adj
 
@@ -56,22 +65,29 @@ def SAGEAdjNorm(adj, order=-1):
         Normalized adjacency matrix in form of ``N * N`` sparse matrix.
 
     """
-
-    adj = sp.eye(adj.shape[0]) + adj
-    for i in range(len(adj.data)):
-        if adj.data[i] > 0 and adj.data[i] != 1:
-            adj.data[i] = 1
-        if adj.data[i] < 0:
-            adj.data[i] = 0
-    adj.eliminate_zeros()
-    adj = sp.coo_matrix(adj)
-    if order == 0:
-        return adj.tocoo()
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, order).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    adj = d_mat_inv_sqrt @ adj
+    if sp.issparse(adj):
+        adj = sp.eye(adj.shape[0]) + adj
+        for i in range(len(adj.data)):
+            if adj.data[i] > 0 and adj.data[i] != 1:
+                adj.data[i] = 1
+            if adj.data[i] < 0:
+                adj.data[i] = 0
+        adj.eliminate_zeros()
+        adj = sp.coo_matrix(adj)
+        if order == 0:
+            return adj.tocoo()
+        rowsum = np.array(adj.sum(1))
+        d_inv = np.power(rowsum, order).flatten()
+        d_inv[np.isinf(d_inv)] = 0.
+        d_mat_inv = sp.diags(d_inv)
+        adj = d_mat_inv @ adj
+    else:
+        adj = torch.eye(adj.shape[0]).to(adj.device) + adj
+        rowsum = adj.sum(1)
+        d_inv = torch.pow(rowsum, order).flatten()
+        d_inv[torch.isinf(d_inv)] = 0.
+        d_mat_inv = torch.diag(d_inv)
+        adj = d_mat_inv @ adj
 
     return adj
 
