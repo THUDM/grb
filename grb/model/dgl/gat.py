@@ -69,7 +69,10 @@ class GAT(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(n_features[i]))
+                if i == 0:
+                    self.layers.append(nn.LayerNorm(n_features[i]))
+                else:
+                    self.layers.append(nn.LayerNorm(n_features[i] * n_heads))
             self.layers.append(GATConv(in_feats=n_features[i] * n_heads if i != 0 else n_features[i],
                                        out_feats=n_features[i + 1],
                                        num_heads=n_heads if i != n_layers - 1 else 1,
