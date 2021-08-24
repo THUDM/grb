@@ -2,7 +2,6 @@
 import torch
 import torch.nn.functional as F
 
-import grb.utils as utils
 from grb.evaluator import metric
 
 model_list = ["gcn",
@@ -322,15 +321,15 @@ def build_metric():
 
 def build_attack(attack_name, device="cpu", args=None):
     if attack_name in "rnd":
-        from grb.attack.rnd import RND
+        from grb.attack.injection.rnd import RAND
 
-        attack = RND(n_inject_max=args.n_inject,
-                     n_edge_max=args.n_edge_max,
-                     feat_lim_min=args.feat_lim_min,
-                     feat_lim_max=args.feat_lim_max,
-                     device=device)
+        attack = RAND(n_inject_max=args.n_inject,
+                      n_edge_max=args.n_edge_max,
+                      feat_lim_min=args.feat_lim_min,
+                      feat_lim_max=args.feat_lim_max,
+                      device=device)
     elif attack_name in "fgsm":
-        from grb.attack.fgsm import FGSM
+        from grb.attack.injection.fgsm import FGSM
 
         attack = FGSM(epsilon=args.lr,
                       n_epoch=args.n_epoch,
@@ -341,7 +340,7 @@ def build_attack(attack_name, device="cpu", args=None):
                       early_stop=args.early_stop,
                       device=device)
     elif attack_name in "pgd":
-        from grb.attack.pgd import PGD
+        from grb.attack.injection.pgd import PGD
 
         attack = PGD(epsilon=args.lr,
                      n_epoch=args.n_epoch,
@@ -352,7 +351,7 @@ def build_attack(attack_name, device="cpu", args=None):
                      early_stop=args.early_stop,
                      device=device)
     elif attack_name in "speit":
-        from grb.attack.speit import SPEIT
+        from grb.attack.injection.speit import SPEIT
 
         attack = SPEIT(lr=args.lr,
                        n_epoch=args.n_epoch,
@@ -363,7 +362,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        early_stop=args.early_stop,
                        device=device)
     elif attack_name in "tdgia":
-        from grb.attack.tdgia import TDGIA
+        from grb.attack.injection.tdgia import TDGIA
 
         attack = TDGIA(lr=args.lr,
                        n_epoch=args.n_epoch,
@@ -376,7 +375,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        sequential_step=1.0,
                        device=device)
     elif attack_name in "tdgia_random":
-        from grb.attack.tdgia import TDGIA
+        from grb.attack.injection.tdgia import TDGIA
 
         attack = TDGIA(lr=args.lr,
                        n_epoch=args.n_epoch,
@@ -388,7 +387,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        inject_mode='random',
                        device=device)
     elif attack_name in "tdgia_uniform":
-        from grb.attack.tdgia import TDGIA
+        from grb.attack.injection.tdgia import TDGIA
 
         attack = TDGIA(lr=args.lr,
                        n_epoch=args.n_epoch,

@@ -82,7 +82,7 @@ trainer.train(model=model, n_epoch=200, dropout=0.5,
 An example of applying Topological Defective Graph Injection Attack ([TDGIA](https://github.com/THUDM/tdgia)) on trained GCN model.
 
 ```python
-from grb.attack.tdgia import TDGIA
+from grb.attack.injection.tdgia import TDGIA
 
 # Attack configuration
 tdgia = TDGIA(lr=0.01, 

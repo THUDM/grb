@@ -53,7 +53,7 @@ def build_model(model_name, num_features, num_classes):
                     dropout=0.5)
         train_params = {
             "lr"                 : 0.01,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -69,7 +69,7 @@ def build_model(model_name, num_features, num_classes):
                           dropout=0.6)
         train_params = {
             "lr"                 : 0.001,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -86,7 +86,7 @@ def build_model(model_name, num_features, num_classes):
                      dropout=0.5)
         train_params = {
             "lr"                 : 0.001,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -97,13 +97,14 @@ def build_model(model_name, num_features, num_classes):
         model = TAGCN(in_features=num_features,
                       out_features=num_classes,
                       hidden_features=128,
-                      n_layers=3,
-                      k=4,
+                      n_layers=4,
+                      k=2,
                       layer_norm=True if "ln" in model_name else False,
+                      batch_norm=True,
                       dropout=0.5)
         train_params = {
             "lr"                 : 0.01,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -113,14 +114,14 @@ def build_model(model_name, num_features, num_classes):
         from grb.model.torch import APPNP
         model = APPNP(in_features=num_features,
                       out_features=num_classes,
-                      hidden_features=128,
-                      n_layers=5,
+                      hidden_features=256,
+                      n_layers=3,
                       k=4,
                       layer_norm=True if "ln" in model_name else False,
                       dropout=0.5)
         train_params = {
             "lr"                 : 0.001,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -136,7 +137,7 @@ def build_model(model_name, num_features, num_classes):
                     dropout=0.6)
         train_params = {
             "lr"                 : 0.001,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -153,7 +154,7 @@ def build_model(model_name, num_features, num_classes):
                     dropout=0.6)
         train_params = {
             "lr"                 : 0.01,
-            "n_epoch"            : 8000,
+            "n_epoch"            : 10000,
             "early_stop"         : True,
             "early_stop_patience": 500,
             "train_mode"         : "inductive",
@@ -320,15 +321,15 @@ def build_metric():
 
 def build_attack(attack_name, device="cpu", args=None):
     if attack_name in "rnd":
-        from grb.attack.rnd import RND
+        from grb.attack.injection.rnd import RAND
 
-        attack = RND(n_inject_max=args.n_inject,
-                     n_edge_max=args.n_edge_max,
-                     feat_lim_min=args.feat_lim_min,
-                     feat_lim_max=args.feat_lim_max,
-                     device=device)
+        attack = RAND(n_inject_max=args.n_inject,
+                      n_edge_max=args.n_edge_max,
+                      feat_lim_min=args.feat_lim_min,
+                      feat_lim_max=args.feat_lim_max,
+                      device=device)
     elif attack_name in "fgsm":
-        from grb.attack.fgsm import FGSM
+        from grb.attack.injection.fgsm import FGSM
 
         attack = FGSM(epsilon=args.lr,
                       n_epoch=args.n_epoch,
@@ -339,7 +340,7 @@ def build_attack(attack_name, device="cpu", args=None):
                       early_stop=args.early_stop,
                       device=device)
     elif attack_name in "pgd":
-        from grb.attack.pgd import PGD
+        from grb.attack.injection.pgd import PGD
 
         attack = PGD(epsilon=args.lr,
                      n_epoch=args.n_epoch,
@@ -350,7 +351,7 @@ def build_attack(attack_name, device="cpu", args=None):
                      early_stop=args.early_stop,
                      device=device)
     elif attack_name in "speit":
-        from grb.attack.speit import SPEIT
+        from grb.attack.injection.speit import SPEIT
 
         attack = SPEIT(lr=args.lr,
                        n_epoch=args.n_epoch,
@@ -361,7 +362,7 @@ def build_attack(attack_name, device="cpu", args=None):
                        early_stop=args.early_stop,
                        device=device)
     elif attack_name in "tdgia":
-        from grb.attack.tdgia import TDGIA
+        from grb.attack.injection.tdgia import TDGIA
 
         attack = TDGIA(lr=args.lr,
                        n_epoch=args.n_epoch,
