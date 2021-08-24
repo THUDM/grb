@@ -1,17 +1,12 @@
-import sys
-
-import torch.nn.functional as F
-
-sys.path.append('..')
-
-import grb.utils as utils
 from grb.dataset import Dataset
 
 if __name__ == '__main__':
     # Load data
-    dataset = Dataset(name='grb-cora',
-                      data_dir="../../data/grb-cora",
-                      mode='easy', feat_norm="arctan")
+    dataset_name = 'grb-cora'
+    dataset = Dataset(name=dataset_name,
+                      data_dir="../data/",
+                      mode='full',
+                      feat_norm='arctan')
 
     adj = dataset.adj
     features = dataset.features
@@ -21,34 +16,36 @@ if __name__ == '__main__':
     test_mask = dataset.test_mask
 
     # Load model
-    from grb.model.torch.gcn import GCN
+    from grb.model.torch import GCN
+    from grb.utils.normalize import GCNAdjNorm
 
-    model = GCN(in_features=num_features,
-                out_features=num_classes,
-                hidden_features=[64, 64],
-                activation=F.relu)
-
-    print("Number of parameters: {}.".format(utils.get_num_params(model)))
-    print(model)
+    model_name = "gcn"
+    model_sur = GCN(in_features=dataset.num_features,
+                    out_features=dataset.num_classes,
+                    hidden_features=64,
+                    n_layers=2,
+                    adj_norm_func=GCNAdjNorm,
+                    layer_norm=False,
+                    residual=False,
+                    dropout=0.5)
+    print(model_sur)
 
     # Prepare attack
-    from grb.attack.tdgia import TDGIA
-    from grb.utils.normalize import GCNAdjNorm
+    from grb.attack.injection.tdgia import TDGIA
 
     device = 'cuda:0'
 
     attack = TDGIA(lr=0.001,
-                   n_epoch=10,
-                   n_inject_max=20,
-                   n_edge_max=20,
+                   n_epoch=100,
+                   n_inject_max=100,
+                   n_edge_max=200,
                    feat_lim_min=-0.99,
                    feat_lim_max=0.99,
                    device=device,
                    inject_mode='tdgia')
 
-    adj_attack, features_attack = attack.attack(model=model,
+    adj_attack, features_attack = attack.attack(model=model_sur,
                                                 adj=adj,
                                                 features=features,
-                                                target_mask=test_mask,
-                                                adj_norm_func=GCNAdjNorm)
+                                                target_mask=test_mask)
     print(adj_attack, features_attack)

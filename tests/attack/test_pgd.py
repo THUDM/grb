@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(model)
 
     # Prepare attack
-    from grb.attack.pgd import PGD
+    from grb.attack.injection.pgd import PGD
     from grb.utils.normalize import GCNAdjNorm
 
     device = 'cuda:0'

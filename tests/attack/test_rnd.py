@@ -32,16 +32,16 @@ if __name__ == '__main__':
     print(model)
 
     # Prepare attack
-    from grb.attack.rnd import RND
+    from grb.attack.injection.rnd import RAND
     from grb.utils.normalize import GCNAdjNorm
 
     device = 'cuda:0'
 
-    attack = RND(n_inject_max=100,
-                 n_edge_max=20,
-                 feat_lim_min=-1,
-                 feat_lim_max=1,
-                 device=device)
+    attack = RAND(n_inject_max=100,
+                  n_edge_max=20,
+                  feat_lim_min=-1,
+                  feat_lim_max=1,
+                  device=device)
 
     adj_attack, features_attack = attack.attack(model=model,
                                                 adj=adj,

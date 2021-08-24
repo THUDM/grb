@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(model)
 
     # Prepare attack
-    from grb.attack.speit import SPEIT
+    from grb.attack.injection.speit import SPEIT
     from grb.utils.normalize import GCNAdjNorm
 
     device = 'cuda:0'

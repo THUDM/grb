@@ -76,7 +76,7 @@ trainer.train(model=model,
 _, test_acc = trainer.inference(model)
 print("Test accuracy: {:.4f}".format(test_acc))
 
-from grb.attack.fgsm import FGSM
+from grb.attack.injection.fgsm import FGSM
 
 fgsm = FGSM(epsilon=0.01,
             n_epoch=10,

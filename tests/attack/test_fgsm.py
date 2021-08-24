@@ -1,5 +1,4 @@
 import sys
-import torch
 import torch.nn.functional as F
 
 sys.path.append('..')
@@ -34,7 +33,7 @@ if __name__ == '__main__':
     print("Number of parameters: {}.".format(utils.get_num_params(model)))
 
     # Prepare attack
-    from grb.attack.fgsm import FGSM
+    from grb.attack.injection.fgsm import FGSM
     from grb.utils.normalize import GCNAdjNorm
 
     device = 'cuda:0'
