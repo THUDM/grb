@@ -1,21 +1,23 @@
 import random
+import time
 
 import numpy as np
 import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
+from tqdm.auto import tqdm
 
-from .base import InjectionAttack, EarlyStop
-from ..evaluator import metric
-from ..utils import utils
+from grb.attack.base import InjectionAttack, EarlyStop
+from grb.evaluator import metric
+from grb.utils import utils
 
 
-class PGD(InjectionAttack):
+class FGSM(InjectionAttack):
     r"""
 
     Description
     -----------
-    Graph injection attack version of Projected Gradient Descent attack (`PGD <https://arxiv.org/abs/1706.06083>`__).
+    Graph injection attack version of Fast Gradient Sign Method (`FGSM <https://arxiv.org/abs/1412.6572>`__).
 
     Parameters
     ----------
@@ -35,12 +37,16 @@ class PGD(InjectionAttack):
         Loss function compatible with ``torch.nn.functional``. Default: ``F.nll_loss``.
     eval_metric : func of grb.evaluator.metric, optional
         Evaluation metric. Default: ``metric.eval_acc``.
-    device : str, optional
-        Device used to host data. Default: ``cpu``.
-    early_stop : bool, optional
-        Whether to early stop. Default: ``False``.
+    early_stop : bool or instance of EarlyStop, optional
+        Whether to early stop. Default: ``None``.
+    early_stop_patience : int, optional
+        Patience of early_stop. Only enabled when ``early_stop is not None``. Default: ``1000``.
+    early_stop_epsilon : float, optional
+        Tolerance of early_stop. Only enabled when ``early_stop is not None``. Default: ``1e-5``.
     verbose : bool, optional
         Whether to display logs. Default: ``True``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
 
     """
 
@@ -53,9 +59,11 @@ class PGD(InjectionAttack):
                  feat_lim_max,
                  loss=F.nll_loss,
                  eval_metric=metric.eval_acc,
-                 device='cpu',
-                 early_stop=False,
-                 verbose=True):
+                 early_stop=None,
+                 early_stop_patience=1000,
+                 early_stop_epsilon=1e-5,
+                 verbose=True,
+                 device='cpu'):
         self.device = device
         self.epsilon = epsilon
         self.n_epoch = n_epoch
@@ -69,38 +77,88 @@ class PGD(InjectionAttack):
 
         # Early stop
         if early_stop:
-            self.early_stop = EarlyStop(patience=1000, epsilon=1e-4)
+            if isinstance(early_stop, EarlyStop):
+                self.early_stop = early_stop
+            else:
+                self.early_stop = EarlyStop(patience=early_stop_patience,
+                                            epsilon=early_stop_epsilon)
         else:
-            self.early_stop = early_stop
+            self.early_stop = None
 
-    def attack(self, model, adj, features, target_mask, adj_norm_func):
+    def attack(self,
+               model,
+               adj,
+               features,
+               target_mask,
+               feat_norm=None,
+               adj_norm_func=None):
+        r"""
+
+        Description
+        -----------
+        Attack process consists of injection and feature update.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        adj : scipy.sparse.csr.csr_matrix
+            Adjacency matrix in form of ``N * N`` sparse matrix.
+        features : torch.FloatTensor
+            Features in form of ``N * D`` torch float tensor.
+        target_mask : torch.Tensor
+            Mask of attack target nodes in form of ``N * 1`` torch bool tensor.
+        feat_norm : str, optional
+            Type of feature normalization, ['arctan', 'tanh']. Default: ``None``.
+        adj_norm_func : func of utils.normalize, optional
+            Function that normalizes adjacency matrix. Default: ``None``.
+
+        Returns
+        -------
+        adj_attack : scipy.sparse.csr.csr_matrix
+            Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
+        features_attack : torch.FloatTensor
+            Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
+
+        """
+
+        time_start = time.time()
         model.to(self.device)
         n_total, n_feat = features.shape
-        features = utils.feat_preprocess(features=features, device=self.device)
+        features = utils.feat_preprocess(features=features,
+                                         feat_norm=model.feat_norm if feat_norm is None else feat_norm,
+                                         device=self.device)
         adj_tensor = utils.adj_preprocess(adj=adj,
-                                          adj_norm_func=adj_norm_func,
+                                          adj_norm_func=model.adj_norm_func if adj_norm_func is None else adj_norm_func,
+                                          model_type=model.model_type,
                                           device=self.device)
-        pred_orig = model(features, adj_tensor)
-        origin_labels = torch.argmax(pred_orig, dim=1)
+        pred_origin = model(features, adj_tensor)
+        labels_origin = torch.argmax(pred_origin, dim=1)
         adj_attack = self.injection(adj=adj,
                                     n_inject=self.n_inject_max,
                                     n_node=n_total,
                                     target_mask=target_mask)
 
-        # Random initialization
-        features_attack = np.random.normal(loc=0, scale=self.feat_lim_max / 10,
-                                           size=(self.n_inject_max, n_feat))
+        features_attack = np.zeros((self.n_inject_max, n_feat))
         features_attack = self.update_features(model=model,
                                                adj_attack=adj_attack,
-                                               features=features,
+                                               features_origin=features,
                                                features_attack=features_attack,
-                                               origin_labels=origin_labels,
+                                               labels_origin=labels_origin,
                                                target_mask=target_mask,
+                                               feat_norm=feat_norm,
                                                adj_norm_func=adj_norm_func)
+        time_end = time.time()
+        if self.verbose:
+            print("Attack runtime: {:.4f}.".format(time_end - time_start))
 
         return adj_attack, features_attack
 
-    def injection(self, adj, n_inject, n_node, target_mask):
+    def injection(self,
+                  adj,
+                  n_inject,
+                  n_node,
+                  target_mask):
         r"""
 
         Description
@@ -155,7 +213,15 @@ class PGD(InjectionAttack):
 
         return adj_attack
 
-    def update_features(self, model, adj_attack, features, features_attack, origin_labels, target_mask, adj_norm_func):
+    def update_features(self,
+                        model,
+                        adj_attack,
+                        features_origin,
+                        features_attack,
+                        labels_origin,
+                        target_mask,
+                        feat_norm=None,
+                        adj_norm_func=None):
         r"""
 
         Description
@@ -168,16 +234,18 @@ class PGD(InjectionAttack):
             Model implemented based on ``torch.nn.module``.
         adj_attack :  scipy.sparse.csr.csr_matrix
             Adversarial adjacency matrix in form of :math:`(N + N_{inject})\times(N + N_{inject})` sparse matrix.
-        features : torch.FloatTensor
+        features_origin : torch.FloatTensor
             Features in form of ``N * D`` torch float tensor.
         features_attack : torch.FloatTensor
             Features of nodes after attacks in form of :math:`N_{inject}` * D` torch float tensor.
-        origin_labels : torch.LongTensor
+        labels_origin : torch.LongTensor
             Labels of target nodes originally predicted by the model.
         target_mask : torch.Tensor
             Mask of target nodes in form of ``N * 1`` torch bool tensor.
-        adj_norm_func : func of utils.normalize
-            Function that normalizes adjacency matrix.
+        feat_norm : str, optional
+            Type of feature normalization, ['arctan', 'tanh']. Default: ``None``.
+        adj_norm_func : func of utils.normalize, optional
+            Function that normalizes adjacency matrix. Default: ``None``.
 
         Returns
         -------
@@ -190,21 +258,23 @@ class PGD(InjectionAttack):
         n_epoch = self.n_epoch
         feat_lim_min, feat_lim_max = self.feat_lim_min, self.feat_lim_max
 
-        n_total = features.shape[0]
+        n_total = features_origin.shape[0]
+        features_attack = utils.feat_preprocess(features=features_attack,
+                                                feat_norm=model.feat_norm if feat_norm is None else feat_norm,
+                                                device=self.device)
         adj_attacked_tensor = utils.adj_preprocess(adj=adj_attack,
-                                                   adj_norm_func=adj_norm_func,
+                                                   adj_norm_func=model.adj_norm_func if adj_norm_func is None else adj_norm_func,
                                                    model_type=model.model_type,
                                                    device=self.device)
-        features_attack = utils.feat_preprocess(features=features_attack, device=self.device)
         model.eval()
-
-        for i in range(n_epoch):
+        epoch_bar = tqdm(range(n_epoch), disable=not self.verbose)
+        for i in epoch_bar:
             features_attack.requires_grad_(True)
             features_attack.retain_grad()
-            features_concat = torch.cat((features, features_attack), dim=0)
+            features_concat = torch.cat((features_origin, features_attack), dim=0)
             pred = model(features_concat, adj_attacked_tensor)
             pred_loss = self.loss(pred[:n_total][target_mask],
-                                  origin_labels[target_mask]).to(self.device)
+                                  labels_origin[target_mask]).to(self.device)
 
             model.zero_grad()
             pred_loss.backward()
@@ -214,18 +284,20 @@ class PGD(InjectionAttack):
             features_attack = features_attack.detach()
 
             test_score = self.eval_metric(pred[:n_total][target_mask],
-                                          origin_labels[target_mask])
+                                          labels_origin[target_mask])
 
             if self.early_stop:
                 self.early_stop(test_score)
                 if self.early_stop.stop:
-                    print("Attacking: Early stopped.")
+                    if self.verbose:
+                        print("Attack early stopped.Surrogate test score: {:.4f}".format(test_score))
                     self.early_stop = EarlyStop()
-                    return features_attack
 
+                    return features_attack
             if self.verbose:
-                print(
-                    "Attacking: Epoch {}, Loss: {:.5f}, Surrogate test score: {:.5f}".format(i, pred_loss, test_score),
-                    end='\r' if i != n_epoch - 1 else '\n')
+                epoch_bar.set_description(
+                    "Epoch {}, Loss: {:.4f}, Surrogate test score: {:.4f}".format(i, pred_loss, test_score))
+        if self.verbose:
+            print("Surrogate test score: {:.4f}".format(test_score))
 
         return features_attack
