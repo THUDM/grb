@@ -35,8 +35,8 @@ class Trainer(object):
         Decay factor of lr_scheduler. Only enabled when ``lr_scheduler is not None``. Default: ``0.75``.
     lr_min : float, optional
         Minimum value of learning rate. Only enabled when ``lr_scheduler is not None``. Default: ``0.0``.
-    early_stop : bool, optional
-        Whether to use early stop.
+    early_stop : bool or instance of EarlyStop, optional
+        Whether to early stop. Default: ``None``.
     early_stop_patience : int, optional
         Patience of early_stop. Only enabled when ``early_stop is not None``. Default: ``100``.
     early_stop_epsilon : float, optional
@@ -149,9 +149,9 @@ class Trainer(object):
             Whether to display logs. Default: ``False``.
 
         """
+        time_start = time.time()
         model.to(self.device)
         model.train()
-
         if save_dir is None:
             cur_time = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
             save_dir = "./tmp_{}".format(cur_time)
@@ -218,9 +218,9 @@ class Trainer(object):
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
+                            time_end = time.time()
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            # if if_save:
-                            #     utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            print("Training runtime: {:.4f}.".format(time_end - time_start))
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -256,9 +256,9 @@ class Trainer(object):
                     if self.early_stop is not None:
                         self.early_stop(val_loss)
                         if self.early_stop.stop:
+                            time_end = time.time()
                             print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
-                            # if if_save:
-                            #     utils.save_model(model, save_dir, "early_stopped_{}".format(save_name), verbose=verbose)
+                            print("Training runtime: {:.4f}.".format(time_end - time_start))
                             if return_scores:
                                 return train_score_list, val_score_list, best_val_score
                             else:
@@ -268,7 +268,9 @@ class Trainer(object):
                         epoch, train_loss, train_score, val_loss, val_score))
         if if_save:
             utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
+        time_end = time.time()
         print("Training finished. Best validation score: {:.4f}".format(best_val_score))
+        print("Training runtime: {:.4f}.".format(time_end - time_start))
         if return_scores:
             return train_score_list, val_score_list, best_val_score
         else:
@@ -380,8 +382,6 @@ class Trainer(object):
         eval_score = self.eval_metric(pred, labels)
 
         return eval_loss, eval_score
-
-        pass
 
     def inference(self, model):
         r"""

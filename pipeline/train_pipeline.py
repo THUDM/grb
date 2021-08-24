@@ -1,12 +1,11 @@
 import argparse
 import os
 import sys
-
 import torch
 
 from grb.dataset import Dataset
 from grb.dataset import GRB_SUPPORTED_DATASETS
-from grb.utils import Trainer
+from grb.utils import Trainer, Logger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training GNN models in pipeline.')
@@ -71,7 +70,12 @@ if __name__ == '__main__':
         model_list = args.model
     else:
         model_list = config.model_list_basic
+    terminal_out = sys.stdout
     for model_name in model_list:
+        logger = Logger(file_dir=args.log_dir,
+                        file_name="train_{}.out".format(model_name),
+                        stream=terminal_out)
+        sys.stdout = logger
         print("*" * 80)
         print("Training {} model...........".format(model_name))
         for i in range(args.n_train):
