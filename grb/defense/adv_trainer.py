@@ -3,6 +3,7 @@ import time
 
 import torch
 import torch.nn.functional as F
+from tqdm.auto import tqdm
 
 import grb.utils as utils
 from grb.evaluator import metric
@@ -13,11 +14,15 @@ class AdvTrainer(object):
                  dataset,
                  optimizer,
                  loss,
-                 attack=None,
-                 adj_norm_func=None,
                  feat_norm=None,
+                 attack=None,
                  lr_scheduler=None,
+                 lr_patience=100,
+                 lr_factor=0.75,
+                 lr_min=1e-5,
                  early_stop=None,
+                 early_stop_patience=100,
+                 early_stop_epsilon=1e-5,
                  eval_metric=metric.eval_acc,
                  device='cpu'):
 
@@ -29,7 +34,6 @@ class AdvTrainer(object):
         self.val_mask = dataset.val_mask
         self.test_mask = dataset.test_mask
         self.num_classes = dataset.num_classes
-        self.adj_norm_func = adj_norm_func
         self.num_nodes = dataset.num_nodes
 
         self.device = device
@@ -40,6 +44,7 @@ class AdvTrainer(object):
                                              device=self.device)
 
         # Settings
+        assert isinstance(optimizer, torch.optim.Optimizer), "Optimizer should be instance of torch.optim.Optimizer."
         self.optimizer = optimizer
         self.loss = loss
         self.eval_metric = eval_metric
@@ -47,29 +52,38 @@ class AdvTrainer(object):
 
         # Learning rate scheduling
         if lr_scheduler:
-            self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer,
-                mode='min',
-                patience=100,
-                factor=0.75,
-                min_lr=0.0,
-                verbose=True)
+            if isinstance(lr_scheduler, (torch.optim.lr_scheduler._LRScheduler,
+                                         torch.optim.lr_scheduler.ReduceLROnPlateau)):
+                self.lr_scheduler = lr_scheduler
+            else:
+                self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer,
+                    mode='min',
+                    patience=lr_patience,
+                    factor=lr_factor,
+                    min_lr=lr_min,
+                    verbose=True)
         else:
-            self.lr_scheduler = lr_scheduler
+            self.lr_scheduler = None
 
         # Early stop
         if early_stop:
-            self.early_stop = EarlyStop()
+            if isinstance(early_stop, EarlyStop):
+                self.early_stop = early_stop
+            else:
+                self.early_stop = EarlyStop(patience=early_stop_patience,
+                                            epsilon=early_stop_epsilon)
         else:
-            self.early_stop = early_stop
+            self.early_stop = None
 
-    def train(self, model, n_epoch,
+    def train(self,
+              model,
+              n_epoch,
               save_dir=None,
               save_name=None,
               eval_every=10,
               save_after=0,
               train_mode="trasductive",
-              dropout=0,
               verbose=True):
         model.to(self.device)
         model.train()
@@ -109,40 +123,41 @@ class AdvTrainer(object):
             features_train = features[train_mask]
             features_val = features[train_val_mask]
             adj_train = utils.adj_preprocess(self.adj,
-                                             adj_norm_func=self.adj_norm_func,
+                                             adj_norm_func=model.adj_norm_func,
                                              mask=self.train_mask,
                                              model_type=model.model_type,
                                              device=self.device)
             adj_val = utils.adj_preprocess(self.adj,
-                                           adj_norm_func=self.adj_norm_func,
+                                           adj_norm_func=model.adj_norm_func,
                                            mask=train_val_mask,
                                            model_type=model.model_type,
                                            device=self.device)
             num_train = torch.sum(train_mask).item()
-            for epoch in range(n_epoch):
-                logits = model(features_train, adj_train, dropout)[:num_train]
+            epoch_bar = tqdm(range(n_epoch))
+            for epoch in epoch_bar:
+                logits = model(features_train, adj_train)[:num_train]
                 if self.loss == F.nll_loss:
                     out = F.log_softmax(logits, 1)
                     train_loss = self.loss(out, labels[train_mask])
-                    logits_val = model(features_val, adj_val, dropout)[:]
+                    logits_val = model(features_val, adj_val)[:]
                     out_val = F.log_softmax(logits_val, 1)
                     val_loss = self.loss(out_val[val_mask_induc], labels[val_mask])
                 elif self.loss == F.cross_entropy:
                     out = logits
                     train_loss = self.loss(out, labels[train_mask])
-                    logits_val = model(features_val, adj_val, dropout)
+                    logits_val = model(features_val, adj_val)
                     out_val = logits_val
                     val_loss = self.loss(out_val[val_mask_induc], labels[val_mask])
                 elif self.loss == F.binary_cross_entropy:
                     out = F.sigmoid(logits)
                     train_loss = self.loss(out, labels[train_mask].float())
-                    logits_val = model(features_val, adj_val, dropout)
+                    logits_val = model(features_val, adj_val)
                     out_val = F.sigmoid(logits_val)
                     val_loss = self.loss(out_val[val_mask_induc], labels[val_mask].float())
                 elif self.loss == F.binary_cross_entropy_with_logits:
                     out = logits
                     train_loss = self.loss(out, labels[train_mask].float())
-                    logits_val = model(features_val, adj_val, dropout)
+                    logits_val = model(features_val, adj_val)
                     out_val = F.sigmoid(logits_val)
                     val_loss = self.loss(out_val[val_mask_induc], labels[val_mask].float())
 
@@ -155,9 +170,9 @@ class AdvTrainer(object):
                                                                      adj=self.adj[train_mask][:, train_mask],
                                                                      features=features[train_mask],
                                                                      target_mask=torch.ones(num_train, dtype=bool),
-                                                                     adj_norm_func=self.adj_norm_func)
+                                                                     adj_norm_func=model.adj_norm_func)
                     adj_train = utils.adj_preprocess(adj=adj_attack,
-                                                     adj_norm_func=self.adj_norm_func,
+                                                     adj_norm_func=model.adj_norm_func,
                                                      model_type=model.model_type,
                                                      device=self.device)
                     features_train = torch.cat([features[train_mask], features_attack])
@@ -179,24 +194,24 @@ class AdvTrainer(object):
                     if val_score > best_val_score:
                         best_val_score = val_score
                         if epoch > save_after:
-                            print(
+                            epoch_bar.set_description(
                                 "Training: Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name)
-                    if verbose:
-                        print(
-                            'Training: Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                            '| Val loss {:.4f} | Val score {:.4f}'.format(
-                                epoch, train_loss, train_score, val_loss, val_score))
+                            utils.save_model(model, save_dir, save_name, verbose=verbose)
+                    epoch_bar.set_description(
+                        'Training: Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                        '| Val loss {:.4f} | Val score {:.4f}'.format(
+                            epoch, train_loss, train_score, val_loss, val_score))
         else:
             # Transductive setting
             adj_train = utils.adj_preprocess(self.adj,
-                                             adj_norm_func=self.adj_norm_func,
+                                             adj_norm_func=model.adj_norm_func,
                                              mask=None,
                                              model_type=model.model_type,
                                              device=self.device)
             features_train = features
-            for epoch in range(n_epoch):
-                logits = model(features_train, adj_train, dropout)[:self.num_nodes]
+            epoch_bar = tqdm(range(n_epoch))
+            for epoch in epoch_bar:
+                logits = model(features_train, adj_train)[:self.num_nodes]
                 if self.loss == F.nll_loss:
                     out = F.log_softmax(logits, 1)
                     train_loss = self.loss(out[train_mask], labels[train_mask])
@@ -223,9 +238,9 @@ class AdvTrainer(object):
                                                                      adj=self.adj,
                                                                      features=self.features,
                                                                      target_mask=val_mask,
-                                                                     adj_norm_func=self.adj_norm_func)
+                                                                     adj_norm_func=model.adj_norm_func)
                     adj_train = utils.adj_preprocess(adj=adj_attack,
-                                                     adj_norm_func=self.adj_norm_func,
+                                                     adj_norm_func=model.adj_norm_func,
                                                      model_type=model.model_type,
                                                      device=self.device)
                     features_train = torch.cat([features, features_attack])
@@ -236,7 +251,7 @@ class AdvTrainer(object):
                     self.early_stop(val_loss)
                     if self.early_stop.stop:
                         print("Training: early stopped.")
-                        utils.save_model(model, save_dir, "final_" + save_name)
+                        utils.save_model(model, save_dir, "final_" + save_name, verbose=verbose)
                         return
 
                 if epoch % eval_every == 0:
@@ -247,34 +262,75 @@ class AdvTrainer(object):
                     if val_score > best_val_score:
                         best_val_score = val_score
                         if epoch > save_after:
-                            print(
+                            epoch_bar.set_description(
                                 "Training: Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
-                            utils.save_model(model, save_dir, save_name)
-                    if verbose:
-                        print(
-                            'Training: Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
-                            '| Val loss {:.4f} | Val score {:.4f}'.format(
-                                epoch, train_loss, train_score, val_loss, val_score))
+                            utils.save_model(model, save_dir, save_name, verbose=verbose)
+
+                    epoch_bar.set_description(
+                        'Training: Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                        '| Val loss {:.4f} | Val score {:.4f}'.format(
+                            epoch, train_loss, train_score, val_loss, val_score))
 
         utils.save_model(model, save_dir, "final_" + save_name)
 
     def inference(self, model):
+        r"""
+
+        Description
+        -----------
+        Inference of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+
+        Returns
+        -------
+        logits : torch.Tensor
+            Output logits of model.
+
+        """
         model.to(self.device)
         model.eval()
         adj = utils.adj_preprocess(self.adj,
-                                   adj_norm_func=self.adj_norm_func,
+                                   adj_norm_func=model.adj_norm_func,
                                    model_type=model.model_type,
                                    device=self.device)
-        logits = model(self.features, adj, dropout=0)
-        if self.loss == F.nll_loss:
-            out = F.log_softmax(logits, 1)
-        elif self.loss == F.binary_cross_entropy:
-            out = F.sigmoid(logits)
-        else:
-            out = logits
-        test_score = self.eval_metric(out, self.labels, self.test_mask)
+        logits = model(self.features, adj)
 
-        return logits, test_score
+        return logits
+
+    def evaluate(self, model, mask=None):
+        r"""
+
+        Description
+        -----------
+        Evaluation of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        mask : torch.tensor, optional
+            Mask of target nodes.  Default: ``None``.
+
+        Returns
+        -------
+        score : float
+            Score on masked nodes.
+
+        """
+        model.to(self.device)
+        model.eval()
+        adj = utils.adj_preprocess(self.adj,
+                                   adj_norm_func=model.adj_norm_func,
+                                   model_type=model.model_type,
+                                   device=self.device)
+        logits = model(self.features, adj)
+        score = self.eval_metric(logits, self.labels, mask)
+
+        return score
 
 
 class EarlyStop(object):

@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from grb.utils.normalize import RobustGCNAdjNorm
 
 class RobustGCN(nn.Module):
     r"""
@@ -19,34 +20,49 @@ class RobustGCN(nn.Module):
         Dimension of output features.
     hidden_features : int or list of int
         Dimension of hidden features. List if multi-layer.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``True``.
+    feat_norm : str, optional
+        Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
+    adj_norm_func : func of utils.normalize, optional
+        Function that normalizes adjacency matrix. Default: ``RobustAdjNorm``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, hidden_features, dropout=True):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 n_layers,
+                 feat_norm=None,
+                 adj_norm_func=RobustGCNAdjNorm,
+                 dropout=0.0):
         super(RobustGCN, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
+
         self.act0 = F.elu
         self.act1 = F.relu
 
         self.layers = nn.ModuleList()
-        self.layers.append(RobustGCNConv(in_features, hidden_features[0], act0=self.act0, act1=self.act1,
-                                         initial=True, dropout=dropout))
-        for i in range(len(hidden_features) - 1):
-            self.layers.append(RobustGCNConv(hidden_features[i], hidden_features[i + 1],
-                                             act0=self.act0, act1=self.act1, dropout=True))
-        self.layers.append(RobustGCNConv(hidden_features[-1], out_features, act0=self.act0, act1=self.act1))
+        for i in range(n_layers):
+            self.layers.append(RobustGCNConv(n_features[i], n_features[i + 1], act0=self.act0, act1=self.act1,
+                                             initial=True if i == 0 else False,
+                                             dropout=dropout if i != n_layers - 1 else 0.0))
 
     @property
     def model_type(self):
         """Indicate type of implementation."""
         return "torch"
 
-    def forward(self, x, adj, dropout=0.0):
+    def forward(self, x, adj):
         r"""
 
         Parameters
@@ -55,8 +71,6 @@ class RobustGCN(nn.Module):
             Tensor of input features.
         adj : list of torch.SparseTensor
             List of sparse tensor of adjacency matrix.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -69,7 +83,7 @@ class RobustGCN(nn.Module):
         mean = x
         var = x
         for layer in self.layers:
-            mean, var = layer(mean, var=var, adj0=adj0, adj1=adj1, dropout=dropout)
+            mean, var = layer(mean, var=var, adj0=adj0, adj1=adj1)
         sample = torch.randn(var.shape).to(x.device)
         output = mean + sample * torch.pow(var, 0.5)
 
@@ -95,21 +109,24 @@ class RobustGCNConv(nn.Module):
         Activation function. Default: ``F.relu``.
     initial : bool, optional
         Whether to initialize variance.
-    dropout : bool, optional
-        Whether to dropout during training. Default: ``False``.
+    dropout : float, optional
+            Rate of dropout. Default: ``0.0``.
 
     """
 
-    def __init__(self, in_features, out_features, act0=F.elu, act1=F.relu, initial=False, dropout=False):
+    def __init__(self, in_features, out_features, act0=F.elu, act1=F.relu, initial=False, dropout=0.0):
         super(RobustGCNConv, self).__init__()
         self.mean_conv = nn.Linear(in_features, out_features)
         self.var_conv = nn.Linear(in_features, out_features)
         self.act0 = act0
         self.act1 = act1
         self.initial = initial
-        self.dropout = dropout
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
 
-    def forward(self, mean, var=None, adj0=None, adj1=None, dropout=0.0):
+    def forward(self, mean, var=None, adj0=None, adj1=None):
         r"""
 
         Parameters
@@ -122,8 +139,6 @@ class RobustGCNConv(nn.Module):
             Sparse tensor of adjacency matrix 0. Default: ``None``.
         adj1 : torch.SparseTensor, optional
             Sparse tensor of adjacency matrix 1. Default: ``None``.
-        dropout : float, optional
-            Rate of dropout. Default: ``0.0``.
 
         Returns
         -------
@@ -145,7 +160,8 @@ class RobustGCNConv(nn.Module):
         if self.dropout:
             mean = self.act0(mean)
             var = self.act0(var)
-            mean = F.dropout(mean, dropout)
-            var = F.dropout(var, dropout)
+            if self.dropout is not None:
+                mean = self.dropout(mean)
+                var = self.dropout(var)
 
         return mean, var

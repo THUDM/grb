@@ -2,3 +2,4 @@
 from .adv_trainer import AdvTrainer
 from .gcnsvd import GCNSVD
 from .gnnguard import GCNGuard, GATGuard
+from .robustgcn import RobustGCN
