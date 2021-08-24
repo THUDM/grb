@@ -191,7 +191,7 @@ class TAGConv(nn.Module):
         x = self.linear(x)
         if self.batch_norm:
             x = self.norm_func(x)
-        if not (self.activation is None):
+        if self.activation is not None:
             x = self.activation(x)
         if self.dropout is not None:
             x = self.dropout(x)
