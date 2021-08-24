@@ -35,9 +35,15 @@ model_list_basic = ["gcn",
                     "gin",
                     "gat"]
 
-attack_list = ["rnd", "fgsm", "pgd", "speit", "tdgia"]
+attack_list = ["rand", "fgsm", "pgd", "speit", "tdgia"]
 
-model_sur_list = ["gcn"]
+model_sur_list = ["gcn",
+                  "graphsage",
+                  "sgcn",
+                  "tagcn",
+                  "appnp",
+                  "gin",
+                  "gat"]
 
 
 def build_model(model_name, num_features, num_classes):
@@ -335,53 +341,53 @@ def build_metric():
 
 
 def build_attack(attack_name, device="cpu", args=None):
-    if attack_name in "rnd":
-        from grb.attack.injection.rnd import RAND
+    if attack_name in "rand":
+        from grb.attack.injection import RAND
 
-        attack = RAND(n_inject_max=args.n_inject,
+        attack = RAND(n_inject_max=args.n_inject_max,
                       n_edge_max=args.n_edge_max,
                       feat_lim_min=args.feat_lim_min,
                       feat_lim_max=args.feat_lim_max,
                       device=device)
     elif attack_name in "fgsm":
-        from grb.attack.injection.fgsm import FGSM
+        from grb.attack.injection import FGSM
 
         attack = FGSM(epsilon=args.lr,
                       n_epoch=args.n_epoch,
-                      n_inject_max=args.n_inject,
+                      n_inject_max=args.n_inject_max,
                       n_edge_max=args.n_edge_max,
                       feat_lim_min=args.feat_lim_min,
                       feat_lim_max=args.feat_lim_max,
                       early_stop=args.early_stop,
                       device=device)
     elif attack_name in "pgd":
-        from grb.attack.injection.pgd import PGD
+        from grb.attack.injection import PGD
 
         attack = PGD(epsilon=args.lr,
                      n_epoch=args.n_epoch,
-                     n_inject_max=args.n_inject,
+                     n_inject_max=args.n_inject_max,
                      n_edge_max=args.n_edge_max,
                      feat_lim_min=args.feat_lim_min,
                      feat_lim_max=args.feat_lim_max,
                      early_stop=args.early_stop,
                      device=device)
     elif attack_name in "speit":
-        from grb.attack.injection.speit import SPEIT
+        from grb.attack.injection import SPEIT
 
         attack = SPEIT(lr=args.lr,
                        n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
+                       n_inject_max=args.n_inject_max,
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
                        early_stop=args.early_stop,
                        device=device)
     elif attack_name in "tdgia":
-        from grb.attack.injection.tdgia import TDGIA
+        from grb.attack.injection import TDGIA
 
         attack = TDGIA(lr=args.lr,
                        n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
+                       n_inject_max=args.n_inject_max,
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
