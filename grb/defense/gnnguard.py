@@ -10,27 +10,41 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 
 from grb.model.torch.gcn import GCNConv
+from grb.utils.normalize import GCNAdjNorm
 
 
 class GCNGuard(nn.Module):
-    def __init__(self, in_features, out_features, hidden_features, activation=F.relu,
-                 layer_norm=False, dropout=True, drop=False, attention=True):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 hidden_features,
+                 n_layers,
+                 activation=F.relu,
+                 layer_norm=False,
+                 dropout=True,
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
+                 drop=0.0,
+                 attention=True):
         super(GCNGuard, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
         if type(hidden_features) is int:
-            hidden_features = [hidden_features]
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
 
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(GCNConv(in_features, hidden_features[0], activation=activation, dropout=dropout))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i]))
-            self.layers.append(
-                GCNConv(hidden_features[i], hidden_features[i + 1], activation=activation, dropout=dropout))
-        self.layers.append(GCNConv(hidden_features[-1], out_features))
+                self.layers.append(nn.LayerNorm(n_features[i]))
+            self.layers.append(GCNConv(in_features=n_features[i],
+                                       out_features=n_features[i + 1],
+                                       activation=activation if i != n_layers - 1 else None,
+                                       dropout=dropout if i != n_layers - 1 else 0.0))
         self.reset_parameters()
         self.drop = drop
         self.drop_learn = torch.nn.Linear(2, 1)
@@ -44,14 +58,14 @@ class GCNGuard(nn.Module):
         for layer in self.layers:
             layer.reset_parameters()
 
-    def forward(self, x, adj, dropout=0):
+    def forward(self, x, adj):
         for layer in self.layers:
             if isinstance(layer, nn.LayerNorm):
                 x = layer(x)
             else:
                 if self.attention:
                     adj = self.att_coef(x, adj)
-                x = layer(x, adj, dropout=dropout)
+                x = layer(x, adj)
 
         return x
 
@@ -116,34 +130,51 @@ class GATGuard(nn.Module):
                  in_features,
                  out_features,
                  hidden_features,
-                 num_heads,
+                 n_layers,
+                 n_heads,
                  activation=F.leaky_relu,
                  layer_norm=False,
+                 feat_norm=None,
+                 adj_norm_func=GCNAdjNorm,
                  drop=False,
-                 attention=True):
+                 attention=True,
+                 dropout=0.0):
 
         super(GATGuard, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.feat_norm = feat_norm
+        self.adj_norm_func = adj_norm_func
+        if type(hidden_features) is int:
+            hidden_features = [hidden_features] * (n_layers - 1)
+        elif type(hidden_features) is list or type(hidden_features) is tuple:
+            assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
+        n_features = [in_features] + hidden_features + [out_features]
+
         self.layers = nn.ModuleList()
-        if layer_norm:
-            self.layers.append(nn.LayerNorm(in_features))
-        self.layers.append(
-            GATConv(in_features, hidden_features[0], num_heads, activation=activation, allow_zero_in_degree=True))
-        for i in range(len(hidden_features) - 1):
+        for i in range(n_layers):
             if layer_norm:
-                self.layers.append(nn.LayerNorm(hidden_features[i] * num_heads))
-            self.layers.append(
-                GATConv(hidden_features[i] * num_heads, hidden_features[i + 1], num_heads, activation=activation,
-                        allow_zero_in_degree=True))
-        self.layers.append(GATConv(hidden_features[-1] * num_heads, num_heads, out_features, allow_zero_in_degree=True))
+                if i == 0:
+                    self.layers.append(nn.LayerNorm(n_features[i]))
+                else:
+                    self.layers.append(nn.LayerNorm(n_features[i] * n_heads))
+            self.layers.append(GATConv(in_feats=n_features[i] * n_heads if i != 0 else n_features[i],
+                                       out_feats=n_features[i + 1],
+                                       num_heads=n_heads if i != n_layers - 1 else 1,
+                                       activation=activation if i != n_layers - 1 else None))
         self.drop = drop
         self.drop_learn = torch.nn.Linear(2, 1)
         self.attention = attention
+        if dropout > 0.0:
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.dropout = None
 
     @property
     def model_type(self):
         return "dgl"
 
-    def forward(self, x, adj, dropout=0):
+    def forward(self, x, adj):
         graph = dgl.from_scipy(adj).to(x.device)
         graph.ndata['features'] = x
 
@@ -157,7 +188,8 @@ class GATGuard(nn.Module):
                     graph.ndata['features'] = x
                 x = layer(graph, x).flatten(1)
                 if i != len(self.layers) - 1:
-                    x = F.dropout(x, dropout)
+                    if self.dropout is not None:
+                        x = self.dropout(x)
 
         return x
 

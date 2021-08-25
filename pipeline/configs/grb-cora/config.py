@@ -173,144 +173,70 @@ def build_model(model_name, num_features, num_classes):
             "train_mode"         : "inductive",
         }
         return model, train_params
+    if model_name in ["robustgcn", "robustgcn_at"]:
+        from grb.defense import RobustGCN
+        model = RobustGCN(in_features=num_features,
+                          out_features=num_classes,
+                          hidden_features=128,
+                          n_layers=3,
+                          dropout=0.5)
+        train_params = {
+            "lr"                 : 0.01,
+            "n_epoch"            : 5000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["gcnsvd", "gcnsvd_ln"]:
+        from grb.defense.gcnsvd import GCNSVD
 
-    # if "guard" in model_name:
-    #     if "gcn" in model_name:
-    #         from grb.defense.gnnguard import GCNGuard
-    #
-    #         model = GCNGuard(in_features=num_features,
-    #                          out_features=num_classes,
-    #                          hidden_features=[64, 64],
-    #                          activation=F.relu,
-    #                          drop=True)
-    #         adj_norm_func = utils.normalize.GCNAdjNorm
-    #     elif "gat" in model_name:
-    #         from grb.defense.gnnguard import GATGuard
-    #
-    #         model = GATGuard(in_features=num_features,
-    #                          out_features=num_classes,
-    #                          hidden_features=[64, 64],
-    #                          num_heads=4,
-    #                          activation=F.relu,
-    #                          drop=True)
-    #         adj_norm_func = utils.normalize.GCNAdjNorm
-    # elif "svd" in model_name:
-    #     if "gcn" in model_name:
-    #         from grb.defense.gcnsvd import GCNSVD
-    #
-    #         model = GCNSVD(in_features=num_features,
-    #                        out_features=num_classes,
-    #                        hidden_features=[64, 64],
-    #                        activation=F.relu)
-    #         adj_norm_func = utils.normalize.GCNAdjNorm
-    # elif "robustgcn" in model_name:
-    #     from grb.defense.robustgcn import RobustGCN
-    #
-    #     model = RobustGCN(in_features=num_features,
-    #                       out_features=num_classes,
-    #                       hidden_features=[64, 64, 64])
-    #     adj_norm_func = utils.normalize.RobustGCNAdjNorm
-    # elif "sgcn" in model_name:
-    #     from grb.model.torch.sgcn import SGCN
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = SGCN(in_features=num_features,
-    #                      out_features=num_classes,
-    #                      hidden_features=[64, 64, 64],
-    #                      layer_norm=True,
-    #                      activation=F.relu)
-    #     else:
-    #         model = SGCN(in_features=num_features,
-    #                      out_features=num_classes,
-    #                      hidden_features=[64, 64, 64],
-    #                      activation=F.relu)
-    # elif "tagcn" in model_name:
-    #     from grb.model.torch.tagcn import TAGCN
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = TAGCN(in_features=num_features,
-    #                       out_features=num_classes,
-    #                       hidden_features=[64, 64, 64],
-    #                       layer_norm=True,
-    #                       k=2, activation=F.leaky_relu)
-    #     else:
-    #         model = TAGCN(in_features=num_features,
-    #                       out_features=num_classes,
-    #                       hidden_features=[64, 64, 64],
-    #                       k=2, activation=F.leaky_relu)
-    # elif "gcn" in model_name:
-    #     from grb.model.torch.gcn import GCN
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = GCN(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     layer_norm=True,
-    #                     activation=F.relu)
-    #     else:
-    #         model = GCN(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     activation=F.relu)
-    # elif "graphsage" in model_name:
-    #     from grb.model.torch.graphsage import GraphSAGE
-    #     adj_norm_func = utils.normalize.SAGEAdjNorm
-    #     if 'ln' in model_name:
-    #         model = GraphSAGE(in_features=num_features,
-    #                           out_features=num_classes,
-    #                           hidden_features=[64, 64, 64],
-    #                           layer_norm=True,
-    #                           activation=F.relu)
-    #     else:
-    #         model = GraphSAGE(in_features=num_features,
-    #                           out_features=num_classes,
-    #                           hidden_features=[64, 64, 64],
-    #                           activation=F.relu)
-    # elif "appnp" in model_name:
-    #     from grb.model.torch.appnp import APPNP
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = APPNP(in_features=num_features,
-    #                       out_features=num_classes,
-    #                       hidden_features=64,
-    #                       layer_norm=True,
-    #                       alpha=0.01, k=10)
-    #     else:
-    #         model = APPNP(in_features=num_features,
-    #                       out_features=num_classes,
-    #                       hidden_features=64,
-    #                       alpha=0.01, k=10)
-    # elif "gin" in model_name:
-    #     from grb.model.torch.gin import GIN
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = GIN(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     layer_norm=True,
-    #                     activation=F.relu)
-    #     else:
-    #         model = GIN(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     activation=F.relu)
-    # elif "gat" in model_name:
-    #     from grb.model.dgl.gat import GAT
-    #     adj_norm_func = utils.normalize.GCNAdjNorm
-    #     if 'ln' in model_name:
-    #         model = GAT(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     num_heads=4,
-    #                     layer_norm=True,
-    #                     activation=F.leaky_relu)
-    #     else:
-    #         model = GAT(in_features=num_features,
-    #                     out_features=num_classes,
-    #                     hidden_features=[64, 64, 64],
-    #                     num_heads=4,
-    #                     layer_norm=False,
-    #                     activation=F.leaky_relu)
+        model = GCNSVD(in_features=num_features,
+                       out_features=num_classes,
+                       hidden_features=128,
+                       n_layers=3,
+                       dropout=0.5)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 5000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["gcnguard"]:
+        from grb.defense import GCNGuard
+
+        model = GCNGuard(in_features=num_features,
+                         out_features=num_classes,
+                         hidden_features=128,
+                         n_layers=3,
+                         dropout=0.5)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 5000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
+    if model_name in ["gatguard"]:
+        from grb.defense import GATGuard
+
+        model = GATGuard(in_features=num_features,
+                         out_features=num_classes,
+                         hidden_features=128,
+                         n_heads=4,
+                         n_layers=3,
+                         dropout=0.5)
+        train_params = {
+            "lr"                 : 0.001,
+            "n_epoch"            : 5000,
+            "early_stop"         : True,
+            "early_stop_patience": 500,
+            "train_mode"         : "inductive",
+        }
+        return model, train_params
     print("Model name not supported.")
     raise NotImplementedError
 
