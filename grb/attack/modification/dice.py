@@ -48,8 +48,9 @@ class DICE(ModificationAttack):
                         degrees[index[1]] -= 1
 
         index_delete = np.random.permutation(target_index_pair)[:n_delete]
-        adj_attack[index_delete[:, 0], index_delete[:, 1]] = 0
-        adj_attack[index_delete[:, 1], index_delete[:, 0]] = 0
+        if index_delete != []:
+            adj_attack[index_delete[:, 0], index_delete[:, 1]] = 0
+            adj_attack[index_delete[:, 1], index_delete[:, 0]] = 0
 
         # connect externally
         print("Connect externally......")
