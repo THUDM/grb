@@ -44,6 +44,7 @@ modification_attack_list = ["dice",
                             "flip",
                             "fga",
                             "nea",
+                            "pgd",
                             "stack"]
 
 injection_attack_list = ["rand",
@@ -296,6 +297,18 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
             attack = STACK(n_edge_mod=args.n_edge_mod,
                            device=device)
             return attack
+        if attack_name == "pgd":
+            from grb.attack.modification import PGD
+
+            attack = PGD(epsilon=args.epsilon,
+                         n_epoch=args.attack_epoch,
+                         n_node_mod=args.n_node_mod,
+                         n_edge_mod=args.n_edge_mod,
+                         feat_lim_min=args.feat_lim_min,
+                         feat_lim_max=args.feat_lim_max,
+                         early_stop=args.early_stop,
+                         device=device)
+            return attack
     elif mode == "injection":
         if attack_name == "rand":
             from grb.attack.injection import RAND
@@ -305,6 +318,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                           feat_lim_min=args.feat_lim_min,
                           feat_lim_max=args.feat_lim_max,
                           device=device)
+            return attack
         elif attack_name == "fgsm":
             from grb.attack.injection import FGSM
 
@@ -316,6 +330,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                           feat_lim_max=args.feat_lim_max,
                           early_stop=args.early_stop,
                           device=device)
+            return attack
         elif attack_name == "pgd":
             from grb.attack.injection import PGD
 
@@ -327,6 +342,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                          feat_lim_max=args.feat_lim_max,
                          early_stop=args.early_stop,
                          device=device)
+            return attack
         elif attack_name == "speit":
             from grb.attack.injection import SPEIT
 
@@ -338,6 +354,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                            feat_lim_max=args.feat_lim_max,
                            early_stop=args.early_stop,
                            device=device)
+            return attack
         elif attack_name == "tdgia":
             from grb.attack.injection import TDGIA
 
@@ -351,6 +368,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                            inject_mode='random',
                            sequential_step=1.0,
                            device=device)
+            return attack
         elif attack_name == "tdgia_random":
             from grb.attack.injection.tdgia import TDGIA
 
@@ -363,6 +381,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                            early_stop=args.early_stop,
                            inject_mode='random',
                            device=device)
+            return attack
         elif attack_name == "tdgia_uniform":
             from grb.attack.injection import TDGIA
 
@@ -376,6 +395,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                            inject_mode='uniform',
                            sequential_step=1.0,
                            device=device)
+            return attack
     else:
         raise NotImplementedError
 

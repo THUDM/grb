@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 import time
+
 import torch
 
 import grb.utils as utils
 from grb.dataset import Dataset
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Attacking GNN models in pipeline.')
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument("--model_dir", type=str, default="../saved_models/")
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
     parser.add_argument("--log_dir", type=str, default="../pipeline/logs/")
-    parser.add_argument("--model_file", type=str, default="model_sur_0.pt")
+    parser.add_argument("--model_file", type=str, default="model_sur.pt")
     # Modification attack setting
     parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--attack_mode", type=str, default="modification")
@@ -35,19 +35,11 @@ if __name__ == '__main__':
     parser.add_argument("--feat_lim_min", type=float, default=None)
     parser.add_argument("--feat_lim_max", type=float, default=None)
     parser.add_argument("--flip_type", type=str, default="deg")
-    # Adversarial training settings
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
-    parser.add_argument("--n_train", type=int, default=1)
-    parser.add_argument("--n_epoch", type=int, default=5000, help="Training epoch.")
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
-    parser.add_argument("--eval_every", type=int, default=1)
-    parser.add_argument("--save_after", type=int, default=0)
-    parser.add_argument("--train_mode", type=str, default="inductive")
+    parser.add_argument("--epsilon", type=float, default=0.01)
     parser.add_argument("--eval_metric", type=str, default="acc")
     parser.add_argument("--early_stop", action="store_true")
     parser.add_argument("--early_stop_patience", type=int, default=500)
-    parser.add_argument("--lr_scheduler", action="store_true")
-    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--verbose", action="store_true")
 
     args = parser.parse_args()
@@ -105,11 +97,11 @@ if __name__ == '__main__':
         print("    Modification feature range: [{:.4f}, {:.4f}]".format(args.feat_lim_min, args.feat_lim_max))
 
         if args.attack is not None:
-            attack_list = [args.attack]
+            attack_list = args.attack
         else:
             attack_list = config.modification_attack_list
         if args.model is not None:
-            model_list = [args.model]
+            model_list = args.model
         else:
             model_list = config.model_sur_list
 
@@ -140,11 +132,21 @@ if __name__ == '__main__':
                                                    adj=adj,
                                                    features=features,
                                                    index_target=index_target)
+                    elif attack_name == "pgd":
+                        adj_attack, features_attack = attack.attack(model=model_sur,
+                                                                    adj=adj,
+                                                                    features=features,
+                                                                    index_target=index_target)
+
                     time_end = time.time()
                     print("Attack runtime: {:.4f}".format(time_end - time_start))
                     save_dir = os.path.join(args.save_dir, attack_name + "_vs_" + model_name, dataset_mode, str(i))
 
                     utils.save_adj(adj_attack.tocsr(), save_dir,
                                    file_name="adj_rn_{}_re_{}.pkl".format(args.ratio_node_mod, args.ratio_edge_mod))
+                    if attack_name == "pgd":
+                        utils.save_features(features_attack, save_dir,
+                                            file_name="features_rn_{}_re_{}.npy".format(args.ratio_node_mod,
+                                                                                        args.ratio_edge_mod))
 
         print("Attack finished.")

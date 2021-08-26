@@ -58,22 +58,24 @@ class AttackEvaluator(object):
 
         test_score_dict = {}
         for model_name in model_dict.keys():
-            model, adj_norm_func = self.build_model(model_name=model_name,
-                                                    num_features=self.dataset.num_features,
-                                                    num_classes=self.dataset.num_classes)
-            model.load_state_dict(torch.load(model_dict[model_name], map_location=self.device))
+            # model, adj_norm_func = self.build_model(model_name=model_name,
+            #                                         num_features=self.dataset.num_features,
+            #                                         num_classes=self.dataset.num_classes)
+            # model.load_state_dict(torch.load(model_dict[model_name], map_location=self.device))
+            model = torch.load(model_dict[model_name], map_location=self.device)
             model.to(self.device)
             model.eval()
 
             test_score = self.eval(model=model,
                                    adj=adj_attack,
                                    features=features_attack,
-                                   adj_norm_func=adj_norm_func)
+                                   adj_norm_func=model.adj_norm_func)
 
             test_score_dict[model_name] = test_score
             if verbose:
                 print("Model {}, Test score: {:.4f}".format(model_name, test_score))
 
+        del model
         test_score_sorted = sorted(list(test_score_dict.values()))
         test_score_dict["average"] = np.mean(test_score_sorted)
         test_score_dict["3-max"] = np.mean(test_score_sorted[-3:])
@@ -110,7 +112,7 @@ class AttackEvaluator(object):
                                           device=self.device,
                                           model_type=model.model_type)
         features = utils.feat_preprocess(features=features, device=self.device)
-        logits = model(features, adj_tensor, dropout=0)
+        logits = model(features, adj_tensor)
         logp = F.softmax(logits[:self.dataset.num_nodes], 1)
         test_score = metric.eval_acc(logp, self.dataset.labels.to(self.device),
                                      self.dataset.test_mask.to(self.device))

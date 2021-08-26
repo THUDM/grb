@@ -44,6 +44,7 @@ modification_attack_list = ["dice",
                             "flip",
                             "fga",
                             "nea",
+                            "pgd"
                             "stack"]
 
 injection_attack_list = ["rand",
@@ -253,90 +254,148 @@ def build_metric():
     return metric.eval_acc
 
 
-def build_attack(attack_name, device="cpu", args=None):
-    if attack_name in "rnd":
-        from grb.attack.injection.rnd import RAND
+def build_attack(attack_name, device="cpu", args=None, mode="modification"):
+    if mode == "modification":
+        if attack_name == "dice":
+            from grb.attack.modification import DICE
 
-        attack = RAND(n_inject_max=args.n_inject,
-                      n_edge_max=args.n_edge_max,
-                      feat_lim_min=args.feat_lim_min,
-                      feat_lim_max=args.feat_lim_max,
-                      device=device)
-    elif attack_name in "fgsm":
-        from grb.attack.injection.fgsm import FGSM
+            attack = DICE(n_edge_mod=args.n_edge_mod,
+                          ratio_delete=0.6,
+                          device=device)
+            return attack
+        if attack_name == "fga":
+            from grb.attack.modification import FGA
 
-        attack = FGSM(epsilon=args.lr,
-                      n_epoch=args.n_epoch,
-                      n_inject_max=args.n_inject,
-                      n_edge_max=args.n_edge_max,
-                      feat_lim_min=args.feat_lim_min,
-                      feat_lim_max=args.feat_lim_max,
-                      early_stop=args.early_stop,
-                      device=device)
-    elif attack_name in "pgd":
-        from grb.attack.injection.pgd import PGD
+            attack = FGA(n_edge_mod=args.n_edge_mod,
+                         device=device)
+            return attack
+        if attack_name == "flip":
+            from grb.attack.modification import FLIP
 
-        attack = PGD(epsilon=args.lr,
-                     n_epoch=args.n_epoch,
-                     n_inject_max=args.n_inject,
-                     n_edge_max=args.n_edge_max,
-                     feat_lim_min=args.feat_lim_min,
-                     feat_lim_max=args.feat_lim_max,
-                     early_stop=args.early_stop,
-                     device=device)
-    elif attack_name in "speit":
-        from grb.attack.injection.speit import SPEIT
+            attack = FLIP(n_edge_mod=args.n_edge_mod,
+                          flip_type=args.flip_type,
+                          mode="descend",
+                          device=device)
+            return attack
+        if attack_name == "rand":
+            from grb.attack.modification import RAND
 
-        attack = SPEIT(lr=args.lr,
-                       n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
-                       n_edge_max=args.n_edge_max,
-                       feat_lim_min=args.feat_lim_min,
-                       feat_lim_max=args.feat_lim_max,
-                       early_stop=args.early_stop,
-                       device=device)
-    elif attack_name in "tdgia":
-        from grb.attack.injection.tdgia import TDGIA
+            attack = RAND(n_edge_mod=args.n_edge_mod,
+                          device=device)
+            return attack
+        if attack_name == "nea":
+            from grb.attack.modification import NEA
 
-        attack = TDGIA(lr=args.lr,
-                       n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
-                       n_edge_max=args.n_edge_max,
-                       feat_lim_min=args.feat_lim_min,
-                       feat_lim_max=args.feat_lim_max,
-                       early_stop=args.early_stop,
-                       inject_mode='random',
-                       sequential_step=1.0,
-                       device=device)
-    elif attack_name in "tdgia_random":
-        from grb.attack.injection.tdgia import TDGIA
+            attack = NEA(n_edge_mod=args.n_edge_mod,
+                         device=device)
+            return attack
+        if attack_name == "stack":
+            from grb.attack.modification import STACK
 
-        attack = TDGIA(lr=args.lr,
-                       n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
-                       n_edge_max=args.n_edge_max,
-                       feat_lim_min=args.feat_lim_min,
-                       feat_lim_max=args.feat_lim_max,
-                       early_stop=args.early_stop,
-                       inject_mode='random',
-                       device=device)
-    elif attack_name in "tdgia_uniform":
-        from grb.attack.injection.tdgia import TDGIA
+            attack = STACK(n_edge_mod=args.n_edge_mod,
+                           device=device)
+            return attack
+        if attack_name == "pgd":
+            from grb.attack.modification import PGD
 
-        attack = TDGIA(lr=args.lr,
-                       n_epoch=args.n_epoch,
-                       n_inject_max=args.n_inject,
-                       n_edge_max=args.n_edge_max,
-                       feat_lim_min=args.feat_lim_min,
-                       feat_lim_max=args.feat_lim_max,
-                       early_stop=args.early_stop,
-                       inject_mode='uniform',
-                       sequential_step=1.0,
-                       device=device)
+            attack = PGD(epsilon=args.epsilon,
+                         n_epoch=args.attack_epoch,
+                         n_node_mod=args.n_node_mod,
+                         n_edge_mod=args.n_edge_mod,
+                         feat_lim_min=args.feat_lim_min,
+                         feat_lim_max=args.feat_lim_max,
+                         early_stop=args.early_stop,
+                         device=device)
+            return attack
+    elif mode == "injection":
+        if attack_name == "rand":
+            from grb.attack.injection import RAND
+
+            attack = RAND(n_inject_max=args.n_inject,
+                          n_edge_max=args.n_edge_max,
+                          feat_lim_min=args.feat_lim_min,
+                          feat_lim_max=args.feat_lim_max,
+                          device=device)
+            return attack
+        elif attack_name == "fgsm":
+            from grb.attack.injection import FGSM
+
+            attack = FGSM(epsilon=args.lr,
+                          n_epoch=args.n_epoch,
+                          n_inject_max=args.n_inject,
+                          n_edge_max=args.n_edge_max,
+                          feat_lim_min=args.feat_lim_min,
+                          feat_lim_max=args.feat_lim_max,
+                          early_stop=args.early_stop,
+                          device=device)
+            return attack
+        elif attack_name == "pgd":
+            from grb.attack.injection import PGD
+
+            attack = PGD(epsilon=args.lr,
+                         n_epoch=args.n_epoch,
+                         n_inject_max=args.n_inject,
+                         n_edge_max=args.n_edge_max,
+                         feat_lim_min=args.feat_lim_min,
+                         feat_lim_max=args.feat_lim_max,
+                         early_stop=args.early_stop,
+                         device=device)
+            return attack
+        elif attack_name == "speit":
+            from grb.attack.injection import SPEIT
+
+            attack = SPEIT(lr=args.lr,
+                           n_epoch=args.n_epoch,
+                           n_inject_max=args.n_inject,
+                           n_edge_max=args.n_edge_max,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           device=device)
+            return attack
+        elif attack_name == "tdgia":
+            from grb.attack.injection import TDGIA
+
+            attack = TDGIA(lr=args.lr,
+                           n_epoch=args.n_epoch,
+                           n_inject_max=args.n_inject,
+                           n_edge_max=args.n_edge_max,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           inject_mode='random',
+                           sequential_step=1.0,
+                           device=device)
+            return attack
+        elif attack_name == "tdgia_random":
+            from grb.attack.injection.tdgia import TDGIA
+
+            attack = TDGIA(lr=args.lr,
+                           n_epoch=args.n_epoch,
+                           n_inject_max=args.n_inject,
+                           n_edge_max=args.n_edge_max,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           inject_mode='random',
+                           device=device)
+            return attack
+        elif attack_name == "tdgia_uniform":
+            from grb.attack.injection import TDGIA
+
+            attack = TDGIA(lr=args.lr,
+                           n_epoch=args.n_epoch,
+                           n_inject_max=args.n_inject,
+                           n_edge_max=args.n_edge_max,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           inject_mode='uniform',
+                           sequential_step=1.0,
+                           device=device)
+            return attack
     else:
         raise NotImplementedError
-
-    return attack
 
 
 def build_model_autotrain(model_name):
