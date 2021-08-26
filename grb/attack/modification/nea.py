@@ -54,6 +54,8 @@ class NEA(ModificationAttack):
             if adj_attack[index[0], index[1]] == 0:
                 adj_attack[index[0], index[1]] = 1
                 adj_attack[index[1], index[0]] = 1
+                degs[index[0]] += 1
+                degs[index[1]] += 1
                 n_edge_flip += 1
             else:
                 if self.allow_isolate:
