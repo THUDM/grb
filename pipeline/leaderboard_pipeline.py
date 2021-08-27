@@ -23,6 +23,8 @@ if __name__ == '__main__':
     parser.add_argument("--model_dir", type=str, default="../saved_models/")
     parser.add_argument("--model_file", type=str, default="model.pt")
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
+    parser.add_argument("--n_attack", type=int, default=0)
+    parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--attack_mode", type=str, default="injection")
     parser.add_argument("--attack_dir", type=str, default="../attack_results/")
     parser.add_argument("--attack_adj_name", type=str, default="adj.pkl")
@@ -50,12 +52,16 @@ if __name__ == '__main__':
     sys.path.append(args.config_dir)
     import config
 
-    if args.attack_mode == "modification":
-        args.attack_list = config.modification_attack_list
-    elif args.attack_mode == "injection":
-        args.attack_list = config.injection_attack_list
+    if args.attack is not None:
+        args.attack_list = args.attack
     else:
-        args.attack_list = config.attack_list
+        if args.attack_mode == "modification":
+            args.attack_list = config.modification_attack_list
+        elif args.attack_mode == "injection":
+            args.attack_list = config.injection_attack_list
+        else:
+            args.attack_list = config.attack_list
+
     result_dict = {"no_attack": {}}
     if args.attack_dir:
         for attack_name in args.attack_list:
@@ -96,7 +102,7 @@ if __name__ == '__main__':
             for model_sur in model_sur_list:
                 attack_dict[attack_name] = os.path.join(args.attack_dir,
                                                         attack_name + "_vs_" + model_sur,
-                                                        dataset_mode, str(0))
+                                                        dataset_mode, str(args.n_attack))
         if args.save_dir is not None:
             if not os.path.exists(args.save_dir):
                 os.makedirs(args.save_dir)
@@ -117,7 +123,7 @@ if __name__ == '__main__':
             for attack_name in attack_dict:
                 print("Evaluating {} attack..........".format(attack_name))
                 if args.attack_mode == "modification":
-                    if attack_name in ["dice", "rand", "flip", "fga", "nea", "stack"]:
+                    if attack_name in ["dice", "rand", "flip", "fga", "nea", "stack", "pgd"]:
                         with open(os.path.join(attack_dict[attack_name], args.attack_adj_name), 'rb') as f:
                             adj_attack = pickle.load(f)
                         adj_attacked = adj_attack
@@ -137,7 +143,7 @@ if __name__ == '__main__':
                                                         features_attack=features_attacked)
                 result_dict[attack_name][dataset_mode] = test_score_dict
 
-                del adj_attack, adj_attacked, features_attack, features_attacked
+                del adj_attack, adj_attacked, features_attacked
     sorted_result_keys = sorted(result_dict, key=lambda x: (result_dict[x]['full']['weighted']))
     result_df = pd.DataFrame.from_dict({(i, j): result_dict[i][j]
                                         for i in sorted_result_keys

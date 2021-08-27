@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--attack_mode", type=str, default="modification")
     parser.add_argument("--save_dir", type=str, default="../attack_results/")
-    parser.add_argument("--attack_epoch", type=int, default=2000)
+    parser.add_argument("--attack_epoch", type=int, default=500)
     parser.add_argument("--attack_lr", type=float, default=0.01)
     parser.add_argument("--n_attack", type=int, default=1)
     parser.add_argument("--ratio_node_mod", type=float, default=0.05)

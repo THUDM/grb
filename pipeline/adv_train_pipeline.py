@@ -14,7 +14,7 @@ def build_attack_adv(attack_name, device="cpu", args=None):
     if attack_name == "rand":
         from grb.attack.injection import RAND
 
-        attack = RAND(n_inject_max=args.n_inject,
+        attack = RAND(n_inject_max=args.n_inject_max,
                       n_edge_max=args.n_edge_max,
                       feat_lim_min=args.feat_lim_min,
                       feat_lim_max=args.feat_lim_max,
@@ -25,7 +25,7 @@ def build_attack_adv(attack_name, device="cpu", args=None):
 
         attack = FGSM(epsilon=args.attack_lr,
                       n_epoch=args.attack_epoch,
-                      n_inject_max=args.n_inject,
+                      n_inject_max=args.n_inject_max,
                       n_edge_max=args.n_edge_max,
                       feat_lim_min=args.feat_lim_min,
                       feat_lim_max=args.feat_lim_max,
@@ -36,7 +36,7 @@ def build_attack_adv(attack_name, device="cpu", args=None):
 
         attack = PGD(epsilon=args.lr,
                      n_epoch=args.attack_epoch,
-                     n_inject_max=args.n_inject,
+                     n_inject_max=args.n_inject_max,
                      n_edge_max=args.n_edge_max,
                      feat_lim_min=args.feat_lim_min,
                      feat_lim_max=args.feat_lim_max,
@@ -47,7 +47,7 @@ def build_attack_adv(attack_name, device="cpu", args=None):
 
         attack = SPEIT(lr=args.attack_lr,
                        n_epoch=args.attack_epoch,
-                       n_inject_max=args.n_inject,
+                       n_inject_max=args.n_inject_max,
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
@@ -58,7 +58,7 @@ def build_attack_adv(attack_name, device="cpu", args=None):
 
         attack = TDGIA(lr=args.attack_lr,
                        n_epoch=args.attack_epoch,
-                       n_inject_max=args.n_inject,
+                       n_inject_max=args.n_inject_max,
                        n_edge_max=args.n_edge_max,
                        feat_lim_min=args.feat_lim_min,
                        feat_lim_max=args.feat_lim_max,
@@ -85,17 +85,17 @@ if __name__ == '__main__':
     # Attack setting
     parser.add_argument("--attack_adv", type=str, default="fgsm")
     parser.add_argument("--attack_epoch", type=int, default=10)
-    parser.add_argument("--attack_lr", type=float, default=0.1)
+    parser.add_argument("--attack_lr", type=float, default=0.01)
     parser.add_argument("--n_attack", type=int, default=1)
-    parser.add_argument("--n_inject_ratio", type=float, default=0.005)
-    parser.add_argument("--n_inject", type=int, default=20)
+    parser.add_argument("--n_inject_ratio", type=float, default=None)
+    parser.add_argument("--n_inject_max", type=int, default=20)
     parser.add_argument("--n_edge_max", type=int, default=20)
     parser.add_argument("--feat_lim_min", type=float, default=None)
     parser.add_argument("--feat_lim_max", type=float, default=None)
     # Adversarial training settings
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
     parser.add_argument("--n_train", type=int, default=1)
-    parser.add_argument("--n_epoch", type=int, default=5000, help="Training epoch.")
+    parser.add_argument("--n_epoch", type=int, default=8000, help="Training epoch.")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
     parser.add_argument("--eval_every", type=int, default=1)
     parser.add_argument("--save_after", type=int, default=0)

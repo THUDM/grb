@@ -94,7 +94,7 @@ def build_model(model_name, num_features, num_classes):
         from grb.model.torch import SGCN
         model = SGCN(in_features=num_features,
                      out_features=num_classes,
-                     hidden_features=256,
+                     hidden_features=128,
                      n_layers=3,
                      k=4,
                      layer_norm=True if "ln" in model_name else False,
@@ -313,7 +313,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         if attack_name == "rand":
             from grb.attack.injection import RAND
 
-            attack = RAND(n_inject_max=args.n_inject,
+            attack = RAND(n_inject_max=args.n_inject_max,
                           n_edge_max=args.n_edge_max,
                           feat_lim_min=args.feat_lim_min,
                           feat_lim_max=args.feat_lim_max,
@@ -324,7 +324,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = FGSM(epsilon=args.lr,
                           n_epoch=args.n_epoch,
-                          n_inject_max=args.n_inject,
+                          n_inject_max=args.n_inject_max,
                           n_edge_max=args.n_edge_max,
                           feat_lim_min=args.feat_lim_min,
                           feat_lim_max=args.feat_lim_max,
@@ -336,7 +336,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = PGD(epsilon=args.lr,
                          n_epoch=args.n_epoch,
-                         n_inject_max=args.n_inject,
+                         n_inject_max=args.n_inject_max,
                          n_edge_max=args.n_edge_max,
                          feat_lim_min=args.feat_lim_min,
                          feat_lim_max=args.feat_lim_max,
@@ -348,7 +348,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = SPEIT(lr=args.lr,
                            n_epoch=args.n_epoch,
-                           n_inject_max=args.n_inject,
+                           n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
                            feat_lim_max=args.feat_lim_max,
@@ -360,7 +360,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = TDGIA(lr=args.lr,
                            n_epoch=args.n_epoch,
-                           n_inject_max=args.n_inject,
+                           n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
                            feat_lim_max=args.feat_lim_max,
@@ -374,7 +374,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = TDGIA(lr=args.lr,
                            n_epoch=args.n_epoch,
-                           n_inject_max=args.n_inject,
+                           n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
                            feat_lim_max=args.feat_lim_max,
@@ -387,7 +387,7 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
 
             attack = TDGIA(lr=args.lr,
                            n_epoch=args.n_epoch,
-                           n_inject_max=args.n_inject,
+                           n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
                            feat_lim_max=args.feat_lim_max,

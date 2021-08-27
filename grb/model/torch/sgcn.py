@@ -1,6 +1,7 @@
 """Torch module for SGCN."""
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from grb.utils.normalize import GCNAdjNorm
 
@@ -58,7 +59,7 @@ class SGCN(nn.Module):
         elif type(hidden_features) is list or type(hidden_features) is tuple:
             assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
 
-        self.batch_norm = nn.BatchNorm1d(in_features)
+        # self.batch_norm = nn.BatchNorm1d(in_features)
         self.in_conv = nn.Linear(in_features, hidden_features[0])
         self.out_conv = nn.Linear(hidden_features[-1], out_features)
         self.activation = activation
@@ -98,10 +99,9 @@ class SGCN(nn.Module):
 
         """
 
-        x = self.batch_norm(x)
+        # x = self.batch_norm(x)
         x = self.in_conv(x)
-        if self.activation is not None:
-            x = self.activation(x)
+        x = F.relu(x)
         if self.dropout is not None:
             x = self.dropout(x)
 

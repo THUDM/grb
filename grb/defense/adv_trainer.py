@@ -16,6 +16,7 @@ class AdvTrainer(object):
                  loss,
                  feat_norm=None,
                  attack=None,
+                 attack_mode="injection",
                  lr_scheduler=None,
                  lr_patience=100,
                  lr_factor=0.75,
@@ -49,6 +50,7 @@ class AdvTrainer(object):
         self.loss = loss
         self.eval_metric = eval_metric
         self.attack = attack
+        self.attack_mode = attack_mode
 
         # Learning rate scheduling
         if lr_scheduler:
@@ -166,16 +168,27 @@ class AdvTrainer(object):
                 self.optimizer.step()
 
                 if self.attack is not None:
-                    adj_attack, features_attack = self.attack.attack(model=model,
-                                                                     adj=self.adj[train_mask][:, train_mask],
-                                                                     features=features[train_mask],
-                                                                     target_mask=torch.ones(num_train, dtype=bool),
-                                                                     adj_norm_func=model.adj_norm_func)
-                    adj_train = utils.adj_preprocess(adj=adj_attack,
-                                                     adj_norm_func=model.adj_norm_func,
-                                                     model_type=model.model_type,
-                                                     device=self.device)
-                    features_train = torch.cat([features[train_mask], features_attack])
+                    if self.attack_mode == "injection":
+                        adj_attack, features_attack = self.attack.attack(model=model,
+                                                                         adj=self.adj[train_mask][:, train_mask],
+                                                                         features=features[train_mask],
+                                                                         target_mask=torch.ones(num_train, dtype=bool),
+                                                                         adj_norm_func=model.adj_norm_func)
+                        adj_train = utils.adj_preprocess(adj=adj_attack,
+                                                         adj_norm_func=model.adj_norm_func,
+                                                         model_type=model.model_type,
+                                                         device=self.device)
+                        features_train = torch.cat([features[train_mask], features_attack])
+                    else:
+                        adj_attack, features_attack = self.attack.attack(model=model,
+                                                                         adj=self.adj[train_mask][:, train_mask],
+                                                                         features=features[train_mask],
+                                                                         index_target=torch.range(0, num_train))
+                        adj_train = utils.adj_preprocess(adj=adj_attack,
+                                                         adj_norm_func=model.adj_norm_func,
+                                                         model_type=model.model_type,
+                                                         device=self.device)
+                        features_train = features_attack[train_mask]
 
                 if self.lr_scheduler:
                     self.lr_scheduler.step(val_loss)
