@@ -1,6 +1,5 @@
 import os
-
-import networkx as nx
+import random
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -77,7 +76,7 @@ class Dataset(object):
 
     """
 
-    def __init__(self, name, data_dir=None, mode="easy", feat_norm=None, verbose=True):
+    def __init__(self, name, data_dir=None, mode="easy", feat_norm="arctan", verbose=True):
         # Create data dir
         if name not in GRB_SUPPORTED_DATASETS:
             print("{} dataset not supported.".format(name))
@@ -198,66 +197,112 @@ class CogDLDataset(object):
             Whether to display logs. Default: ``True``.
         """
 
-        from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
+        if name in self.COGDL_GRAPH_CLASSIFICATION_DATASETS:
+            from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
 
-        try:
-            if data_dir:
-                dataset = build_dataset_from_path(data_path=data_dir, task="node_classification", dataset=name)
-            else:
-                dataset = build_dataset_from_name(name)
-        except AssertionError:
-            print("Dataset '{}' is not supported.".format(name))
-            exit(1)
+            try:
+                if data_dir:
+                    dataset = build_dataset_from_path(data_path=data_dir, task="graph_classification", dataset=name)
+                else:
+                    dataset = build_dataset_from_name(name)
+            except AssertionError:
+                print("Dataset '{}' is not supported.".format(name))
+                exit(1)
 
-        self.name = name
-        graph = dataset.data
-        edge_index = graph.edge_index
-        attr = graph.edge_attr if graph.edge_attr is not None else torch.ones(edge_index[0].shape[0])
-        self.adj = self.build_adj(attr, edge_index, adj_type='csr')
+            self.name = name
+            if dataset[0].x is None:
+                from cogdl.tasks.graph_classification import node_degree_as_feature
+                dataset = node_degree_as_feature(dataset)
 
-        if mode == 'origin':
-            self.features = dataset.data.x
-            self.labels = dataset.data.y
-            self.train_mask = dataset.data.train_mask
-            self.val_mask = dataset.data.val_mask
-            self.test_mask = dataset.data.test_mask
-            self.num_train = int(torch.sum(self.train_mask))
-            self.num_val = int(torch.sum(self.val_mask))
-            self.num_test = int(torch.sum(self.test_mask))
-            self.num_nodes = dataset.data.num_nodes
-            self.num_edges = dataset.data.num_edges // 2
-            self.num_features = dataset.data.num_features
-            self.num_classes = dataset.data.num_classes
-        elif mode == 'lcc':
-            # Get largest connected component
-            graph_nx = nx.from_scipy_sparse_matrix(self.adj)
-            components = nx.connected_components(graph_nx)
-            lcc_nodes = list(next(components))
-            subgraph = graph_nx.subgraph(lcc_nodes)
-            self.adj = nx.to_scipy_sparse_matrix(subgraph, format='coo')
-            self.features = dataset.data.x[lcc_nodes]
-            self.labels = dataset.data.y[lcc_nodes]
-            self.train_mask = dataset.data.train_mask[lcc_nodes]
-            self.val_mask = dataset.data.val_mask[lcc_nodes]
-            self.test_mask = dataset.data.test_mask[lcc_nodes]
-            self.num_train = int(torch.sum(self.train_mask))
-            self.num_val = int(torch.sum(self.val_mask))
-            self.num_test = int(torch.sum(self.test_mask))
-            self.num_nodes = subgraph.number_of_nodes()
-            self.num_edges = subgraph.number_of_edges() // 2
-            self.num_features = dataset.data.num_features
-            self.num_classes = dataset.data.num_classes
+            self.graphs = dataset.data
+            self.labels = dataset.y
+            self.num_graphs = len(self.graphs)
+            self.index_train, self.index_val, self.index_test = self.graph_splitting(self.num_graphs)
+            self.num_nodes_max = max([graph.num_nodes for graph in self.graphs])
+            self.num_edges_max = max([graph.num_edges for graph in self.graphs])
+            self.num_train = len(self.index_train)
+            self.num_val = len(self.index_val)
+            self.num_test = len(self.index_test)
+            self.num_features = dataset.num_features
+            self.num_classes = dataset.num_classes
 
-        if verbose:
-            print("Dataset \'{}\' loaded.".format(name))
-            print("    Number of nodes: {}".format(self.num_nodes))
-            print("    Number of edges: {}".format(self.num_edges))
-            print("    Number of features: {}".format(self.num_features))
-            print("    Number of classes: {}".format(self.num_classes))
-            print("    Number of train samples: {}".format(self.num_train))
-            print("    Number of val samples: {}".format(self.num_val))
-            print("    Number of test samples: {}".format(self.num_test))
-            print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+            if verbose:
+                print("Dataset \'{}\' loaded.".format(name))
+                print("    Number of graphs: {}".format(self.num_graphs))
+                print("    Number of nodes (maximum): {}".format(self.num_nodes_max))
+                print("    Number of edges (maximum): {}".format(self.num_edges_max))
+                print("    Number of features: {}".format(self.num_features))
+                print("    Number of classes: {}".format(self.num_classes))
+                print("    Number of train samples: {}".format(self.num_train))
+                print("    Number of val samples: {}".format(self.num_val))
+                print("    Number of test samples: {}".format(self.num_test))
+
+        else:
+            from cogdl.datasets import build_dataset_from_name, build_dataset_from_path
+
+            try:
+                if data_dir:
+                    dataset = build_dataset_from_path(data_path=data_dir, task="node_classification", dataset=name)
+                else:
+                    dataset = build_dataset_from_name(name)
+            except AssertionError:
+                print("Dataset '{}' is not supported.".format(name))
+                exit(1)
+
+            self.name = name
+            graph = dataset.data
+            edge_index = graph.edge_index
+            attr = graph.edge_attr if graph.edge_attr is not None else torch.ones(edge_index[0].shape[0])
+            self.adj = self.build_adj(attr, edge_index, adj_type='csr')
+
+            if mode == 'origin':
+                self.features = dataset.data.x
+                self.labels = dataset.data.y
+                self.train_mask = dataset.data.train_mask
+                self.val_mask = dataset.data.val_mask
+                self.test_mask = dataset.data.test_mask
+                self.num_train = int(torch.sum(self.train_mask))
+                self.num_val = int(torch.sum(self.val_mask))
+                self.num_test = int(torch.sum(self.test_mask))
+                self.num_nodes = dataset.data.num_nodes
+                self.num_edges = dataset.data.num_edges // 2
+                self.num_features = dataset.data.num_features
+                self.num_classes = dataset.data.num_classes
+            elif mode == 'lcc':
+                # Get largest connected component
+                import networkx as nx
+                graph_nx = nx.from_scipy_sparse_matrix(self.adj)
+                components = nx.connected_components(graph_nx)
+                lcc_nodes = list(next(components))
+                subgraph = graph_nx.subgraph(lcc_nodes)
+                self.adj = nx.to_scipy_sparse_matrix(subgraph, format='coo')
+                self.features = dataset.data.x[lcc_nodes]
+                self.labels = dataset.data.y[lcc_nodes]
+                self.train_mask = dataset.data.train_mask[lcc_nodes]
+                self.val_mask = dataset.data.val_mask[lcc_nodes]
+                self.test_mask = dataset.data.test_mask[lcc_nodes]
+                self.num_train = int(torch.sum(self.train_mask))
+                self.num_val = int(torch.sum(self.val_mask))
+                self.num_test = int(torch.sum(self.test_mask))
+                self.num_nodes = subgraph.number_of_nodes()
+                self.num_edges = subgraph.number_of_edges() // 2
+                self.num_features = dataset.data.num_features
+                self.num_classes = dataset.data.num_classes
+
+            if verbose:
+                print("Dataset \'{}\' loaded.".format(name))
+                print("    Number of nodes: {}".format(self.num_nodes))
+                print("    Number of edges: {}".format(self.num_edges))
+                print("    Number of features: {}".format(self.num_features))
+                print("    Number of classes: {}".format(self.num_classes))
+                print("    Number of train samples: {}".format(self.num_train))
+                print("    Number of val samples: {}".format(self.num_val))
+                print("    Number of test samples: {}".format(self.num_test))
+                print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+
+    @property
+    def COGDL_GRAPH_CLASSIFICATION_DATASETS(self):
+        return {"mutag", "imdb-b", "imdb-m", "collab", "reddit-b"}
 
     @staticmethod
     def build_adj(attr, edge_index, adj_type='csr'):
@@ -273,6 +318,21 @@ class CogDLDataset(object):
             adj = sp.coo_matrix((attr, edge_index))
 
         return adj
+
+    @staticmethod
+    def graph_splitting(num_graphs, train_ratio=0.8, val_ratio=0.1):
+        assert train_ratio + val_ratio <= 1.0
+        train_size = int(num_graphs * train_ratio)
+        val_size = int(num_graphs * val_ratio)
+        test_size = num_graphs - train_size - val_size
+        index = list(range(num_graphs))
+        random.shuffle(index)
+
+        train_index = index[:train_size]
+        val_index = index[train_size:-test_size]
+        test_index = index[-test_size:]
+
+        return train_index, val_index, test_index
 
 
 class OGBDataset(object):
@@ -295,57 +355,89 @@ class OGBDataset(object):
         """
 
         self.name = name
-        from ogb.nodeproppred import DglNodePropPredDataset
-        dataset = DglNodePropPredDataset(name=name, root=data_dir)
-        split_idx = dataset.get_idx_split()
-        train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
-        graph, labels = dataset[0]
-        self.adj = graph.adj(scipy_fmt="csr")
-        if name in ["ogbn-arxiv", "ogbn-products"]:
-            self.features = graph.ndata['feat']
-            self.labels = labels.squeeze()
-            self.num_nodes = graph.num_nodes()
-            if name == "ogbn-arxiv":
-                srcs, dsts = graph.all_edges()
-                graph.add_edges(dsts, srcs)
-            self.num_edges = graph.num_edges() // 2
-            self.num_features = self.features.shape[1]
-            self.num_classes = dataset.num_classes
-        elif name in ["ogbn-proteins"]:
-            self.features = graph.edata['feat']
-            self.labels = labels.squeeze()
-            self.num_nodes = graph.num_nodes()
-            self.num_edges = graph.num_edges() // 2
-            self.num_features = self.features.shape[1]
-            self.num_classes = dataset.num_classes
-            self.num_tasks = dataset.num_tasks
+        if name in self.OGB_NODE_CLASSIFICATION_DATASETS:
+            from ogb.nodeproppred import DglNodePropPredDataset
+            dataset = DglNodePropPredDataset(name=name, root=data_dir)
+            split_idx = dataset.get_idx_split()
+            train_idx, val_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+            graph, labels = dataset[0]
+            self.adj = graph.adj(scipy_fmt="csr")
+            if name in ["ogbn-arxiv", "ogbn-products"]:
+                self.features = graph.ndata['feat']
+                self.labels = labels.squeeze()
+                self.num_nodes = graph.num_nodes()
+                if name == "ogbn-arxiv":
+                    srcs, dsts = graph.all_edges()
+                    graph.add_edges(dsts, srcs)
+                self.num_edges = graph.num_edges() // 2
+                self.num_features = self.features.shape[1]
+                self.num_classes = dataset.num_classes
+            elif name in ["ogbn-proteins"]:
+                self.features = graph.edata['feat']
+                self.labels = labels.squeeze()
+                self.num_nodes = graph.num_nodes()
+                self.num_edges = graph.num_edges() // 2
+                self.num_features = self.features.shape[1]
+                self.num_classes = dataset.num_classes
+                self.num_tasks = dataset.num_tasks
 
-        train_mask = torch.zeros(self.num_nodes, dtype=bool)
-        train_mask[train_idx] = True
-        self.train_mask = train_mask
-        val_mask = torch.zeros(self.num_nodes, dtype=bool)
-        val_mask[val_idx] = True
-        self.val_mask = val_mask
-        test_mask = torch.zeros(self.num_nodes, dtype=bool)
-        test_mask[test_idx] = True
-        self.test_mask = test_mask
+            train_mask = torch.zeros(self.num_nodes, dtype=bool)
+            train_mask[train_idx] = True
+            self.train_mask = train_mask
+            val_mask = torch.zeros(self.num_nodes, dtype=bool)
+            val_mask[val_idx] = True
+            self.val_mask = val_mask
+            test_mask = torch.zeros(self.num_nodes, dtype=bool)
+            test_mask[test_idx] = True
+            self.test_mask = test_mask
 
-        self.num_train = int(torch.sum(self.train_mask))
-        self.num_val = int(torch.sum(self.val_mask))
-        self.num_test = int(torch.sum(self.test_mask))
+            self.num_train = int(torch.sum(self.train_mask))
+            self.num_val = int(torch.sum(self.val_mask))
+            self.num_test = int(torch.sum(self.test_mask))
 
-        if verbose:
-            print("Dataset \'{}\' loaded.".format(name))
-            print("    Number of nodes: {}".format(self.num_nodes))
-            print("    Number of edges: {}".format(self.num_edges))
-            print("    Number of features: {}".format(self.num_features))
-            print("    Number of classes: {}".format(self.num_classes))
-            if name in ["ogbn-proteins"]:
-                print("    Number of tasks: {}".format(self.num_tasks))
-            print("    Number of train samples: {}".format(self.num_train))
-            print("    Number of val samples: {}".format(self.num_val))
-            print("    Number of test samples: {}".format(self.num_test))
-            print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+            if verbose:
+                print("Dataset \'{}\' loaded.".format(name))
+                print("    Number of nodes: {}".format(self.num_nodes))
+                print("    Number of edges: {}".format(self.num_edges))
+                print("    Number of features: {}".format(self.num_features))
+                print("    Number of classes: {}".format(self.num_classes))
+                if name in ["ogbn-proteins"]:
+                    print("    Number of tasks: {}".format(self.num_tasks))
+                print("    Number of train samples: {}".format(self.num_train))
+                print("    Number of val samples: {}".format(self.num_val))
+                print("    Number of test samples: {}".format(self.num_test))
+                print("    Feature range: [{:.4f}, {:.4f}]".format(self.features.min(), self.features.max()))
+        elif name in self.OGB_GRAPH_CLASSIFICATION_DATASETS:
+            from ogb.graphproppred import GraphPropPredDataset
+
+            dataset = GraphPropPredDataset(name=name, root=data_dir)
+
+            split_idx = dataset.get_idx_split()
+            train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+
+            if name in ["ogbg-code2"]:
+                self.dataset = dataset
+                self.index_train = train_idx
+                self.index_val = valid_idx
+                self.index_test = test_idx
+                self.num_train = len(train_idx)
+                self.num_val = len(valid_idx)
+                self.num_test = len(test_idx)
+
+            if verbose:
+                print("Dataset \'{}\' loaded.".format(name))
+                print("    Number of graphs: {}".format(len(dataset)))
+                print("    Number of train samples: {}".format(self.num_train))
+                print("    Number of val samples: {}".format(self.num_val))
+                print("    Number of test samples: {}".format(self.num_test))
+
+    @property
+    def OGB_NODE_CLASSIFICATION_DATASETS(self):
+        return {"ogbn_arxiv", "ogbn_products", "ogbn_arxiv", "ogbn_proteins"}
+
+    @property
+    def OGB_GRAPH_CLASSIFICATION_DATASETS(self):
+        return {"ogbg-code2"}
 
 
 class CustomDataset(object):

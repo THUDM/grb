@@ -59,7 +59,7 @@ class SGCN(nn.Module):
         elif type(hidden_features) is list or type(hidden_features) is tuple:
             assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
 
-        # self.batch_norm = nn.BatchNorm1d(in_features)
+        self.batch_norm = nn.BatchNorm1d(in_features)
         self.in_conv = nn.Linear(in_features, hidden_features[0])
         self.out_conv = nn.Linear(hidden_features[-1], out_features)
         self.activation = activation
@@ -82,6 +82,10 @@ class SGCN(nn.Module):
         """Indicate type of implementation."""
         return "torch"
 
+    @property
+    def model_name(self):
+        return "sgcn"
+
     def forward(self, x, adj):
         r"""
 
@@ -99,7 +103,7 @@ class SGCN(nn.Module):
 
         """
 
-        # x = self.batch_norm(x)
+        x = self.batch_norm(x)
         x = self.in_conv(x)
         x = F.relu(x)
         if self.dropout is not None:

@@ -80,6 +80,10 @@ class TAGCN(nn.Module):
         """Indicate type of implementation."""
         return "torch"
 
+    @property
+    def model_name(self):
+        return "tagcn"
+
     def reset_parameters(self):
         """Reset paramters."""
         for layer in self.layers:

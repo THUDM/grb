@@ -30,7 +30,7 @@ class GAT(nn.Module):
     feat_norm : str, optional
         Type of features normalization, choose from ["arctan", "tanh", None]. Default: ``None``.
     adj_norm_func : func of utils.normalize, optional
-        Function that normalizes adjacency matrix. Default: ``GCNAdjNorm``.
+        Function that normalizes adjacency matrix. Default: ``None``.
     feat_dropout : float, optional
         Dropout rate for input features. Default: ``0.0``.
     attn_dropout : float, optional
@@ -50,7 +50,7 @@ class GAT(nn.Module):
                  activation=F.leaky_relu,
                  layer_norm=False,
                  feat_norm=None,
-                 adj_norm_func=GCNAdjNorm,
+                 adj_norm_func=None,
                  feat_dropout=0.0,
                  attn_dropout=0.0,
                  residual=False,
@@ -89,6 +89,10 @@ class GAT(nn.Module):
     def model_type(self):
         return "dgl"
 
+    @property
+    def model_name(self):
+        return "gat"
+
     def forward(self, x, adj):
         r"""
 
@@ -107,6 +111,7 @@ class GAT(nn.Module):
         """
 
         graph = dgl.from_scipy(adj).to(x.device)
+        graph = dgl.remove_self_loop(graph)
         graph = dgl.add_self_loop(graph)
         graph.ndata['features'] = x
 

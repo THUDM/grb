@@ -92,6 +92,10 @@ class GIN(nn.Module):
         """Indicate type of implementation."""
         return "torch"
 
+    @property
+    def model_name(self):
+        return "gin"
+
     def reset_parameters(self):
         """Reset parameters."""
         for layer in self.layers:
