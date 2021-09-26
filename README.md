@@ -12,6 +12,7 @@
 
 ## Updates
 * [26/09/2021] Add support for graph classification task! See [tutorials](https://github.com/THUDM/grb/blob/master/examples/graph_classification/) in ``examples/``.
+* [16/09/2021] Add a [paper list](https://github.com/THUDM/grb/blob/master/paperlist/README.md) of state-of-the-art researches about adversarial robustness in graph machine learning (Keep Updating).
 * [27/08/2021] Add support for modification attacks! 7 implementations and tutorials:
     * [Implementations](https://github.com/THUDM/grb/blob/master/grb/attack/modification/)
     * [Modification Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/modification_attack.ipynb).
