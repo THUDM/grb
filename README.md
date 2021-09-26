@@ -15,9 +15,9 @@
 * [16/09/2021] Add a [paper list](https://github.com/THUDM/grb/blob/master/paperlist/README.md) of state-of-the-art researches about adversarial robustness in graph machine learning (Keep Updating).
 * [27/08/2021] Add support for modification attacks! 7 implementations and tutorials:
     * [Implementations](https://github.com/THUDM/grb/blob/master/grb/attack/modification/)
-    * [Modification Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/modification_attack.ipynb).
+    * [Modification Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/modification_attack.ipynb)
 * [17/08/2021] Add AutoML function based on [optuna](https://github.com/optuna/optuna) for training GNNs:
-    * ``AutoTrainer`` in [grb.utils.trainer](https://github.com/THUDM/grb/blob/master/grb/utils/trainer.py).
+    * ``AutoTrainer`` in [grb.trainer.trainer](https://github.com/THUDM/grb/blob/master/grb/utils/trainer.py)
     * Tutorial: [Training GNNs with AutoML](https://github.com/THUDM/grb/blob/master/examples/training_gnns_automl.ipynb)
 * [14/08/2021] Add tutorials based on jupyter notebook in ``examples/``: 
     * [Load Datasets](https://github.com/THUDM/grb/blob/master/examples/node_classification/load_datasets.ipynb)
@@ -108,7 +108,7 @@ adj_attack, features_attack = rst
 
 ## GRB Evaluation
 
-### Evaluation scenario
+### Evaluation scenario (Injection Attack)
 
 ![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
 
