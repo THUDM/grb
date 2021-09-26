@@ -6,8 +6,9 @@ import torch
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 
-from ..evaluator import metric
-from ..utils import utils
+from grb.evaluator import metric
+from grb.utils import utils
+from grb.trainer import trainer_helper
 
 
 class Trainer(object):
@@ -263,6 +264,7 @@ class Trainer(object):
                                 return train_score_list, val_score_list, best_val_score
                             else:
                                 return
+
                     epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
                                               '| Val loss {:.4f} | Val score {:.4f}'.format(
                         epoch, train_loss, train_score, val_loss, val_score))
@@ -309,21 +311,41 @@ class Trainer(object):
 
         model.train()
         logits = model(features, adj)
-        if self.loss == F.nll_loss:
-            pred = F.log_softmax(logits, 1)
-        elif self.loss == F.binary_cross_entropy:
-            pred = F.sigmoid(logits)
-        elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
-            pred = logits
-        else:
-            pred = logits
-        if pred_mask is not None:
-            pred = pred[pred_mask]
-        if labels_mask is not None:
-            labels = labels[labels_mask]
-        if self.loss == F.binary_cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
-            labels = labels.float()
-        train_loss = self.loss(pred, labels)
+        train_loss = None
+        if hasattr(model, "model_name"):
+            if model.model_name == "grand":
+                train_loss = 0.0
+                if labels_mask is not None:
+                    labels = labels[labels_mask]
+                for i in range(model.s):
+                    if pred_mask is not None:
+                        train_loss += self.loss(logits[i][pred_mask], labels)
+                    else:
+                        train_loss += self.loss(logits[i], labels)
+                train_loss /= model.s
+
+                train_loss += trainer_helper.consistency_loss(logits, model.temp,  model.lam)
+                if pred_mask is not None:
+                    pred = logits[0][pred_mask]
+                else:
+                    pred = logits[0]
+        if train_loss is None:
+            if self.loss == F.nll_loss:
+                pred = F.log_softmax(logits, 1)
+            elif self.loss == F.binary_cross_entropy:
+                pred = F.sigmoid(logits)
+            elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+                pred = logits
+            else:
+                pred = logits
+
+            if pred_mask is not None:
+                pred = pred[pred_mask]
+            if labels_mask is not None:
+                labels = labels[labels_mask]
+            if self.loss == F.binary_cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+                labels = labels.float()
+            train_loss = self.loss(pred, labels)
         self.optimizer.zero_grad()
         train_loss.backward()
         self.optimizer.step()
@@ -439,6 +461,382 @@ class Trainer(object):
                                    device=self.device)
         logits = model(self.features, adj)
         score = self.eval_metric(logits, self.labels, mask)
+
+        return score
+
+
+class GraphTrainer(object):
+    r"""
+
+    Description
+    -----------
+    Trainer for Graph Classification task.
+
+    Parameters
+    ----------
+    dataset : grb.dataset.CogDLGraphDataset
+        GRB supported dataset.
+    optimizer : torch.optim
+        Optimizer for training.
+    loss : func of torch.nn.functional
+        Loss function.
+    batch_size : int
+        Size of mini-batch graph data (multiple graphs).
+    lr_scheduler : bool or instance of torch.optim.lr_scheduler, optional
+        Whether to use learning rate scheduler. Default: ``None``.
+    lr_patience : int, optional
+        Patience of lr_scheduler. Only enabled when ``lr_scheduler is not None``. Default: ``100``.
+    lr_factor : float, optional
+        Decay factor of lr_scheduler. Only enabled when ``lr_scheduler is not None``. Default: ``0.75``.
+    lr_min : float, optional
+        Minimum value of learning rate. Only enabled when ``lr_scheduler is not None``. Default: ``0.0``.
+    early_stop : bool or instance of EarlyStop, optional
+        Whether to early stop. Default: ``None``.
+    early_stop_patience : int, optional
+        Patience of early_stop. Only enabled when ``early_stop is not None``. Default: ``100``.
+    early_stop_epsilon : float, optional
+        Tolerance of early_stop. Only enabled when ``early_stop is not None``. Default: ``1e-5``.
+    eval_metric : func of grb.metric, optional
+        Evaluation metric, like accuracy or F1 score. Default: ``grb.metric.eval_acc``.
+    device : str, optional
+        Device used to host data. Default: ``cpu``.
+
+    """
+
+    def __init__(self,
+                 dataset,
+                 optimizer,
+                 loss,
+                 batch_size,
+                 lr_scheduler=None,
+                 lr_patience=100,
+                 lr_factor=0.75,
+                 lr_min=1e-5,
+                 early_stop=None,
+                 early_stop_patience=100,
+                 early_stop_epsilon=1e-5,
+                 eval_metric=metric.eval_acc,
+                 device='cpu'):
+        # Load dataset
+        self.graphs = dataset.graphs
+        self.labels = dataset.labels
+        self.index_train = dataset.index_train
+        self.index_val = dataset.index_val
+        self.index_test = dataset.index_test
+        self.num_graphs = dataset.num_graphs
+        self.num_features = dataset.num_features
+        self.num_classes = dataset.num_classes
+        self.device = device
+
+        from cogdl.data import DataLoader
+        train_data = dict(dataset=[self.graphs[i] for i in self.index_train], batch_size=batch_size)
+        val_data = dict(dataset=[self.graphs[i] for i in self.index_val], batch_size=batch_size)
+        test_data = dict(dataset=[self.graphs[i] for i in self.index_test], batch_size=batch_size)
+        self.train_loader = DataLoader(**train_data)
+        self.val_loader = DataLoader(**val_data)
+        self.test_loader = DataLoader(**test_data)
+
+        # Settings
+        assert isinstance(optimizer, torch.optim.Optimizer), "Optimizer should be instance of torch.optim.Optimizer."
+        self.optimizer = optimizer
+        self.loss = loss
+        self.eval_metric = eval_metric
+
+        # Learning rate scheduling
+        if lr_scheduler:
+            if isinstance(lr_scheduler, (torch.optim.lr_scheduler._LRScheduler,
+                                         torch.optim.lr_scheduler.ReduceLROnPlateau)):
+                self.lr_scheduler = lr_scheduler
+            else:
+                self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer,
+                    mode='min',
+                    patience=lr_patience,
+                    factor=lr_factor,
+                    min_lr=lr_min,
+                    verbose=True)
+        else:
+            self.lr_scheduler = None
+
+        # Early stop
+        if early_stop:
+            if isinstance(early_stop, EarlyStop):
+                self.early_stop = early_stop
+            else:
+                self.early_stop = EarlyStop(patience=early_stop_patience,
+                                            epsilon=early_stop_epsilon)
+        else:
+            self.early_stop = None
+
+    def train(self,
+              model,
+              n_epoch,
+              save_dir=None,
+              save_name=None,
+              eval_every=1,
+              if_save=True,
+              save_after=0,
+              return_scores=False,
+              verbose=True):
+        r"""
+
+        Description
+        -----------
+        Train a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        n_epoch : int
+            Number of epoch.
+        save_dir : str, optional
+            Directory for saving model. Default: ``None``.
+        save_name : str, optional
+            Name for saved model. Default: ``None``.
+        eval_every : int, optional
+            Evaluation step. Default: ``10``.
+        save_after : int, optional
+            Save after certain number of epoch. Default: ``0``.
+        return_scores : bool, optional
+            Whether to return list of scores during training. Default: ``False``.
+        verbose : bool, optional
+            Whether to display logs. Default: ``False``.
+
+        """
+        time_start = time.time()
+        model.to(self.device)
+        model.train()
+        if save_dir is None:
+            cur_time = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+            save_dir = "./tmp_{}".format(cur_time)
+        else:
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+
+        if save_name is None:
+            save_name = "model.pt"
+        else:
+            if save_name.split(".")[-1] != "pt":
+                save_name = save_name + ".pt"
+
+        train_score_list = []
+        val_score_list = []
+        epoch_bar = tqdm(range(n_epoch))
+        best_val_score = 0.0
+
+        for epoch in epoch_bar:
+            self.train_step(model, self.train_loader)
+            train_loss, train_score = self.eval_step(model, self.train_loader)
+            train_score_list.append(train_score)
+
+            if epoch % eval_every == 0:
+                val_loss, val_score = self.eval_step(model, self.val_loader)
+                val_score_list.append(val_score)
+                if val_score > best_val_score:
+                    best_val_score = val_score
+                    if epoch > save_after:
+                        if verbose:
+                            print("Epoch {:05d} | Best validation score: {:.4f}".format(epoch, best_val_score))
+                        if if_save:
+                            utils.save_model(model, save_dir, save_name, verbose=verbose)
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step(val_loss)
+                if self.early_stop is not None:
+                    self.early_stop(val_loss)
+                    if self.early_stop.stop:
+                        time_end = time.time()
+                        print("Training early stopped. Best validation score: {:.4f}".format(best_val_score))
+                        print("Training runtime: {:.4f}.".format(time_end - time_start))
+                        if return_scores:
+                            return train_score_list, val_score_list, best_val_score
+                        else:
+                            return
+
+                epoch_bar.set_description('Epoch {:05d} | Train loss {:.4f} | Train score {:.4f} '
+                                          '| Val loss {:.4f} | Val score {:.4f}'.format(
+                    epoch, train_loss, train_score, val_loss, val_score))
+
+        if if_save:
+            utils.save_model(model, save_dir, "final_{}".format(save_name), verbose=verbose)
+        time_end = time.time()
+        print("Training finished. Best validation score: {:.4f}".format(best_val_score))
+        print("Training runtime: {:.4f}.".format(time_end - time_start))
+        if return_scores:
+            return train_score_list, val_score_list, best_val_score
+        else:
+            return
+
+    def train_step(self, model, data_loader):
+        r"""
+
+        Description
+        -----------
+        Training step.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        data_loader :
+            Graph dataloader.
+
+        """
+
+        model.train()
+        for batch in data_loader:
+            features = batch.x.to(self.device)
+            labels = batch.y.to(self.device)
+            if batch.edge_attr.shape[1] == 0:
+                batch.edge_attr = torch.ones(batch.edge_attr.shape[0])
+            else:
+                batch.edge_attr = batch.edge_attr.squeeze(-1)
+            adj = utils.build_adj(batch.edge_attr, batch.edge_index)
+            adj = utils.adj_preprocess(adj, device=self.device)
+            logits = model(features, adj, batch_index=batch.batch.to(self.device))
+
+            if self.loss == F.nll_loss:
+                pred = F.log_softmax(logits, 1)
+            elif self.loss == F.binary_cross_entropy:
+                pred = F.sigmoid(logits)
+            elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+                pred = logits
+            else:
+                pred = logits
+
+            if self.loss == F.binary_cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+                labels = labels.float()
+            train_loss = self.loss(pred, labels)
+            self.optimizer.zero_grad()
+            train_loss.backward()
+            self.optimizer.step()
+
+    def eval_step(self, model, data_loader):
+        r"""
+
+        Description
+        -----------
+        Evaluation step.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        data_loader :
+            Graph dataloader.
+
+        Returns
+        -------
+        eval_loss : torch.Tensor
+            Evaluation loss for the step.
+        eval_score : torch.Tensor
+            Evaluation score for the step.
+
+        """
+
+        model.eval()
+        losses = []
+        preds = []
+        labels = []
+        with torch.no_grad():
+            for batch in data_loader:
+                if batch.edge_attr.shape[1] == 0:
+                    batch.edge_attr = torch.ones(batch.edge_attr.shape[0])
+                else:
+                    batch.edge_attr = batch.edge_attr.squeeze(-1)
+                adj = utils.build_adj(batch.edge_attr, batch.edge_index)
+                adj = utils.adj_preprocess(adj, device=self.device)
+                logits = model(batch.x.to(self.device), adj, batch_index=batch.batch.to(self.device))
+                if self.loss == F.nll_loss:
+                    pred = F.log_softmax(logits, 1)
+                elif self.loss == F.binary_cross_entropy:
+                    pred = F.sigmoid(logits)
+                elif self.loss == F.cross_entropy or self.loss == F.binary_cross_entropy_with_logits:
+                    pred = logits
+                else:
+                    pred = logits
+                loss = self.loss(pred, batch.y.to(self.device))
+                losses.append(loss.item())
+                preds.append(pred)
+                labels.append(batch.y)
+
+        eval_loss = sum(losses) / len(losses)
+        preds = torch.cat(preds, dim=0)
+        labels = torch.cat(labels).to(self.device)
+        eval_score = self.eval_metric(preds, labels)
+
+        return eval_loss, eval_score
+
+    def inference(self, model):
+        r"""
+
+        Description
+        -----------
+        Inference of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+
+        Returns
+        -------
+        logits : torch.Tensor
+            Output logits of model.
+
+        """
+        model.to(self.device)
+        model.eval()
+        logits = torch.zeros((self.num_graphs, self.num_classes))
+        for i in range(self.num_graphs):
+            graph = self.graphs[i]
+            if len(graph.edge_attr.shape) == 1:
+                graph.edge_attr = torch.ones(graph.edge_attr.shape)
+            elif graph.edge_attr.shape[1] == 0:
+                graph.edge_attr = torch.ones(graph.edge_attr.shape[0])
+            else:
+                graph.edge_attr = graph.edge_attr.squeeze(-1)
+            adj = utils.build_adj(graph.edge_attr, graph.edge_index)
+            adj = utils.adj_preprocess(adj, device=self.device)
+            logits[i] = model(graph.x.to(self.device), adj)
+
+        return logits
+
+    def evaluate(self, model, index=None):
+        r"""
+
+        Description
+        -----------
+        Evaluation of a GNN model.
+
+        Parameters
+        ----------
+        model : torch.nn.module
+            Model implemented based on ``torch.nn.module``.
+        index : torch.tensor, optional
+            Index of target nodes.  Default: ``None``.
+
+        Returns
+        -------
+        score : float
+            Score on masked nodes.
+
+        """
+        model.to(self.device)
+        model.eval()
+        logits = torch.zeros((self.num_graphs, self.num_classes)).to(self.device)
+        for i in range(self.num_graphs):
+            graph = self.graphs[i]
+            if len(graph.edge_attr.shape) == 1:
+                graph.edge_attr = torch.ones(graph.edge_attr.shape)
+            elif graph.edge_attr.shape[1] == 0:
+                graph.edge_attr = torch.ones(graph.edge_attr.shape[0])
+            else:
+                graph.edge_attr = graph.edge_attr.squeeze(-1)
+            adj = utils.build_adj(graph.edge_attr, graph.edge_index)
+            adj = utils.adj_preprocess(adj, device=self.device)
+            logits[i] = model(graph.x.to(self.device), adj)
+        score = self.eval_metric(logits, self.labels.to(self.device), index)
 
         return score
 
