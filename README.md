@@ -11,13 +11,17 @@
 <div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_key_features.png/></div>
 
 ## Updates
+* [26/09/2021] Add support for graph classification task! See [tutorials](https://github.com/THUDM/grb/blob/master/examples/graph_classification/) in ``examples/``.
+* [27/08/2021] Add support for modification attacks! 7 implementations and tutorials:
+    * [Implementations](https://github.com/THUDM/grb/blob/master/grb/attack/modification/)
+    * [Modification Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/modification_attack.ipynb).
 * [17/08/2021] Add AutoML function based on [optuna](https://github.com/optuna/optuna) for training GNNs:
     * ``AutoTrainer`` in [grb.utils.trainer](https://github.com/THUDM/grb/blob/master/grb/utils/trainer.py).
     * Tutorial: [Training GNNs with AutoML](https://github.com/THUDM/grb/blob/master/examples/training_gnns_automl.ipynb)
 * [14/08/2021] Add tutorials based on jupyter notebook in ``examples/``: 
-    * [Load Datasets](https://github.com/THUDM/grb/blob/master/examples/load_datasets.ipynb)
-    * [Training GNNs](https://github.com/THUDM/grb/blob/master/examples/training_gnns.ipynb)
-    * [Injection Attack](https://github.com/THUDM/grb/blob/master/examples/injection_attack.ipynb)
+    * [Load Datasets](https://github.com/THUDM/grb/blob/master/examples/node_classification/load_datasets.ipynb)
+    * [Training GNNs](https://github.com/THUDM/grb/blob/master/examples/node_classification/training.ipynb)
+    * [Injection Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/injection_attack.ipynb)
 ## Get Started
 
 ### Installation
@@ -60,7 +64,7 @@ An example of training Graph Convolutional Network ([GCN](https://arxiv.org/abs/
 import torch  # pytorch backend
 from grb.dataset import Dataset
 from grb.model.torch import GCN
-from grb.utils.trainer import Trainer
+from grb.trainer.trainer import Trainer
 
 # Load data
 dataset = Dataset(name='grb-cora', mode='easy',
