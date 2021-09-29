@@ -3,6 +3,7 @@ import os
 import pickle
 import random
 import time
+import scipy.sparse as sp
 from urllib import request
 
 import numpy as np
@@ -13,6 +14,21 @@ import torch
 from ..evaluator import metric
 
 pd.set_option('display.width', 1000)
+
+
+def build_adj(attr, edge_index, adj_type='csr'):
+    if type(attr) == torch.Tensor:
+        attr = attr.numpy()
+    if type(edge_index) == torch.Tensor:
+        edge_index = edge_index.numpy()
+    if type(edge_index) == tuple:
+        edge_index = [edge_index[0].numpy(), edge_index[1].numpy()]
+    if adj_type == 'csr':
+        adj = sp.csr_matrix((attr, edge_index))
+    elif adj_type == 'coo':
+        adj = sp.coo_matrix((attr, edge_index))
+
+    return adj
 
 
 def adj_to_tensor(adj):

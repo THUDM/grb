@@ -76,11 +76,12 @@ class Dataset(object):
 
     """
 
-    def __init__(self, name, data_dir=None, mode="easy", feat_norm="arctan", verbose=True):
+    def __init__(self, name, data_dir=None, mode="easy", feat_norm="arctan", verbose=True, custom=False):
         # Create data dir
-        if name not in GRB_SUPPORTED_DATASETS:
-            print("{} dataset not supported.".format(name))
-            exit(1)
+        if not custom:
+            if name not in GRB_SUPPORTED_DATASETS:
+                print("{} dataset not supported.".format(name))
+                exit(1)
         if data_dir is None:
             data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", name)
         if name not in data_dir:
@@ -533,7 +534,7 @@ class CustomDataset(object):
 
     """
     def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
-                 name=None, data_dir=None, mode='full', feat_norm=None, save=False, verbose=True):
+                 name=None, data_dir=None, mode='full', feat_norm=None, save=False, verbose=True, seed=42):
         self.name = name
         self.adj = adj
         self.num_nodes = features.shape[0]
@@ -556,7 +557,7 @@ class CustomDataset(object):
         self.labels = labels
 
         if (train_mask is None) or (val_mask is None) or (test_mask is None):
-            index = splitting(adj)
+            index = splitting(adj, seed=seed)
             self.index = index
         if train_mask is None:
             index_train = index.get("index_train")

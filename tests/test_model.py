@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(model)
 
     # Define trainer
-    from grb.utils.trainer import Trainer
+    from grb.trainer.trainer import Trainer
     from grb.utils.normalize import GCNAdjNorm
 
     device = 'cuda:0'

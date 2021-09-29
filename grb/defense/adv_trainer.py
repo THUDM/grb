@@ -183,12 +183,12 @@ class AdvTrainer(object):
                         adj_attack, features_attack = self.attack.attack(model=model,
                                                                          adj=self.adj[train_mask][:, train_mask],
                                                                          features=features[train_mask],
-                                                                         index_target=torch.range(0, num_train))
+                                                                         index_target=torch.range(0, num_train - 1).multinomial(int(num_train * 0.01)))
                         adj_train = utils.adj_preprocess(adj=adj_attack,
                                                          adj_norm_func=model.adj_norm_func,
                                                          model_type=model.model_type,
                                                          device=self.device)
-                        features_train = features_attack[train_mask]
+                        features_train = features_attack
 
                 if self.lr_scheduler:
                     self.lr_scheduler.step(val_loss)

@@ -54,7 +54,7 @@ model = GRAND(in_features=num_features,
 print("Number of parameters: {}.".format(utils.get_num_params(model)))
 print(model)
 
-from grb.utils.trainer import Trainer
+from grb.trainer.trainer import Trainer
 
 adam = torch.optim.Adam(model.parameters(), lr=0.01)
 trainer = Trainer(dataset=dataset,
