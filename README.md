@@ -4,9 +4,9 @@
 [![Documentation Status](https://readthedocs.org/projects/grb/badge/?version=latest)](https://grb.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/github/license/THUDM/grb)](./LICENSE)
 
-**[Homepage](https://cogdl.ai/grb/home)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
+**[Homepage](https://cogdl.ai/grb/home)** | **[Paper](https://openreview.net/pdf?id=NxWUnvwFV4)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
 
-**Graph Robustness Benchmark (GRB)** provides _scalable_, _unified_, _modular_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning models. GRB has **elaborated datasets**, **unified evaluation pipeline**, **modular coding framework**, and **reproducible leaderboards**, which facilitate the robust developments of graph adversarial learning, summarizing existing progress and generating insights into future research. 
+**Graph Robustness Benchmark (GRB)** provides _scalable_, _unified_, _modular_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning models. GRB has **elaborated datasets**, **unified evaluation pipeline**, **modular coding framework**, and **reproducible leaderboards**, which facilitate the developments of graph adversarial learning, summarizing existing progress and generating insights into future research. 
 
 <div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_key_features.png/></div>
 
