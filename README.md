@@ -4,13 +4,15 @@
 [![Documentation Status](https://readthedocs.org/projects/grb/badge/?version=latest)](https://grb.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/github/license/THUDM/grb)](./LICENSE)
 
-**[Homepage](https://cogdl.ai/grb/home)** | **[Paper](https://openreview.net/pdf?id=NxWUnvwFV4)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
+**[Homepage](https://cogdl.ai/grb/home)** | **[Paper](https://arxiv.org/abs/2111.04314)** | **[Datasets](https://cogdl.ai/grb/datasets)** | **[Leaderboard](https://cogdl.ai/grb/leaderboard)** | **[Documentation](https://grb.readthedocs.io/en/latest)**
 
 **Graph Robustness Benchmark (GRB)** provides _scalable_, _unified_, _modular_, and _reproducible_ evaluation on the adversarial robustness of graph machine learning models. GRB has **elaborated datasets**, **unified evaluation pipeline**, **modular coding framework**, and **reproducible leaderboards**, which facilitate the developments of graph adversarial learning, summarizing existing progress and generating insights into future research. 
 
 <div align=center><img width="700" src=https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_key_features.png/></div>
 
 ## Updates
+
+* [08/11/2021] The final version of our paper is now available in [arxiv](https://arxiv.org/abs/2111.04314), there is also a representation [video](https://recorder-v3.slideslive.com/?share=55351&s=c61f55db-27d4-4c4e-8844-ad30c0e2776b) for brief introduction of GRB.
 * [11/10/2021] GRB is accepted by **NeurIPS 2021 Datasets and Benchmarks Track**! Find [our paper](https://openreview.net/pdf?id=NxWUnvwFV4) in OpenReview.
 * [26/09/2021] Add support for graph classification task! See [tutorials](https://github.com/THUDM/grb/blob/master/examples/graph_classification/) in ``examples/``.
 * [16/09/2021] Add a [paper list](https://github.com/THUDM/grb/blob/master/paperlist/README.md) of state-of-the-art researches about adversarial robustness in graph machine learning (Keep Updating).
@@ -28,11 +30,11 @@
 
 ### Installation
 
-Install grb via _pip_:
+Install grb via _pip_ (current version v0.1.0):
 ```bash
 pip install grb
 ```
-Install grb via _git_:
+Install grb via _git_ (for the newest version):
 ```bash
 git clone git@github.com:THUDM/grb.git
 cd grb
@@ -109,20 +111,20 @@ adj_attack, features_attack = rst
 
 ## GRB Evaluation
 
-### Evaluation scenario (Injection Attack)
+### Evaluation scenarios (Injection attack as an example)
 
 ![GRB](https://github.com/THUDM/grb/blob/master/docs/source/_static/grb_scenario.png)
 
-GRB provides a unified evaluation scenario for fair comparisons between attacks and defenses. The scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. Take the case of a citation-graph classification system for example. The platform collects labeled data from previous papers and trains a GML model. When a batch of new papers are submitted, it updates the graph and uses the trained model to predict labels for them. 
+GRB provides unified evaluation scenarios for fair comparisons between attacks and defenses. The example scenario is **Black-box**, **Evasion**, **Inductive**, **Injection**. 
 
 * **Black-box**: Both the attacker and the defender have no knowledge about the applied methods each other uses.
 * **Evasion**: Models are already trained in trusted data (e.g. authenticated users), which are untouched by the attackers but might have natural noises. Thus, attacks will only happen during the inference phase. 
 * **Inductive**: Models are used to classify unseen data (e.g. new users), i.e. validation or test data are unseen during training, which requires models to generalize to out of distribution data.
 * **Injection**: The attackers can only inject new nodes but not modify the target nodes directly. Since it is usually hard to hack into users' accounts and modify their profiles. However, it is easier to create fake accounts and connect them to existing users.
 
-### GRB Leaderboard
+### GRB Leaderboards
 
-GRB maintains [leaderboards](https://cogdl.ai/grb/leaderboard/) that permits a fair comparision across various attacks and defenses. To ensure the reproducibility, we provide all necessary information including datasets, attack results, saved models, etc. Besides, all results on the leaderboards can be easily reproduced by running the following scripts (e.g. [leaderboard for _grb-cora_ dataset](https://cogdl.ai/grb/leaderboard/cora)):
+GRB maintains [leaderboards](https://cogdl.ai/grb/leaderboard/) that permits a fair comparision across various attacks and defenses. To ensure the reproducibility, we provide all necessary information including datasets, attack results, saved models, etc. Besides, all results on the leaderboards can be easily reproduced by running the following scripts (e.g., [leaderboard for _grb-cora_ dataset](https://cogdl.ai/grb/leaderboard/cora, compatible with v0.1.0)):
 ```bash
 sh run_leaderboard_pipeline.sh -d grb-cora -g 0 -s ./leaderboard -n 0
 Usage: run_leaderboard_pipeline.sh [-d <string>] [-g <int>] [-s <string>] [-n <int>]
@@ -152,7 +154,7 @@ Please submit your methods via the google form [GRB submission](https://docs.goo
 
 ## Citing GRB
 
-Please cite [our paper](https://openreview.net/pdf?id=NxWUnvwFV4) if you find GRB useful for your research: 
+If you find GRB useful for your research, please cite [our paper](https://arxiv.org/abs/2111.04314):  
 
 ```
 @article{zheng2021grb,
@@ -166,4 +168,3 @@ Please cite [our paper](https://openreview.net/pdf?id=NxWUnvwFV4) if you find GR
 ## Contact
 
 In case of any problem, please contact us via email: cogdl.grbteam@gmail.com. We also welcome researchers to join our [Google Group](https://groups.google.com/g/graph-robustness-benchmark) for further discussion on the adversarial robustness of graph machine learning.
-
