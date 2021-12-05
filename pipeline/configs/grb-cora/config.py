@@ -45,6 +45,7 @@ modification_attack_list = ["dice",
                             "fga",
                             "nea",
                             "pgd",
+                            "prbcd",
                             "stack"]
 
 injection_attack_list = ["rand",
@@ -67,11 +68,11 @@ def build_model(model_name, num_features, num_classes):
                     layer_norm=True if "ln" in model_name else False,
                     dropout=0.6)
         train_params = {
-            "lr"                 : 0.01,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.01,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["graphsage", "graphsage_ln", "graphsage_at", "graphsage_ln_at"]:
@@ -83,11 +84,11 @@ def build_model(model_name, num_features, num_classes):
                           layer_norm=True if "ln" in model_name else False,
                           dropout=0.6)
         train_params = {
-            "lr"                 : 0.005,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.005,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["sgcn", "sgcn_ln", "sgcn_at", "sgcn_ln_at"]:
@@ -100,11 +101,11 @@ def build_model(model_name, num_features, num_classes):
                      layer_norm=True if "ln" in model_name else False,
                      dropout=0.5)
         train_params = {
-            "lr"                 : 0.01,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.01,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["tagcn", "tagcn_ln", "tagcn_at", "tagcn_ln_at"]:
@@ -117,11 +118,11 @@ def build_model(model_name, num_features, num_classes):
                       layer_norm=True if "ln" in model_name else False,
                       dropout=0.7)
         train_params = {
-            "lr"                 : 0.005,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.005,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["appnp", "appnp_ln", "appnp_at", "appnp_ln_at"]:
@@ -134,11 +135,11 @@ def build_model(model_name, num_features, num_classes):
                       layer_norm=True if "ln" in model_name else False,
                       dropout=0.7)
         train_params = {
-            "lr"                 : 0.005,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.005,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["gin", "gin_ln", "gin_at", "gin_ln_at"]:
@@ -150,11 +151,11 @@ def build_model(model_name, num_features, num_classes):
                     layer_norm=True if "ln" in model_name else False,
                     dropout=0.6)
         train_params = {
-            "lr"                 : 0.005,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.005,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["gat", "gat_ln", "gat_at", "gat_ln_at"]:
@@ -167,11 +168,11 @@ def build_model(model_name, num_features, num_classes):
                     layer_norm=True if "ln" in model_name else False,
                     dropout=0.5)
         train_params = {
-            "lr"                 : 0.001,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.001,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["robustgcn", "robustgcn_at"]:
@@ -182,11 +183,11 @@ def build_model(model_name, num_features, num_classes):
                           n_layers=3,
                           dropout=0.5)
         train_params = {
-            "lr"                 : 0.01,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.01,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["gcnsvd", "gcnsvd_ln"]:
@@ -198,11 +199,11 @@ def build_model(model_name, num_features, num_classes):
                        n_layers=3,
                        dropout=0.5)
         train_params = {
-            "lr"                 : 0.001,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.001,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["gcnguard"]:
@@ -214,11 +215,11 @@ def build_model(model_name, num_features, num_classes):
                          n_layers=3,
                          dropout=0.5)
         train_params = {
-            "lr"                 : 0.001,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.001,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     if model_name in ["gatguard"]:
@@ -231,11 +232,11 @@ def build_model(model_name, num_features, num_classes):
                          n_layers=3,
                          dropout=0.5)
         train_params = {
-            "lr"                 : 0.001,
-            "n_epoch"            : 5000,
-            "early_stop"         : True,
+            "lr": 0.001,
+            "n_epoch": 5000,
+            "early_stop": True,
             "early_stop_patience": 500,
-            "train_mode"         : "inductive",
+            "train_mode": "inductive",
         }
         return model, train_params
     print("Model name not supported.")
@@ -308,6 +309,18 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                          feat_lim_max=args.feat_lim_max,
                          early_stop=args.early_stop,
                          device=device)
+            return attack
+        if attack_name == "prbcd":
+            from grb.attack.modification import PRBCD
+
+            attack = PRBCD(epsilon=args.epsilon,
+                           n_epoch=args.attack_epoch,
+                           n_node_mod=args.n_node_mod,
+                           n_edge_mod=args.n_edge_mod,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           device=device)
             return attack
     elif mode == "injection":
         if attack_name == "rand":
@@ -407,13 +420,13 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -425,13 +438,13 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -443,14 +456,14 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "k"              : trial.suggest_categorical("k", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "k": trial.suggest_categorical("k", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -462,14 +475,14 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "k"              : trial.suggest_categorical("k", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "k": trial.suggest_categorical("k", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -481,14 +494,14 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "k"              : trial.suggest_categorical("k", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "k": trial.suggest_categorical("k", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -500,13 +513,13 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params
@@ -518,14 +531,14 @@ def build_model_autotrain(model_name):
         def params_search(trial):
             model_params = {
                 "hidden_features": trial.suggest_categorical("hidden_features", [32, 64, 128, 256]),
-                "n_layers"       : trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
-                "n_heads"        : trial.suggest_categorical("n_heads", [2, 4, 6, 8]),
-                "dropout"        : trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
+                "n_layers": trial.suggest_categorical("n_layers", [2, 3, 4, 5]),
+                "n_heads": trial.suggest_categorical("n_heads", [2, 4, 6, 8]),
+                "dropout": trial.suggest_categorical("dropout", [0.5, 0.6, 0.7, 0.8]),
             }
             train_params = {
-                "lr"                 : trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
-                "n_epoch"            : 5000,
-                "early_stop"         : True,
+                "lr": trial.suggest_categorical("lr", [1e-2, 1e-3, 5e-3, 1e-4]),
+                "n_epoch": 5000,
+                "early_stop": True,
                 "early_stop_patience": 500,
             }
             return model_params, train_params

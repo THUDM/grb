@@ -297,7 +297,7 @@ class GCNConv(nn.Module):
         """
 
         x = self.linear(x)
-        x = torch.spmm(adj, x)
+        x = torch.sparse.mm(adj, x)
         if self.activation is not None:
             x = self.activation(x)
         if self.residual is not None:

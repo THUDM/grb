@@ -34,12 +34,19 @@ def GCNAdjNorm(adj, order=-0.5):
         d_mat_inv = sp.diags(d_inv)
         adj = d_mat_inv @ adj @ d_mat_inv
     else:
-        adj = torch.eye(adj.shape[0]).to(adj.device) + adj
-        rowsum = adj.sum(1)
+        rowsum = torch.sparse.mm(adj, torch.ones((adj.shape[0], 1), device=adj.device)) + 1
         d_inv = torch.pow(rowsum, order).flatten()
         d_inv[torch.isinf(d_inv)] = 0.
-        d_mat_inv = torch.diag(d_inv)
-        adj = d_mat_inv @ adj @ d_mat_inv
+
+        self_loop_idx = torch.stack((
+            torch.arange(adj.shape[0], device=adj.device),
+            torch.arange(adj.shape[0], device=adj.device)
+        ))
+        self_loop_val = torch.ones_like(self_loop_idx[0], dtype=adj.dtype)
+        indices = torch.cat((self_loop_idx, adj.indices()), dim=1)
+        values = torch.cat((self_loop_val, adj.values()))
+        values = d_inv[indices[0]] * values * d_inv[indices[1]]
+        adj = torch.sparse.FloatTensor(indices, values, adj.shape).coalesce()
 
     return adj
 

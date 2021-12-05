@@ -39,7 +39,8 @@ modification_attack_list = ["dice",
                             "flip",
                             "fga",
                             "nea",
-                            "pgd"
+                            "pgd",
+                            "prbcd",
                             "stack"]
 
 injection_attack_list = ["rand",
@@ -302,6 +303,18 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                          feat_lim_max=args.feat_lim_max,
                          early_stop=args.early_stop,
                          device=device)
+            return attack
+        if attack_name == "prbcd":
+            from grb.attack.modification import PRBCD
+
+            attack = PRBCD(epsilon=args.epsilon,
+                           n_epoch=args.attack_epoch,
+                           n_node_mod=args.n_node_mod,
+                           n_edge_mod=args.n_edge_mod,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           device=device)
             return attack
     elif mode == "injection":
         if attack_name == "rand":

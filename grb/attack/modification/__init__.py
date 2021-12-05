@@ -5,3 +5,4 @@ from .nea import NEA
 from .rand import RAND
 from .stack import STACK
 from .pgd import PGD
+from .prbcd import PRBCD
