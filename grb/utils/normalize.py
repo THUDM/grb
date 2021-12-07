@@ -116,3 +116,13 @@ def RobustGCNAdjNorm(adj):
     adj1 = GCNAdjNorm(adj, order=-1)
 
     return adj0, adj1
+
+
+def feature_normalize(features):
+    x_sum = torch.sum(features, dim=1)
+    x_rev = x_sum.pow(-1).flatten()
+    x_rev[torch.isnan(x_rev)] = 0.0
+    x_rev[torch.isinf(x_rev)] = 0.0
+    features = features * x_rev.unsqueeze(-1).expand_as(features)
+
+    return features
