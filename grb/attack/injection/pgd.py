@@ -34,7 +34,7 @@ class PGD(InjectionAttack):
     feat_lim_max : float
         Maximum limit of features.
     loss : func of torch.nn.functional, optional
-        Loss function compatible with ``torch.nn.functional``. Default: ``F.nll_loss``.
+        Loss function compatible with ``torch.nn.functional``. Default: ``F.cross_entropy``.
     eval_metric : func of grb.evaluator.metric, optional
         Evaluation metric. Default: ``metric.eval_acc``.
     early_stop : bool or instance of EarlyStop, optional
@@ -59,7 +59,7 @@ class PGD(InjectionAttack):
                  n_edge_max,
                  feat_lim_min,
                  feat_lim_max,
-                 loss=F.nll_loss,
+                 loss=F.cross_entropy,
                  eval_metric=metric.eval_acc,
                  early_stop=None,
                  early_stop_patience=1000,
