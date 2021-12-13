@@ -1,5 +1,6 @@
 import os
 import random
+
 import numpy as np
 import scipy.sparse as sp
 import torch
@@ -203,7 +204,7 @@ class CogDLDataset(object):
 
             try:
                 if data_dir:
-                    dataset = build_dataset_from_path(data_path=data_dir, task="graph_classification", dataset=name)
+                    dataset = build_dataset_from_path(data_path=data_dir, dataset=name)
                 else:
                     dataset = build_dataset_from_name(name)
             except AssertionError:
@@ -243,7 +244,7 @@ class CogDLDataset(object):
 
             try:
                 if data_dir:
-                    dataset = build_dataset_from_path(data_path=data_dir, task="node_classification", dataset=name)
+                    dataset = build_dataset_from_path(data_path=data_dir, dataset=name)
                 else:
                     dataset = build_dataset_from_name(name)
             except AssertionError:
@@ -533,6 +534,7 @@ class CustomDataset(object):
         Mask of test nodes in form of ``N * 1`` torch bool tensor.
 
     """
+
     def __init__(self, adj, features, labels, train_mask=None, val_mask=None, test_mask=None,
                  name=None, data_dir=None, mode='full', feat_norm=None, save=False, verbose=True, seed=42):
         self.name = name
@@ -725,6 +727,7 @@ def splitting(adj,
         "index_test_easy", "index_test_medium", "index_test_hard"}``.
 
     """
+
     def a_not_in_b(a, b):
         c = []
         for i in a:
