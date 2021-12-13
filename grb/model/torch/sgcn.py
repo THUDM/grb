@@ -47,6 +47,7 @@ class SGCN(nn.Module):
                  feat_norm=None,
                  adj_norm_func=GCNAdjNorm,
                  layer_norm=False,
+                 batch_norm=False,
                  k=4,
                  dropout=0.0):
         super(SGCN, self).__init__()
@@ -59,7 +60,10 @@ class SGCN(nn.Module):
         elif type(hidden_features) is list or type(hidden_features) is tuple:
             assert len(hidden_features) == (n_layers - 1), "Incompatible sizes between hidden_features and n_layers."
 
-        self.batch_norm = nn.BatchNorm1d(in_features)
+        if batch_norm:
+            self.batch_norm = nn.BatchNorm1d(in_features)
+        else:
+            self.batch_norm = None
         self.in_conv = nn.Linear(in_features, hidden_features[0])
         self.out_conv = nn.Linear(hidden_features[-1], out_features)
         self.activation = activation
@@ -102,8 +106,8 @@ class SGCN(nn.Module):
             Output of model (logits without activation).
 
         """
-
-        x = self.batch_norm(x)
+        if self.batch_norm is not None:
+            x = self.batch_norm(x)
         x = self.in_conv(x)
         x = F.relu(x)
         if self.dropout is not None:

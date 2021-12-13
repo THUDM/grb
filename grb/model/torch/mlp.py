@@ -38,6 +38,7 @@ class MLP(nn.Module):
                  activation=F.relu,
                  feat_norm=None,
                  adj_norm_func=None,
+                 batch_norm=False,
                  layer_norm=False,
                  dropout=0.0):
         super(MLP, self).__init__()
@@ -58,6 +59,7 @@ class MLP(nn.Module):
             self.layers.append(MLPLayer(in_features=n_features[i],
                                         out_features=n_features[i + 1],
                                         activation=activation if i != n_layers - 1 else None,
+                                        batch_norm=batch_norm if i != n_layers - 1 else None,
                                         dropout=dropout if i != n_layers - 1 else 0.0))
         self.reset_parameters()
 
@@ -121,7 +123,7 @@ class MLPLayer(nn.Module):
 
     """
 
-    def __init__(self, in_features, out_features, activation=None, dropout=0.0):
+    def __init__(self, in_features, out_features, activation=None, batch_norm=False, dropout=0.0):
         super(MLPLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -131,6 +133,10 @@ class MLPLayer(nn.Module):
             self.dropout = nn.Dropout(dropout)
         else:
             self.dropout = None
+        if batch_norm:
+            self.batch_norm = nn.BatchNorm1d(out_features)
+        else:
+            self.batch_norm = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -159,6 +165,9 @@ class MLPLayer(nn.Module):
         """
 
         x = self.linear(x)
+        if hasattr(self, 'batch_norm'):
+            if self.batch_norm is not None:
+                x = self.batch_norm(x)
         if self.activation is not None:
             x = self.activation(x)
         if self.dropout is not None:
