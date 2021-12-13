@@ -12,7 +12,7 @@ class DICE(ModificationAttack):
     def __init__(self,
                  n_edge_mod,
                  ratio_delete=0.6,
-                 allow_isolate=False,
+                 allow_isolate=True,
                  device="cpu",
                  verbose=True):
         self.n_edge_mod = n_edge_mod

@@ -14,7 +14,7 @@ class FLIP(ModificationAttack):
                  n_edge_mod,
                  flip_type="deg",
                  mode="descend",
-                 allow_isolate=False,
+                 allow_isolate=True,
                  device="cpu",
                  verbose=True):
         self.n_edge_mod = n_edge_mod

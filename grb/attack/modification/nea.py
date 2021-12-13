@@ -13,7 +13,7 @@ class NEA(ModificationAttack):
 
     def __init__(self,
                  n_edge_mod,
-                 allow_isolate=False,
+                 allow_isolate=True,
                  device="cpu",
                  verbose=True):
         self.n_edge_mod = n_edge_mod

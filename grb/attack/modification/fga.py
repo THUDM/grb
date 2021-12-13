@@ -14,8 +14,8 @@ class FGA(ModificationAttack):
 
     def __init__(self,
                  n_edge_mod,
-                 loss=F.nll_loss,
-                 allow_isolate=False,
+                 loss=F.cross_entropy,
+                 allow_isolate=True,
                  device="cpu",
                  verbose=True):
         self.n_edge_mod = n_edge_mod

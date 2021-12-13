@@ -20,7 +20,7 @@ class PGD(ModificationAttack):
                  feat_lim_min,
                  feat_lim_max,
                  allow_isolate=False,
-                 loss=F.nll_loss,
+                 loss=F.cross_entropy,
                  eval_metric=metric.eval_acc,
                  early_stop=None,
                  early_stop_patience=1000,

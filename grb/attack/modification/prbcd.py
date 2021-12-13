@@ -4,13 +4,13 @@ from typing import Tuple
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-from tqdm.auto import tqdm
 import torch_sparse
+from tqdm.auto import tqdm
 
 from grb.attack.base import ModificationAttack, EarlyStop
 from grb.evaluator import metric
 from grb.utils import utils
+from grb.utils.normalize import SPARSEAdjNorm
 
 
 def tanh_margin_loss(logits, labels, normalizer=40):
@@ -18,8 +18,8 @@ def tanh_margin_loss(logits, labels, normalizer=40):
     best_non_target_class = sorted[sorted != labels[:, None]].reshape(
         logits.size(0), -1)[:, -1]
     margin = (
-        logits[np.arange(logits.size(0)), labels]
-        - logits[np.arange(logits.size(0)), best_non_target_class]
+            logits[np.arange(logits.size(0)), labels]
+            - logits[np.arange(logits.size(0)), best_non_target_class]
     )
     loss = torch.tanh(-margin / normalizer).mean()
     return loss
@@ -78,7 +78,6 @@ class PRBCD(ModificationAttack):
         self.eps = eps
         self.search_space_size = search_space_size
         self.lr_factor = lr_factor
-        
 
     def attack(self,
                model,
@@ -86,7 +85,7 @@ class PRBCD(ModificationAttack):
                features,
                index_target,
                feat_norm=None,
-               adj_norm_func=None):
+               adj_norm_func=SPARSEAdjNorm):
         time_start = time.time()
 
         self.n = adj.shape[0]
@@ -430,15 +429,15 @@ class PRBCD(ModificationAttack):
     @staticmethod
     def linear_to_triu_idx(n: int, lin_idx: torch.Tensor) -> torch.Tensor:
         row_idx = (
-            n
-            - 2
-            - torch.floor(torch.sqrt(-8 * lin_idx.double() + 4 * n * (n - 1) - 7) / 2.0 - 0.5)
+                n
+                - 2
+                - torch.floor(torch.sqrt(-8 * lin_idx.double() + 4 * n * (n - 1) - 7) / 2.0 - 0.5)
         ).long()
         col_idx = (
-            lin_idx
-            + row_idx
-            + 1 - n * (n - 1) // 2
-            + (n - row_idx) * ((n - row_idx) - 1) // 2
+                lin_idx
+                + row_idx
+                + 1 - n * (n - 1) // 2
+                + (n - row_idx) * ((n - row_idx) - 1) // 2
         )
         return torch.stack((row_idx, col_idx))
 
