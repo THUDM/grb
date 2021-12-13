@@ -250,6 +250,18 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
             attack = STACK(n_edge_mod=args.n_edge_mod,
                            device=device)
             return attack
+        if attack_name == "prbcd":
+            from grb.attack.modification import PRBCD
+
+            attack = PRBCD(epsilon=args.epsilon,
+                           n_epoch=args.attack_epoch,
+                           n_node_mod=args.n_node_mod,
+                           n_edge_mod=args.n_edge_mod,
+                           feat_lim_min=args.feat_lim_min,
+                           feat_lim_max=args.feat_lim_max,
+                           early_stop=args.early_stop,
+                           device=device)
+            return attack
         if attack_name == "pgd":
             from grb.attack.modification import PGD
 
@@ -275,8 +287,8 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         elif attack_name == "fgsm":
             from grb.attack.injection import FGSM
 
-            attack = FGSM(epsilon=args.lr,
-                          n_epoch=args.n_epoch,
+            attack = FGSM(epsilon=args.attack_lr,
+                          n_epoch=args.attack_epoch,
                           n_inject_max=args.n_inject_max,
                           n_edge_max=args.n_edge_max,
                           feat_lim_min=args.feat_lim_min,
@@ -287,8 +299,8 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         elif attack_name == "pgd":
             from grb.attack.injection import PGD
 
-            attack = PGD(epsilon=args.lr,
-                         n_epoch=args.n_epoch,
+            attack = PGD(epsilon=args.attack_lr,
+                         n_epoch=args.attack_epoch,
                          n_inject_max=args.n_inject_max,
                          n_edge_max=args.n_edge_max,
                          feat_lim_min=args.feat_lim_min,
@@ -296,23 +308,11 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
                          early_stop=args.early_stop,
                          device=device)
             return attack
-        if attack_name == "prbcd":
-            from grb.attack.modification import PRBCD
-
-            attack = PRBCD(epsilon=args.epsilon,
-                           n_epoch=args.attack_epoch,
-                           n_node_mod=args.n_node_mod,
-                           n_edge_mod=args.n_edge_mod,
-                           feat_lim_min=args.feat_lim_min,
-                           feat_lim_max=args.feat_lim_max,
-                           early_stop=args.early_stop,
-                           device=device)
-            return attack
         elif attack_name == "speit":
             from grb.attack.injection import SPEIT
 
-            attack = SPEIT(lr=args.lr,
-                           n_epoch=args.n_epoch,
+            attack = SPEIT(lr=args.attack_lr,
+                           n_epoch=args.attack_epoch,
                            n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
@@ -323,8 +323,8 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         elif attack_name == "tdgia":
             from grb.attack.injection import TDGIA
 
-            attack = TDGIA(lr=args.lr,
-                           n_epoch=args.n_epoch,
+            attack = TDGIA(lr=args.attack_lr,
+                           n_epoch=args.attack_epoch,
                            n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
@@ -337,8 +337,8 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         elif attack_name == "tdgia_random":
             from grb.attack.injection.tdgia import TDGIA
 
-            attack = TDGIA(lr=args.lr,
-                           n_epoch=args.n_epoch,
+            attack = TDGIA(lr=args.attack_lr,
+                           n_epoch=args.attack_epoch,
                            n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
@@ -350,8 +350,8 @@ def build_attack(attack_name, device="cpu", args=None, mode="modification"):
         elif attack_name == "tdgia_uniform":
             from grb.attack.injection import TDGIA
 
-            attack = TDGIA(lr=args.lr,
-                           n_epoch=args.n_epoch,
+            attack = TDGIA(lr=args.attack_lr,
+                           n_epoch=args.attack_epoch,
                            n_inject_max=args.n_inject_max,
                            n_edge_max=args.n_edge_max,
                            feat_lim_min=args.feat_lim_min,
