@@ -9,18 +9,21 @@ import grb.utils as utils
 from grb.dataset import Dataset
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Attacking GNN models in pipeline.')
+    parser = argparse.ArgumentParser(description='Modification attack on GML models.')
+
     # Dataset settings
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--dataset_mode", nargs='+', default=["easy", "medium", "hard", "full"])
     parser.add_argument("--data_dir", type=str, default="../data/")
     parser.add_argument("--feat_norm", type=str, default="arctan")
+
     # Model settings
     parser.add_argument("--model", nargs='+', default=None)
     parser.add_argument("--model_dir", type=str, default="../saved_models/")
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
     parser.add_argument("--log_dir", type=str, default="../pipeline/logs/")
     parser.add_argument("--model_file", type=str, default="model_sur.pt")
+
     # Modification attack setting
     parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--attack_mode", type=str, default="modification")
@@ -137,6 +140,11 @@ if __name__ == '__main__':
                                                                     adj=adj,
                                                                     features=features,
                                                                     index_target=index_target)
+                    elif attack_name == "prbcd":
+                        adj_attack, features_attack = attack.attack(model=model_sur,
+                                                                    adj=adj,
+                                                                    features=features,
+                                                                    index_target=target_mask)
 
                     time_end = time.time()
                     print("Attack runtime: {:.4f}".format(time_end - time_start))

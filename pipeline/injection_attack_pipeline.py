@@ -2,25 +2,29 @@ import argparse
 import os
 import sys
 import time
+
 import torch
 
 import grb.utils as utils
 from grb.dataset import Dataset
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Attacking GNN models in pipeline.')
+    parser = argparse.ArgumentParser(description='Injection attack on GML models.')
+
     # Dataset settings
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--dataset_mode", nargs='+', default=["easy", "medium", "hard", "full"])
     parser.add_argument("--data_dir", type=str, default="../data/")
     parser.add_argument("--feat_norm", type=str, default="arctan")
+
     # Model settings
     parser.add_argument("--model", nargs='+', default=None)
     parser.add_argument("--model_dir", type=str, default="../saved_models/")
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
     parser.add_argument("--log_dir", type=str, default="../pipeline/logs/")
-    parser.add_argument("--model_file", type=str, default="model_sur_0.pt")
-    # Modification attack setting
+    parser.add_argument("--model_file", type=str, default="model_sur.pt")
+
+    # Injection attack setting
     parser.add_argument("--attack", nargs='+', default=None)
     parser.add_argument("--attack_mode", type=str, default="injection")
     parser.add_argument("--save_dir", type=str, default="../attack_results/")
@@ -33,18 +37,9 @@ if __name__ == '__main__':
     parser.add_argument("--feat_lim_min", type=float, default=None)
     parser.add_argument("--feat_lim_max", type=float, default=None)
     parser.add_argument("--flip_type", type=str, default="deg")
-    # Adversarial training settings
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
-    parser.add_argument("--n_train", type=int, default=1)
-    parser.add_argument("--n_epoch", type=int, default=500, help="Training epoch.")
-    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
-    parser.add_argument("--eval_every", type=int, default=1)
-    parser.add_argument("--save_after", type=int, default=0)
-    parser.add_argument("--train_mode", type=str, default="inductive")
-    parser.add_argument("--eval_metric", type=str, default="acc")
     parser.add_argument("--early_stop", action="store_true")
     parser.add_argument("--early_stop_patience", type=int, default=500)
-    parser.add_argument("--lr_scheduler", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--verbose", action="store_true")
 

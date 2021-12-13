@@ -6,19 +6,23 @@ import grb.utils as utils
 from grb.dataset import Dataset
 from grb.dataset import GRB_SUPPORTED_DATASETS
 from grb.evaluator import metric
-from grb.utils import AutoTrainer, Logger
+from grb.trainer import AutoTrainer
+from grb.utils import Logger
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Auto training GNN models in pipeline.')
+    parser = argparse.ArgumentParser(description='Auto training GML models in pipeline.')
+
     # Dataset settings
     parser.add_argument("--dataset", type=str, default="grb-cora")
     parser.add_argument("--data_dir", type=str, default="../data/")
     parser.add_argument("--feat_norm", type=str, default="arctan")
+
     # Model settings
     parser.add_argument("--model", nargs='+', default=None)
     parser.add_argument("--config_dir", type=str, default="../pipeline/configs/")
     parser.add_argument("--log_dir", type=str, default="../pipeline/logs/")
     parser.add_argument("--save_name", type=str, default="model.pt")
+
     # Training settings
     parser.add_argument("--gpu", type=int, default=0, help="gpu")
     parser.add_argument("--n_epoch", type=int, default=5000, help="Training epoch.")
