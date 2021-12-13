@@ -99,6 +99,54 @@ def SAGEAdjNorm(adj, order=-1):
     return adj
 
 
+def SPARSEAdjNorm(adj, order=-0.5):
+    r"""
+
+    Description
+    -----------
+    Normalization of adjacency matrix proposed in `GCN <https://arxiv.org/abs/1609.02907>`__.
+
+    Parameters
+    ----------
+    adj : scipy.sparse.csr.csr_matrix or torch.FloatTensor
+        Adjacency matrix in form of ``N * N`` sparse matrix (or in form of ``N * N`` dense tensor).
+    order : float, optional
+        Order of degree matrix. Default: ``-0.5``.
+
+
+    Returns
+    -------
+    adj : scipy.sparse.csr.csr_matrix
+        Normalized adjacency matrix in form of ``N * N`` sparse matrix.
+
+    """
+    if sp.issparse(adj):
+        adj = sp.eye(adj.shape[0]) + adj
+        adj.data[np.where((adj.data > 0) * (adj.data == 1))[0]] = 1
+        adj = sp.coo_matrix(adj)
+        rowsum = np.array(adj.sum(1))
+        d_inv = np.power(rowsum, order).flatten()
+        d_inv[np.isinf(d_inv)] = 0.
+        d_mat_inv = sp.diags(d_inv)
+        adj = d_mat_inv @ adj @ d_mat_inv
+    else:
+        rowsum = torch.sparse.mm(adj, torch.ones((adj.shape[0], 1), device=adj.device)) + 1
+        d_inv = torch.pow(rowsum, order).flatten()
+        d_inv[torch.isinf(d_inv)] = 0.
+
+        self_loop_idx = torch.stack((
+            torch.arange(adj.shape[0], device=adj.device),
+            torch.arange(adj.shape[0], device=adj.device)
+        ))
+        self_loop_val = torch.ones_like(self_loop_idx[0], dtype=adj.dtype)
+        indices = torch.cat((self_loop_idx, adj.indices()), dim=1)
+        values = torch.cat((self_loop_val, adj.values()))
+        values = d_inv[indices[0]] * values * d_inv[indices[1]]
+        adj = torch.sparse.FloatTensor(indices, values, adj.shape).coalesce()
+
+    return adj
+
+
 def RobustGCNAdjNorm(adj):
     r"""
 
