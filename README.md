@@ -44,16 +44,16 @@ pip install -e .
 ### Preparation
 
 GRB provides all necessary components to ensure the reproducibility of evaluation results.
-Get datasets from [link](https://cloud.tsinghua.edu.cn/d/c77db90e05e74a5c9b8b/) or download them by running the following script:
+Get datasets from [link](https://cloud.tsinghua.edu.cn/f/21d3244b99a54a038b44/) or download them by running the following script:
 ```bash
 cd ./scripts
 sh download_dataset.sh
 ```
-Get attack results (adversarial adjacency matrix and features) from [link](https://cloud.tsinghua.edu.cn/d/94b2ea104c2e457d9667/) or download them by running the following script:
+Get attack results (adversarial adjacency matrix and features) from [link](https://cloud.tsinghua.edu.cn/f/cf400543c12d424bbaf1/) or download them by running the following script:
 ```bash
 sh download_attack_results.sh
 ```
-Get saved models (model weights) from [link](https://cloud.tsinghua.edu.cn/d/8b51a6b428464340b368/) or download them by running the following script:
+Get saved models (model weights) from [link](https://cloud.tsinghua.edu.cn/f/32d6c53f914b4809b238/) or download them by running the following script:
 ```bash
 sh download_saved_models.sh
 ```
