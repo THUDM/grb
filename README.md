@@ -21,7 +21,7 @@
     * [Modification Attack](https://github.com/THUDM/grb/blob/master/examples/node_classification/modification_attack.ipynb)
 * [17/08/2021] Add AutoML function based on [optuna](https://github.com/optuna/optuna) for training models:
     * ``AutoTrainer`` in [grb.trainer.trainer](https://github.com/THUDM/grb/blob/master/grb/utils/trainer.py)
-    * Tutorial: [Training models with AutoML](https://github.com/THUDM/grb/blob/master/examples/training_automl.ipynb)
+    * Tutorial: [Training models with AutoML](https://github.com/THUDM/grb/blob/master/examples/node_classification/trianing_automl.ipynb)
 * [14/08/2021] Add tutorials based on jupyter notebook in ``examples/``: 
     * [Load Datasets](https://github.com/THUDM/grb/blob/master/examples/node_classification/load_datasets.ipynb)
     * [Training models](https://github.com/THUDM/grb/blob/master/examples/node_classification/training.ipynb)
